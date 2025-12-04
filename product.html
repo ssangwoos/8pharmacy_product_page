@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에이트약국 제품안내</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* 1. 기본 설정 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            max-width: 600px; /* 모바일처럼 보이게 폭 제한 */
+            margin: 0 auto; /* 중앙 정렬 */
+            padding-bottom: 50px;
+        }
+
+        /* 2. 상단 헤더 (브랜드 로고) */
+        header {
+            background: #fff;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        header h1 {
+            font-size: 1.2rem;
+            color: #1D5C36;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        /* 3. 상품 이미지 영역 */
+        .product-img-box {
+            width: 100%;
+            height: 350px; /* 정사각형에 가깝게 */
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .product-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 이미지가 잘리지 않고 다 보이게 */
+        }
+
+        /* 4. 상품 기본 정보 (이름, 가격) */
+        .product-info {
+            padding: 20px;
+            background: #fff;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        .product-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        .product-price {
+            font-size: 1.6rem;
+            color: #d32f2f; /* 가격 강조색 (빨강 계열) */
+            font-weight: 800;
+        }
+        .currency { font-size: 1rem; color: #555; }
+
+        /* 5. 언어 선택 탭 (국기 버튼) */
+        .lang-tabs {
+            display: flex;
+            justify-content: space-around;
+            background: #fff;
+            padding: 10px 5px;
+            margin-bottom: 2px;
+            border-bottom: 1px solid #eee;
+            position: sticky; /* 스크롤 내려도 상단에 붙음 */
+            top: 0;
+            z-index: 100;
+        }
+        .lang-btn {
+            border: none;
+            background: none;
+            font-size: 2rem; /* 국기 아이콘 크기 */
+            cursor: pointer;
+            opacity: 0.4; /* 선택 안된 건 흐리게 */
+            transition: all 0.2s;
+            padding: 5px 10px;
+            border-bottom: 3px solid transparent;
+        }
+        .lang-btn.active {
+            opacity: 1; /* 선택된 건 진하게 */
+            transform: scale(1.1);
+            border-bottom: 3px solid #1D5C36; /* 선택 표시줄 */
+        }
+        .lang-label {
+            display: block;
+            font-size: 0.8rem;
+            margin-top: -5px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        /* 6. 상세 설명 영역 */
+        .description-container {
+            background: #fff;
+            min-height: 300px;
+            padding: 20px;
+        }
+        
+        /* 탭 내용들 (기본적으로 다 숨김) */
+        .desc-content { display: none; }
+        /* active 클래스가 붙은 내용만 보임 */
+        .desc-content.active { display: block; animation: fadeIn 0.3s; }
+
+        /* 설명 이미지 스타일 (한국식 상세페이지 처럼 긴 이미지 대응) */
+        .desc-content img {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 15px;
+        }
+        .desc-text {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #444;
+            white-space: pre-line; /* 줄바꿈 반영 */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="location.href='index.html'">EIGHT PHARMACY</h1>
+    </header>
+
+    <div class="product-img-box">
+        <img src="./images/sample-product.jpg" alt="상품 이미지" id="mainImage">
+    </div>
+
+    <div class="product-info">
+        <div class="product-name" id="pName">프리미엄 비타민 C 1000</div>
+        <div class="product-price" id="pPrice">35,000 <span class="currency">KRW</span></div>
+    </div>
+
+    <div class="lang-tabs">
+        <button class="lang-btn active" onclick="changeLang('kr')">
+            🇰🇷<span class="lang-label">KOR</span>
+        </button>
+        <button class="lang-btn" onclick="changeLang('en')">
+            🇺🇸<span class="lang-label">ENG</span>
+        </button>
+        <button class="lang-btn" onclick="changeLang('cn')">
+            🇨🇳<span class="lang-label">CHN</span>
+        </button>
+        <button class="lang-btn" onclick="changeLang('jp')">
+            🇯🇵<span class="lang-label">JPN</span>
+        </button>
+    </div>
+
+    <div class="description-container">
+        
+        <div id="desc-kr" class="desc-content active">
+            <h3>상세정보</h3>
+            <p class="desc-text">
+                피로 회복에 탁월한 고함량 비타민 C입니다.
+                하루 한 알로 활력을 찾으세요.
+                
+                [복용법] 1일 1회, 1정 식후 복용
+            </p>
+            </div>
+
+        <div id="desc-en" class="desc-content">
+            <h3>Description</h3>
+            <p class="desc-text">
+                High-potency Vitamin C optimized for fatigue recovery.
+                Boost your vitality with just one tablet a day.
+                
+                [Dosage] Take 1 tablet daily after a meal.
+            </p>
+        </div>
+
+        <div id="desc-cn" class="desc-content">
+            <h3>详细信息</h3>
+            <p class="desc-text">
+                卓越的高含量维生素C，有助于缓解疲劳。
+                每天一片，找回活力。
+                
+                [服用方法] 每日1次，每次1片，饭后服用。
+            </p>
+        </div>
+
+        <div id="desc-jp" class="desc-content">
+            <h3>詳細情報</h3>
+            <p class="desc-text">
+                疲労回復に優れた高含有ビタミンCです。
+                1日1錠で活力を取り戻しましょう。
+                
+                [服用法] 1日1回、1錠を食後に服用
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 언어 변경 기능
+        function changeLang(lang) {
+            // 1. 모든 설명 숨기기
+            document.querySelectorAll('.desc-content').forEach(el => el.classList.remove('active'));
+            // 2. 모든 버튼 비활성화 (흐리게)
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+
+            // 3. 선택된 언어 설명만 보이기
+            document.getElementById('desc-' + lang).classList.add('active');
+            
+            // 4. 클릭한 버튼만 활성화 (진하게)
+            // event.currentTarget을 쓰면 클릭한 바로 그 버튼 요소를 잡을 수 있음
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+
+</body>
+</html>
