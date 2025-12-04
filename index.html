@@ -6,26 +6,39 @@
     <title>에이트약국 (EIGHT PHARMACY)</title>
     
     <style>
-        /* 화면 전체 설정 */
+        /* 1. 공통 설정 & 모바일 기본 설정 */
         body {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5; /* 배경색 (이미지와 어울리는 연회색) */
+            background-color: #f5f5f5;
             
-            /* 이미지를 화면 정중앙에 배치하는 마법의 코드 */
             display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh; /* 화면 높이만큼 꽉 채움 */
+            justify-content: center; /* 좌우 가운데 정렬 */
+            
+            /* 모바일 핵심: 수직 중앙 정렬을 끄고, 위쪽(flex-start)에 붙임 */
+            align-items: flex-start; 
+            
+            /* 모바일에서 이미지가 천장에 딱 붙는 게 싫다면 이 숫자를 조절하세요 (예: 20px) */
+            padding-top: 30px; 
+            
+            min-height: 100vh;
         }
 
-        /* 이미지 스타일 */
         img {
-            width: 100%; /* 모바일에서는 꽉 차게 */
-            max-width: 1000px; /* PC에서는 너무 거대해지지 않게 제한 (조절 가능) */
-            height: auto; /* 비율 유지 */
-            display: block; /* 이미지 하단 미세한 여백 제거 */
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 살짝 그림자를 주어 고급스럽게 */
+            width: 100%;
+            max-width: 1000px; /* PC 최대 크기 제한 */
+            height: auto;
+            display: block;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* 2. PC 화면 설정 (화면 폭이 768px 이상일 때만 작동) */
+        @media (min-width: 768px) {
+            body {
+                /* PC에서는 다시 수직 중앙 정렬로 변경 */
+                align-items: center; 
+                padding-top: 0; /* PC에선 상단 여백 제거 */
+            }
         }
     </style>
 </head>
