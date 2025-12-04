@@ -6,38 +6,39 @@
     <title>에이트약국 (EIGHT PHARMACY)</title>
     
     <style>
-        /* 1. 공통 설정 & 모바일 기본 설정 */
+        /* 1. 공통 & 모바일 설정 */
         body {
             margin: 0;
             padding: 0;
             background-color: #f5f5f5;
             
             display: flex;
-            justify-content: center; /* 좌우 가운데 정렬 */
+            justify-content: center; /* 좌우는 무조건 가운데 */
             
-            /* 모바일 핵심: 수직 중앙 정렬을 끄고, 위쪽(flex-start)에 붙임 */
+            /* 핵심: 상단 여백을 화면 높이의 20% (5분의 1) 만큼 줌 */
+            padding-top: 20vh; 
+            
+            /* 수직 정렬은 위쪽(flex-start)을 기준으로 하되, padding으로 밀어내기 */
             align-items: flex-start; 
             
-            /* 모바일에서 이미지가 천장에 딱 붙는 게 싫다면 이 숫자를 조절하세요 (예: 20px) */
-            padding-top: 30px; 
-            
-            min-height: 100vh;
+            min-height: 100vh; /* 화면 높이 확보 */
+            box-sizing: border-box; /* 패딩이 전체 크기에 포함되도록 설정 */
         }
 
         img {
             width: 100%;
-            max-width: 1000px; /* PC 최대 크기 제한 */
+            max-width: 1000px; 
             height: auto;
             display: block;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        /* 2. PC 화면 설정 (화면 폭이 768px 이상일 때만 작동) */
+        /* 2. PC 화면 설정 (768px 이상) */
         @media (min-width: 768px) {
             body {
-                /* PC에서는 다시 수직 중앙 정렬로 변경 */
+                /* PC에서는 다시 정중앙으로 오게 설정 */
                 align-items: center; 
-                padding-top: 0; /* PC에선 상단 여백 제거 */
+                padding-top: 0; /* PC에선 상단 20% 여백 제거 (중앙 정렬하니까) */
             }
         }
     </style>
