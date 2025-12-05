@@ -41,10 +41,11 @@
         .btn-delete { background-color: #c0392b; }
         .btn-view { background-color: #3498db; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* ✨ QR 섹션 강조 스타일 */
         .qr-section { border: 2px dashed #1D5C36; background-color: #f9fff9; padding: 15px; border-radius: 8px; margin-top: 30px; }
         .qr-label { color: #1D5C36; display: flex; align-items: center; gap: 5px; font-size: 1.1rem;}
+        
+        /* 언어 섹션 구분 헤더 */
+        .section-header { font-size: 1.1rem; font-weight: bold; margin: 30px 0 10px 0; color: #333; border-left: 5px solid #1D5C36; padding-left: 10px; }
     </style>
 </head>
 <body>
@@ -85,20 +86,21 @@
         <div class="input-group qr-section">
             <label class="qr-label">📷 QR 코드 이미지 보관함</label>
             <p style="font-size:0.8rem; color:#666; margin-bottom: 10px;">
-                상품 등록 후 생성된 QR 이미지를 이곳에 업로드하여 안전하게 보관하세요.<br>
-                (수정 모드에서 언제든지 다운로드할 수 있습니다.)
+                상품 등록 후 생성된 QR 이미지를 업로드하여 보관하세요.<br>
+                (수정 모드에서 다운로드 가능)
             </p>
             <input type="file" id="qrFile" accept="image/*">
             
             <div style="display: flex; align-items: flex-end; gap: 15px; margin-top: 10px;">
                 <img id="qrPreview" class="preview-img" style="max-width: 150px;">
-                
                 <a id="qrDownloadBtn" class="btn-small btn-view" style="display:none; text-decoration: none; padding: 10px 15px; align-self: center;" download>
-                    💾 QR 이미지 다운로드
+                    💾 QR 다운로드
                 </a>
             </div>
         </div>
 
+        <div class="section-header">🌍 주요 4개국어</div>
+        
         <div class="lang-section">
             <div class="lang-title">🇰🇷 한국어 설명</div>
             <textarea id="desc_kr" placeholder="한국어 상세 설명을 입력하세요."></textarea>
@@ -114,6 +116,25 @@
         <div class="lang-section">
             <div class="lang-title">🇯🇵 일본어 설명 (日本語)</div>
             <textarea id="desc_jp" placeholder="日本語の説明を入力してください。"></textarea>
+        </div>
+
+        <div class="section-header">🌏 추가 4개국어 (동남아/몽골)</div>
+
+        <div class="lang-section">
+            <div class="lang-title">🇹🇭 태국어 설명 (ภาษาไทย)</div>
+            <textarea id="desc_th" placeholder="กรุณากรอกคำอธิบาย"></textarea>
+        </div>
+        <div class="lang-section">
+            <div class="lang-title">🇻🇳 베트남어 설명 (Tiếng Việt)</div>
+            <textarea id="desc_vn" placeholder="Vui lòng nhập mô tả"></textarea>
+        </div>
+        <div class="lang-section">
+            <div class="lang-title">🇮🇩 인도네시아어 설명 (Bahasa Indonesia)</div>
+            <textarea id="desc_id" placeholder="Masukkan deskripsi"></textarea>
+        </div>
+        <div class="lang-section">
+            <div class="lang-title">🇲🇳 몽골어 설명 (Монгол)</div>
+            <textarea id="desc_mn" placeholder="Тайлбар оруулна уу"></textarea>
         </div>
 
         <button class="btn" onclick="saveProduct()" id="saveBtn">상품 저장하기</button>
@@ -150,9 +171,7 @@
             }
         }
     </script>
-
     <script type="module" src="./admin.js"></script>
-
     <script type="module">
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         const originalEdit = window.editProduct;
