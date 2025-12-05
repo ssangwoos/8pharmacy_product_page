@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에이트약국 관리자 페이지</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 기본 스타일 */
+        body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; background: #f4f4f4; max-width: 800px; margin: 0 auto; }
+        
+        /* 헤더 */
+        header { 
+            text-align: center; 
+            margin-bottom: 20px; 
+        }
+        h1 { color: #1D5C36; margin: 0; }
+        p { color: #666; margin-top: 5px; font-size: 0.9rem; }
+
+        /* ✨ 탭 메뉴 디자인 */
+        .tab-menu {
+            display: flex;
+            background: #fff;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: #f0f0f0;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn:hover { background: #e0e0e0; }
+        
+        /* 활성화된 탭 스타일 */
+        .tab-btn.active {
+            background: #fff;
+            color: #1D5C36;
+            border-bottom: 3px solid #1D5C36;
+        }
+
+        /* 탭 내용 영역 */
+        .tab-content {
+            display: none; /* 기본적으로 숨김 */
+            background: #fff;
+            padding: 25px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .tab-content.active {
+            display: block; /* 활성화되면 보임 */
+            animation: fadeIn 0.3s;
+        }
+
+        /* 폼 스타일 (기존과 동일) */
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;
+        }
+        textarea { height: 80px; resize: vertical; }
+        .row { display: flex; gap: 10px; }
+        .col { flex: 1; }
+        .btn {
+            background-color: #1D5C36; color: white; padding: 15px; width: 100%; border: none; 
+            border-radius: 5px; font-size: 1.1rem; cursor: pointer; font-weight: bold;
+            transition: background 0.3s; margin-top: 10px;
+        }
+        .btn:hover { background-color: #144226; }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .preview-img { max-width: 200px; margin-top: 10px; display: none; }
+        .lang-section { border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
+        .lang-title { font-size: 0.9rem; color: #666; margin-bottom: 5px; border-bottom: 1px solid #ddd; padding-bottom: 3px;}
+
+        /* 리스트 스타일 (기존과 동일) */
+        .product-item {
+            display: flex; align-items: center; background: #fafafa; padding: 15px;
+            margin-bottom: 10px; border-radius: 8px; border: 1px solid #eee; gap: 15px;
+        }
+        .item-img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
+        .item-info { flex: 1; }
+        .item-title { font-weight: bold; font-size: 1.1rem; color: #333; }
+        .item-price { color: #d32f2f; font-weight: bold; }
+        .item-id { font-size: 0.8rem; color: #888; margin-right: 5px; background: #eee; padding: 2px 5px; border-radius: 3px;}
+        .btn-group { display: flex; gap: 5px; }
+        .btn-small { padding: 8px 12px; font-size: 0.9rem; border-radius: 4px; cursor: pointer; border: none; color: white; }
+        .btn-edit { background-color: #f39c12; }
+        .btn-delete { background-color: #c0392b; }
+        .btn-view { background-color: #3498db; }
+        
+        /* 탭 전환 애니메이션 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>💊 EIGHT PHARMACY ADMIN</h1>
+        <p>상품 등록 및 재고 관리 시스템</p>
+    </header>
+    
+    <div class="tab-menu">
+        <button class="tab-btn active" onclick="openTab('tab-register')">📝 상품 등록</button>
+        <button class="tab-btn" onclick="openTab('tab-manage')">📋 상품 관리 (목록)</button>
+    </div>
+
+    <div id="tab-register" class="tab-content active">
+        <div class="input-group">
+            <label>상품 ID (영문/숫자)</label>
+            <input type="text" id="productId" placeholder="예: tylenol, vita500">
+        </div>
+
+        <div class="row">
+            <div class="col input-group">
+                <label>상품명 (한국어)</label>
+                <input type="text" id="name" placeholder="제품 이름">
+            </div>
+            <div class="col input-group">
+                <label>가격 (숫자만)</label>
+                <input type="number" id="price" placeholder="3500">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>상품 이미지</label>
+            <input type="file" id="imageFile" accept="image/*">
+            <img id="preview" class="preview-img">
+        </div>
+
+        <div class="lang-section">
+            <div class="lang-title">🇰🇷 한국어 설명</div>
+            <textarea id="desc_kr" placeholder="한국어 상세 설명을 입력하세요."></textarea>
+        </div>
+        
+        <div class="lang-section">
+            <div class="lang-title">🇺🇸 영어 설명 (English)</div>
+            <textarea id="desc_en" placeholder="Enter description in English."></textarea>
+        </div>
+
+        <div class="lang-section">
+            <div class="lang-title">🇨🇳 중국어 설명 (中文)</div>
+            <textarea id="desc_cn" placeholder="请输入中文说明。"></textarea>
+        </div>
+
+        <div class="lang-section">
+            <div class="lang-title">🇯🇵 일본어 설명 (日本語)</div>
+            <textarea id="desc_jp" placeholder="日本語の説明を入力してください。"></textarea>
+        </div>
+
+        <button class="btn" onclick="saveProduct()" id="saveBtn">상품 저장하기</button>
+    </div>
+
+    <div id="tab-manage" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin:0;">등록된 상품 리스트</h3>
+            <button class="btn-small" style="background:#666;" onclick="loadProductList()">🔄 새로고침</button>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="searchInput" placeholder="🔍 상품명 또는 ID로 검색하세요..." 
+                   style="padding: 12px; font-size: 1rem; border: 2px solid #1D5C36; border-radius: 50px; text-indent: 10px;">
+        </div>
+        <div id="productList">
+            <p style="padding: 20px; text-align: center; color: #999;">로딩 중...</p>
+        </div>
+    </div>
+
+    <script>
+        function openTab(tabName) {
+            // 1. 모든 탭 내용 숨기기
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // 2. 모든 탭 버튼 비활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 3. 선택한 탭 내용 보이기
+            document.getElementById(tabName).classList.add('active');
+            // 4. 클릭한 버튼 활성화 (event.currentTarget 사용)
+            event.currentTarget.classList.add('active');
+            // 👇 [추가] 등록 탭을 누르면 입력폼을 초기화하라!
+            if(tabName === 'tab-register') {
+                 // admin.js에 새로 만든 초기화 함수 호출
+                 if(typeof resetForNew === 'function') {
+                     resetForNew();
+                 }
+            }
+
+            // 5. (꿀팁) '관리' 탭을 누르면 자동으로 리스트를 새로고침 해줌
+            if(tabName === 'tab-manage') {
+                if(typeof loadProductList === 'function') {
+                    loadProductList();
+                }
+            }
+        }
+    </script>
+
+    <script type="module" src="./admin.js"></script>
+
+    <script type="module">
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        // admin.js 모듈에서 전역으로 함수가 선언되어 있지만, 
+        // 탭 전환 시 '수정' 버튼을 눌렀을 때 자동으로 '등록 탭'으로 이동시켜주는 기능을 추가합니다.
+        
+        // 기존 editProduct 함수를 감싸서 탭 이동 기능 추가
+        const originalEdit = window.editProduct; // admin.js의 함수
+        
+        // 덮어쓰기 (Monkey Patching)
+        window.editProduct = async function(id) {
+            // 1. 먼저 등록 탭으로 강제 이동
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-register').classList.add('active');
+            document.querySelector('.tab-btn:first-child').classList.add('active');
+
+            // 2. admin.js의 원래 수정 함수 실행 (데이터 불러오기)
+            // (admin.js가 로드된 후에 실행되어야 함)
+            if (typeof originalEdit === 'function') {
+                originalEdit(id);
+            } else {
+                // 혹시 admin.js 로딩 타이밍 문제시 직접 구현
+                // (일단 admin.js의 로직을 믿고 갑니다)
+                // 만약 안되면 alert 띄우고 사용자가 직접 탭 이동하게 유도
+            }
+        }
+    </script>
+
+</body>
+</html>
