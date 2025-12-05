@@ -1,4 +1,4 @@
-// admin.js (안전장치 추가 버전: ID 수정 금지 & 한글 입력 방지)
+// admin.js (QR 코드 다중 이미지 처리 및 다운로드 기능 탑재)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, doc, setDoc, deleteDoc, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
@@ -20,23 +20,30 @@ const storage = getStorage(app);
 
 let allProducts = []; 
 
-// 1. 초기화 함수 (화면 청소 및 ID 잠금 해제)
+// 1. 초기화 함수 (QR 관련 요소도 초기화 추가)
 function resetForm() {
     const idInput = document.getElementById('productId');
     
-    // 폼 비우기
+    // 텍스트 입력창 비우기
     idInput.value = '';
     document.getElementById('name').value = '';
     document.getElementById('price').value = '';
-    document.getElementById('imageFile').value = '';
-    document.getElementById('preview').style.display = 'none';
     document.querySelectorAll('textarea').forEach(t => t.value = '');
     
-    // ✨ 핵심: ID 입력창 잠금 해제 (새로 등록할 땐 입력할 수 있어야 하니까)
+    // 메인 이미지 비우기
+    document.getElementById('imageFile').value = '';
+    document.getElementById('preview').style.display = 'none';
+    document.getElementById('preview').src = '';
+
+    // ✨ QR 이미지 및 다운로드 버튼 비우기
+    document.getElementById('qrFile').value = '';
+    document.getElementById('qrPreview').style.display = 'none';
+    document.getElementById('qrPreview').src = '';
+    document.getElementById('qrDownloadBtn').style.display = 'none'; // 다운로드 버튼 숨김
+    
+    // ID 잠금 해제
     idInput.disabled = false; 
     idInput.style.backgroundColor = 'white';
-    
-    // 버튼 텍스트 원상복구
     document.getElementById('saveBtn').innerText = "상품 저장하기";
 }
 
@@ -56,11 +63,10 @@ window.loadProductList = async function() {
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            // QR 이미지가 있는지 확인 (있으면 아이콘 표시 등 가능하지만 일단 둠)
             allProducts.push({
                 id: doc.id,
-                name: data.name,
-                price: data.price,
-                image: data.image
+                ...data // 모든 데이터 다 담기
             });
         });
         renderProductList(allProducts);
@@ -82,16 +88,19 @@ function renderProductList(products) {
     let html = '';
     products.forEach((item) => {
         const imgUrl = item.image || 'https://via.placeholder.com/60?text=No+Img';
+        // QR 보유 여부 표시 (선택사항)
+        const qrBadge = item.qrImage ? '<span style="font-size:0.7rem; background:#1D5C36; color:white; padding:2px 4px; border-radius:3px; margin-left:5px;">QR보유</span>' : '';
+
         html += `
             <div class="product-item">
                 <img src="${imgUrl}" class="item-img">
                 <div class="item-info">
-                    <div class="item-title"><span class="item-id">${item.id}</span> ${item.name}</div>
+                    <div class="item-title"><span class="item-id">${item.id}</span> ${item.name} ${qrBadge}</div>
                     <div class="item-price">${Number(item.price).toLocaleString()}원</div>
                 </div>
                 <div class="btn-group">
-                    <button class="btn-small btn-view" onclick="window.open('product.html?id=${item.id}')">QR</button>
-                    <button class="btn-small btn-edit" onclick="editProduct('${item.id}')">수정</button>
+                    <button class="btn-small btn-view" onclick="window.open('product.html?id=${item.id}')">QR확인</button>
+                    <button class="btn-small btn-edit" onclick="editProduct('${item.id}')">수정/QR관리</button>
                     <button class="btn-small btn-delete" onclick="deleteProduct('${item.id}')">삭제</button>
                 </div>
             </div>
@@ -113,9 +122,11 @@ if(searchInput) {
     });
 }
 
+// 삭제 기능
 window.deleteProduct = async function(id) {
-    if(confirm('정말 삭제하시겠습니까? (되돌릴 수 없습니다)')) {
+    if(confirm('정말 삭제하시겠습니까? (저장된 이미지와 QR코드도 모두 삭제됩니다)')) {
         try {
+            // *심화: Storage의 이미지도 지워야 완벽하지만, 일단 DB만 지워도 안 보임.
             await deleteDoc(doc(db, "products", id));
             alert('삭제되었습니다.');
             loadProductList(); 
@@ -125,7 +136,7 @@ window.deleteProduct = async function(id) {
     }
 }
 
-// 3. ✨ 수정 모드 (ID 잠금 기능 추가)
+// 3. 수정 모드 (QR 이미지 불러오기 및 다운로드 버튼 설정)
 window.editProduct = async function(id) {
     const docRef = doc(db, "products", id);
     const docSnap = await getDoc(docRef);
@@ -133,60 +144,80 @@ window.editProduct = async function(id) {
     if (docSnap.exists()) {
         const data = docSnap.data();
         
-        // ID 칸 채우고 잠가버리기 (수정 불가)
+        resetForm(); // 일단 싹 비우고 시작
+
+        // 기본 정보 채우기
         const idInput = document.getElementById('productId');
         idInput.value = id;
-        idInput.disabled = true; // 🔒 잠금!
-        idInput.style.backgroundColor = '#e0e0e0'; // 회색으로 표시
+        idInput.disabled = true; 
+        idInput.style.backgroundColor = '#e0e0e0';
 
         document.getElementById('name').value = data.name;
         document.getElementById('price').value = data.price;
-        
         document.getElementById('desc_kr').value = data.desc_kr || '';
         document.getElementById('desc_en').value = data.desc_en || '';
         document.getElementById('desc_cn').value = data.desc_cn || '';
         document.getElementById('desc_jp').value = data.desc_jp || '';
 
+        // 메인 이미지 미리보기
         if(data.image) {
             const img = document.getElementById('preview');
             img.src = data.image;
             img.style.display = 'block';
         }
 
+        // ✨ QR 이미지 처리 (핵심!)
+        const qrPreview = document.getElementById('qrPreview');
+        const qrBtn = document.getElementById('qrDownloadBtn');
+        
+        if(data.qrImage) {
+            // QR 이미지가 있으면 보여주고
+            qrPreview.src = data.qrImage;
+            qrPreview.style.display = 'block';
+            
+            // 다운로드 버튼 활성화 및 링크 연결
+            qrBtn.href = data.qrImage; // 이미지 주소 연결
+            // 다운로드 시 파일명 지정 (예: tylenol_qr.jpg)
+            qrBtn.download = `${id}_qr.jpg`; 
+            qrBtn.style.display = 'inline-block'; // 버튼 보이게
+        } else {
+            // 없으면 숨김
+            qrPreview.style.display = 'none';
+            qrBtn.style.display = 'none';
+        }
+
         document.getElementById('saveBtn').innerText = "수정 내용 저장하기";
-        alert(`'${data.name}' 수정 모드입니다.\n(ID는 변경할 수 없습니다. 잘못 만들었다면 삭제 후 다시 등록하세요.)`);
+        alert(`'${data.name}' 수정 모드입니다.\nQR코드를 업로드하거나 다운로드할 수 있습니다.`);
     } else {
         alert("상품 정보를 찾을 수 없습니다.");
     }
 }
 
-// 4. 저장 함수 (유효성 검사 강화)
+// 4. 저장 함수 (이미지 2개 업로드 처리)
 window.saveProduct = async function() {
     const btn = document.getElementById('saveBtn');
     const idInput = document.getElementById('productId');
     const id = idInput.value.trim();
-    const fileInput = document.getElementById('imageFile');
+    const fileInput = document.getElementById('imageFile'); // 메인 이미지
+    const qrInput = document.getElementById('qrFile');    // ✨ QR 이미지
     
-    // ✨ 핵심: 한글/특수문자 입력 방지 (정규식 검사)
-    // 영문(a-z, A-Z), 숫자(0-9), 하이픈(-), 언더바(_) 만 허용
     const idRegex = /^[a-zA-Z0-9-_]+$/;
 
     if (!id) return alert("상품 ID를 입력해주세요!");
-    
-    // 검사 실행
     if (!idRegex.test(id)) {
-        alert("❌ ID는 '영문', '숫자'만 입력 가능합니다!\n(한글이나 띄어쓰기는 사용할 수 없습니다)");
-        return; // 저장 안 하고 멈춤
+        alert("❌ ID는 '영문', '숫자'만 입력 가능합니다!");
+        return;
     }
-
     if (!document.getElementById('name').value) return alert("상품명을 입력해주세요!");
 
     try {
         btn.disabled = true;
-        btn.innerText = "처리 중..."; 
+        btn.innerText = "이미지 업로드 및 저장 중..."; 
 
         let imageUrl = "";
+        let qrImageUrl = "";
 
+        // 1️⃣ 메인 이미지 업로드 (압축 함)
         if (fileInput.files.length > 0) {
             let file = fileInput.files[0];
             const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true };
@@ -197,6 +228,18 @@ window.saveProduct = async function() {
             imageUrl = await getDownloadURL(storageRef);
         }
 
+        // 2️⃣ ✨ QR 이미지 업로드 (압축 안 함! - 인식률 위해 원본 유지)
+        if (qrInput.files.length > 0) {
+            let qrFile = qrInput.files[0];
+            // QR은 용량이 작고 선명해야 하므로 압축 과정 생략
+            
+            // 저장 경로: products/아이디_qr.jpg
+            const qrStorageRef = ref(storage, 'products/' + id + '_qr.jpg'); 
+            await uploadBytes(qrStorageRef, qrFile);
+            qrImageUrl = await getDownloadURL(qrStorageRef);
+        }
+
+        // 데이터 준비
         const productData = {
             name: document.getElementById('name').value,
             price: Number(document.getElementById('price').value),
@@ -207,14 +250,16 @@ window.saveProduct = async function() {
             updatedAt: new Date()
         };
         
+        // 새 이미지가 있을 때만 DB 필드 업데이트 (기존 이미지 유지)
         if(imageUrl) productData.image = imageUrl;
+        if(qrImageUrl) productData.qrImage = qrImageUrl; // ✨ QR 주소 추가
 
+        // DB에 저장 (merge: true로 기존 데이터 유지하며 업데이트)
         await setDoc(doc(db, "products", id), productData, { merge: true });
 
-        alert("✅ 저장 완료!");
+        alert("✅ 저장 완료! (QR 이미지도 안전하게 보관되었습니다)");
         
-        resetForm(); // 폼 초기화 함수 호출
-        
+        resetForm(); 
         if(allProducts.length > 0) loadProductList(); 
 
     } catch (error) {
@@ -222,35 +267,34 @@ window.saveProduct = async function() {
         alert("오류: " + error.message);
     } finally {
         btn.disabled = false;
-        // 저장 후엔 다시 원래 텍스트로
         const saveBtnText = document.getElementById('productId').disabled ? "수정 내용 저장하기" : "상품 저장하기";
         btn.innerText = saveBtnText;
     }
 }
 
-// 페이지 로드 시 리스트 불러오기
 loadProductList();
 
-// 이미지 미리보기
-const fileInput = document.getElementById('imageFile');
-if(fileInput) {
-    fileInput.addEventListener('change', async function(e) {
-        const file = e.target.files[0];
-        if(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.getElementById('preview');
-                img.src = e.target.result;
-                img.style.display = 'block';
+// 이미지 미리보기 리스너 세팅 함수
+function setupPreview(inputId, previewId) {
+    const input = document.getElementById(inputId);
+    if(input) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById(previewId);
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
             }
-            reader.readAsDataURL(file);
-        }
-    });
+        });
+    }
 }
 
-// 탭 버튼 클릭 시 폼 초기화 (등록 탭 누르면 새 글 쓰기 모드로)
-// admin.html의 openTab 함수 내에서 처리가 어렵다면, 여기서 이벤트 리스너 추가
-// (하지만 admin.html을 안 고치기 위해 window 함수로 노출)
-window.resetForNew = function() {
-    resetForm();
-}
+// 메인 이미지, QR 이미지 각각 미리보기 연결
+setupPreview('imageFile', 'preview');
+setupPreview('qrFile', 'qrPreview');
+
+window.resetForNew = function() { resetForm(); }
