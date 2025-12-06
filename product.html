@@ -3,49 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eight Pharmacy Product Info</title>
+    
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="EIGHT PHARMACY">
     <meta property="og:title" content="EIGHT PHARMACY 제품 상세">
     <meta property="og:description" content="약사가 엄선한 K-뷰티 & 필수 의약품 정보를 확인하세요.">
     <meta property="og:image" content="https://8pharmacy.kr/images/og-image.png">
+
+    <title>Eight Pharmacy Product Info</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* 기본 설정 */
+        /* 스타일은 기존과 동일합니다 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
         header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
         header h1 { font-size: 1.2rem; color: #1D5C36; font-weight: 800; cursor: pointer; }
-        
         .product-img-box { width: 100%; height: 350px; background-color: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .product-img-box img { width: 100%; height: 100%; object-fit: contain; }
-        
         .product-info { padding: 20px; background: #fff; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
         .product-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; line-height: 1.3; }
-        
-        /* 가격 및 환율 박스 스타일 */
         .price-container { display: flex; flex-direction: column; gap: 5px; }
         .product-price { font-size: 1.8rem; color: #d32f2f; font-weight: 800; }
         .currency { font-size: 1rem; color: #555; font-weight: normal; }
-        
-        .converted-info-box {
-            background-color: #f0f7f4; 
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 5px;
-            display: none; 
-            border-left: 4px solid #1D5C36;
-        }
+        .converted-info-box { background-color: #f0f7f4; padding: 10px; border-radius: 6px; margin-top: 5px; display: none; border-left: 4px solid #1D5C36; }
         .converted-price { font-size: 1.4rem; color: #1D5C36; font-weight: 700; margin-bottom: 4px; }
         .rate-detail { font-size: 0.85rem; color: #666; display: block; }
         .rate-date { font-size: 0.75rem; color: #999; margin-top: 2px; display: block; }
 
-        /* ✨ 8개국어 레이아웃 (Grid 적용) */
         .lang-tabs { 
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 한 줄에 4개씩 */
-            gap: 8px; /* 버튼 사이 간격 */
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 8px; 
             background: #fff; 
             padding: 15px 10px; 
             margin-bottom: 2px; 
@@ -54,35 +43,12 @@
             top: 0; 
             z-index: 100; 
         }
-        
-        .lang-btn { 
-            border: 1px solid transparent; 
-            background: #f8f8f8; /* 배경 살짝 깔아줌 */
-            border-radius: 8px;
-            cursor: pointer; 
-            opacity: 0.6; 
-            transition: all 0.2s; 
-            padding: 8px 5px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 4px; 
-        }
+        .lang-btn { border: 1px solid transparent; background: #f8f8f8; border-radius: 8px; cursor: pointer; opacity: 0.6; transition: all 0.2s; padding: 8px 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .lang-btn:hover { background: #eee; }
-        
-        /* 선택된 버튼 스타일 */
-        .lang-btn.active { 
-            opacity: 1; 
-            background: #e8f5e9; /* 연한 초록 배경 */
-            border: 1px solid #1D5C36; /* 초록 테두리 */
-            transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
+        .lang-btn.active { opacity: 1; background: #e8f5e9; border: 1px solid #1D5C36; transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .flag-icon { width: 28px; height: auto; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .lang-label { font-size: 0.75rem; color: #555; font-weight: bold; }
 
-        /* 설명 영역 */
         .description-container { background: #fff; min-height: 300px; padding: 20px; }
         .desc-content { display: none; }
         .desc-content.active { display: block; animation: fadeIn 0.3s; }
@@ -124,14 +90,14 @@
             <button class="lang-btn active" onclick="changeLang('kr')">
                 <img src="./images/flag-kr.png" class="flag-icon"><span class="lang-label">KOR</span>
             </button>
-            <button class="lang-btn" onclick="changeLang('cn')">
-                <img src="./images/flag-cn.png" class="flag-icon"><span class="lang-label">CHN</span>
+            <button class="lang-btn" onclick="changeLang('en')">
+                <img src="./images/flag-en.png" class="flag-icon"><span class="lang-label">ENG</span>
             </button>
             <button class="lang-btn" onclick="changeLang('jp')">
                 <img src="./images/flag-jp.png" class="flag-icon"><span class="lang-label">JPN</span>
             </button>
-            <button class="lang-btn" onclick="changeLang('en')">
-                <img src="./images/flag-en.png" class="flag-icon"><span class="lang-label">ENG</span>
+            <button class="lang-btn" onclick="changeLang('cn')">
+                <img src="./images/flag-cn.png" class="flag-icon"><span class="lang-label">CHN</span>
             </button>
             
             <button class="lang-btn" onclick="changeLang('th')">
@@ -150,9 +116,9 @@
 
         <div class="description-container">
             <div id="desc-kr" class="desc-content active"><h3>상세정보</h3><p class="desc-text"></p></div>
-            <div id="desc-cn" class="desc-content"><h3>详细信息</h3><p class="desc-text"></p></div>
-            <div id="desc-jp" class="desc-content"><h3>詳細情報</h3><p class="desc-text"></p></div>
             <div id="desc-en" class="desc-content"><h3>Description</h3><p class="desc-text"></p></div>
+            <div id="desc-jp" class="desc-content"><h3>詳細情報</h3><p class="desc-text"></p></div>
+            <div id="desc-cn" class="desc-content"><h3>详细信息</h3><p class="desc-text"></p></div>
             
             <div id="desc-th" class="desc-content"><h3>รายละเอียด</h3><p class="desc-text"></p></div>
             <div id="desc-vn" class="desc-content"><h3>Chi tiết</h3><p class="desc-text"></p></div>
@@ -163,7 +129,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCygpc_WS2_35_8eYgdTEJwZCtNGJjHvY4",
@@ -202,11 +168,12 @@
                     document.getElementById('pPrice').innerText = globalPriceKRW.toLocaleString();
                     document.getElementById('mainImage').src = data.image ? data.image : "./images/sample-product.jpg";
 
-                    // 데이터 매핑
                     setDesc('kr', data.desc_kr); setDesc('en', data.desc_en);
-                    setDesc('cn', data.desc_cn); setDesc('jp', data.desc_jp);
+                    setDesc('jp', data.desc_jp); setDesc('cn', data.desc_cn);
                     setDesc('th', data.desc_th); setDesc('vn', data.desc_vn);
                     setDesc('id', data.desc_id); setDesc('mn', data.desc_mn);
+
+                    updateDoc(docRef, { views: increment(1) }).catch(err => {});
 
                     loading.style.display = 'none';
                     content.style.display = 'block';
@@ -233,27 +200,21 @@
         }
 
         window.changeLang = function(lang) {
-            // 탭 활성화 로직
             document.querySelectorAll('.desc-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('desc-' + lang).classList.add('active');
             
-            // 버튼 활성화 (클릭한 요소 찾기)
             const btns = document.querySelectorAll('.lang-btn');
-            const langMap = {'kr':0, 'cn':1, 'jp':2, 'en':3, 'th':4, 'vn':5, 'id':6, 'mn':7};
+            // ✨ [수정] 버튼 순서 매핑 변경 (0:kr, 1:en, 2:jp, 3:cn ...)
+            const langMap = {'kr':0, 'en':1, 'jp':2, 'cn':3, 'th':4, 'vn':5, 'id':6, 'mn':7};
             if(btns[langMap[lang]]) btns[langMap[lang]].classList.add('active');
 
-            // 환율 계산 및 표시
             const box = document.getElementById('convertBox');
             if (!globalRates || lang === 'kr') { box.style.display = 'none'; return; }
             box.style.display = 'block';
 
-            let targetRate = 0;
-            let currencyCode = "";
-            let symbol = "";
-            let baseUnit = 1; // 기본 1단위
+            let targetRate = 0; let currencyCode = ""; let symbol = ""; let baseUnit = 1;
 
-            // 국가별 설정
             if (lang === 'en') { targetRate = globalRates.USD; currencyCode = "USD"; symbol = "$"; }
             else if (lang === 'cn') { targetRate = globalRates.CNY; currencyCode = "CNY"; symbol = "¥"; }
             else if (lang === 'jp') { targetRate = globalRates.JPY; currencyCode = "JPY"; symbol = "円"; baseUnit = 100; }
@@ -262,23 +223,15 @@
             else if (lang === 'id') { targetRate = globalRates.IDR; currencyCode = "IDR"; symbol = "Rp"; baseUnit = 100; }
             else if (lang === 'mn') { targetRate = globalRates.MNT; currencyCode = "MNT"; symbol = "₮"; baseUnit = 100; }
 
-            // 계산
             let convertedPrice = globalPriceKRW * targetRate;
-            
-            // 표기 포맷 (베트남, 인도네시아 등 단위 큰 화폐는 소수점 제거)
             let priceText = "";
-            if(['vn','id','mn','jp'].includes(lang)) {
-                priceText = convertedPrice.toFixed(0); // 소수점 없음
-            } else {
-                priceText = convertedPrice.toFixed(2); // 소수점 2자리
-            }
+            if(['vn','id','mn','jp'].includes(lang)) { priceText = convertedPrice.toFixed(0); } 
+            else { priceText = convertedPrice.toFixed(2); }
 
-            // 기호 위치
             const priceEl = document.getElementById('convertPrice');
             if(['jp','vn','mn','th'].includes(lang)) priceEl.innerText = priceText + symbol; 
             else priceEl.innerText = symbol + priceText;
 
-            // 환율 정보 표시 (100단위인 경우 반영)
             let reverseRate = (1 / targetRate);
             if (baseUnit === 100) reverseRate = reverseRate * 100;
             
