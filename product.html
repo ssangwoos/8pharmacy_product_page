@@ -11,11 +11,11 @@
     <title>Eight Pharmacy Product Info</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* 기존 스타일 유지 */
+        /* 기존 스타일 전체 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 80px; } /* padding-bottom 늘림 */
-        header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
-        header h1 { font-size: 1.2rem; color: #1D5C36; font-weight: 800; cursor: pointer; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
+        header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #eee; position: sticky; top:0; z-index:100; height: 60px;}
+        header h1 { font-size: 1.2rem; color: #1D5C36; font-weight: 800; cursor: pointer; margin: 0; }
         .product-img-box { width: 100%; height: 350px; background-color: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .product-img-box img { width: 100%; height: 100%; object-fit: contain; }
         .product-info { padding: 20px; background: #fff; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
@@ -39,52 +39,19 @@
         .desc-text { font-size: 1rem; line-height: 1.7; color: #444; white-space: pre-line; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         #loading { text-align: center; padding: 50px; font-weight: bold; color: #666; display: none; }
-
-        /* ✨ [신규] 하단 고정 장바구니 버튼 */
-        .bottom-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; padding: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            display: flex; gap: 10px; justify-content: center; z-index: 900;
-        }
-        .btn-add-cart {
-            flex: 1; max-width: 600px;
-            background-color: #1D5C36; color: white; border: none; 
-            padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; gap: 10px; justify-content: center; z-index: 900; }
+        .btn-add-cart { flex: 1; max-width: 600px; background-color: #1D5C36; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-add-cart:active { transform: scale(0.98); background-color: #144226; }
-
-        /* ✨ 둥둥 떠다니는 장바구니 아이콘 (FAB) */
-        .fab-cart {
-            position: fixed; bottom: 80px; right: 20px;
-            width: 60px; height: 60px; border-radius: 50%;
-            background-color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 950; border: 2px solid #1D5C36;
-            transition: transform 0.2s;
-        }
+        .fab-cart { position: fixed; bottom: 80px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 950; border: 2px solid #1D5C36; transition: transform 0.2s; }
         .fab-cart:active { transform: scale(0.9); }
         .cart-icon { font-size: 1.8rem; }
-        .cart-badge {
-            position: absolute; top: -5px; right: -5px;
-            background-color: #d32f2f; color: white; font-size: 0.8rem; font-weight: bold;
-            width: 24px; height: 24px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            border: 2px solid white;
-        }
-
-        /* 토스트 메시지 */
-        #toast {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px;
-            font-size: 0.9rem; z-index: 1000; display: none;
-        }
+        .cart-badge { position: absolute; top: -5px; right: -5px; background-color: #d32f2f; color: white; font-size: 0.8rem; font-weight: bold; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+        #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px; font-size: 0.9rem; z-index: 1000; display: none; }
     </style>
 </head>
 <body>
     <header><h1 onclick="location.href='index.html'">EIGHT PHARMACY</h1></header>
     <div id="loading">상품 정보를 불러오는 중...</div>
-    
     <div id="content" style="display:none;">
         <div class="product-img-box"><img src="" alt="Product Image" id="mainImage"></div>
         <div class="product-info">
@@ -119,21 +86,14 @@
             <div id="desc-mn" class="desc-content"><h3>Дэлгэрэнгүй</h3><p class="desc-text"></p></div>
         </div>
     </div>
-
-    <div class="fab-cart" onclick="location.href='cart.html'">
-        <span class="cart-icon">🛒</span>
-        <span class="cart-badge" id="cartCount">0</span>
-    </div>
-
-    <div class="bottom-bar">
-        <button class="btn-add-cart" onclick="addToCart()">🛒 장바구니 담기 (Add to Cart)</button>
-    </div>
-
+    <div class="fab-cart" onclick="location.href='cart.html'"><span class="cart-icon">🛒</span><span class="cart-badge" id="cartCount">0</span></div>
+    <div class="bottom-bar"><button class="btn-add-cart" onclick="addToCart()">🛒 장바구니 담기 (Add to Cart)</button></div>
     <div id="toast">✅ 장바구니에 담았습니다!</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        // ✨ [추가] addDoc, collection, serverTimestamp 가져오기
+        import { getFirestore, doc, getDoc, updateDoc, increment, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCygpc_WS2_35_8eYgdTEJwZCtNGJjHvY4",
@@ -143,7 +103,6 @@
             messagingSenderId: "409677826366",
             appId: "1:409677826366:web:dc825470ef673194e2446f"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const urlParams = new URLSearchParams(window.location.search);
@@ -151,13 +110,24 @@
 
         let globalRates = null; let globalPriceKRW = 0; let rateDate = ""; let currentProductData = null;
 
-        // 장바구니 개수 업데이트
         function updateCartCount() {
             const cart = JSON.parse(localStorage.getItem('myCart')) || [];
             const total = cart.reduce((sum, item) => sum + item.qty, 0);
             document.getElementById('cartCount').innerText = total;
         }
-        updateCartCount(); // 페이지 로드 시 실행
+        updateCartCount();
+
+        // ✨ [신규] 로그 저장 함수 (이제부터 모든 기록을 남깁니다)
+        async function logScanEvent(prodId, prodName, lang) {
+            try {
+                await addDoc(collection(db, "scan_logs"), {
+                    productId: prodId,
+                    productName: prodName,
+                    language: lang,
+                    timestamp: serverTimestamp() // 서버 시간 기준 저장
+                });
+            } catch(e) { console.log("로그 저장 실패(무시)", e); }
+        }
 
         async function loadProduct() {
             const loading = document.getElementById('loading');
@@ -172,7 +142,7 @@
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    currentProductData = data; // 전역 저장 (장바구니 담기용)
+                    currentProductData = data;
                     document.getElementById('pName').innerText = data.name;
                     globalPriceKRW = Number(data.price);
                     document.getElementById('pPrice').innerText = globalPriceKRW.toLocaleString();
@@ -183,15 +153,20 @@
                     setDesc('th', data.desc_th); setDesc('vn', data.desc_vn);
                     setDesc('id', data.desc_id); setDesc('mn', data.desc_mn);
 
+                    // 기존 단순 카운터 +1
                     updateDoc(docRef, { views: increment(1) }).catch(err => {});
+                    
+                    // ✨ [핵심] 상세 로그 저장 (한국어 접속)
+                    logScanEvent(productId, data.name, 'kr');
+
                     loading.style.display = 'none'; content.style.display = 'block';
                 } else { loading.innerText = "등록되지 않은 상품입니다."; }
             } catch (error) { loading.innerText = "오류 발생: " + error.message; }
         }
 
-        // ... (changeLang, fetchRates 등 기존 함수 동일 유지) ...
         function setDesc(lang, text) { document.querySelector(`#desc-${lang} .desc-text`).innerText = text || (lang==='kr'?"설명이 없습니다.":"No description."); }
         async function fetchRates() { try { const r = await fetch('https://api.exchangerate-api.com/v4/latest/KRW'); const d = await r.json(); globalRates = d.rates; rateDate = d.date; } catch (e) {} }
+        
         window.changeLang = function(lang) {
             document.querySelectorAll('.desc-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
@@ -199,8 +174,15 @@
             const btns = document.querySelectorAll('.lang-btn');
             const langMap = {'kr':0, 'en':1, 'jp':2, 'cn':3, 'th':4, 'vn':5, 'id':6, 'mn':7};
             if(btns[langMap[lang]]) btns[langMap[lang]].classList.add('active');
+
+            // 기존 카운터 +1
             if(productId) { const docRef = doc(db, "products", productId); updateDoc(docRef, { [`views_${lang}`]: increment(1) }).catch(e=>{}); }
             
+            // ✨ [핵심] 언어 변경 로그 저장
+            if(currentProductData) {
+                logScanEvent(productId, currentProductData.name, lang);
+            }
+
             const box = document.getElementById('convertBox');
             if (!globalRates || lang === 'kr') { box.style.display = 'none'; return; }
             box.style.display = 'block';
@@ -209,53 +191,36 @@
             else if (lang === 'cn') { targetRate = globalRates.CNY; currencyCode = "CNY"; symbol = "¥"; }
             else if (lang === 'jp') { targetRate = globalRates.JPY; currencyCode = "JPY"; symbol = "円"; baseUnit = 100; }
             else if (lang === 'th') { targetRate = globalRates.THB; currencyCode = "THB"; symbol = "฿"; }
-            else if (lang === 'vn') { targetRate = globalRates.VND; currencyCode = "VND"; symbol = "₫"; baseUnit = 100; }
-            else if (lang === 'id') { targetRate = globalRates.IDR; currencyCode = "IDR"; symbol = "Rp"; baseUnit = 100; }
-            else if (lang === 'mn') { targetRate = globalRates.MNT; currencyCode = "MNT"; symbol = "₮"; baseUnit = 100; }
+            else if (lang === 'vn') { targetRate = globalRates.VND; currencyCode = "VND"; symbol = '₫'; baseUnit = 100; }
+            else if (lang === 'id') { targetRate = globalRates.IDR; currencyCode = "IDR"; symbol = 'Rp'; baseUnit = 100; }
+            else if (lang === 'mn') { targetRate = globalRates.MNT; currencyCode = "MNT"; symbol = '₮'; baseUnit = 100; }
+            
             let convertedPrice = globalPriceKRW * targetRate;
             let priceText = ['vn','id','mn','jp'].includes(lang) ? convertedPrice.toFixed(0) : convertedPrice.toFixed(2);
             const priceEl = document.getElementById('convertPrice');
             if(['jp','vn','mn','th'].includes(lang)) priceEl.innerText = priceText + symbol; else priceEl.innerText = symbol + priceText;
+            
             let reverseRate = (1 / targetRate);
             if (baseUnit === 100) reverseRate = reverseRate * 100;
             document.getElementById('convertRate').innerText = `Applied Rate: ${baseUnit} ${currencyCode} ≈ ${reverseRate.toFixed(2)} KRW`;
             document.getElementById('convertDate').innerText = `Updated: ${rateDate}`;
         }
 
-        // ✨ [신규] 장바구니 담기 기능
         window.addToCart = function() {
             if(!currentProductData) return;
-            
-            // 로컬스토리지에서 가져오기
             let cart = JSON.parse(localStorage.getItem('myCart')) || [];
-            
-            // 이미 있는지 확인
             const existingItem = cart.find(item => item.id === productId);
-            if(existingItem) {
-                existingItem.qty += 1;
-            } else {
-                cart.push({
-                    id: productId,
-                    name: currentProductData.name,
-                    price: Number(currentProductData.price),
-                    image: currentProductData.image || "",
-                    qty: 1
-                });
-            }
-            
-            // 저장
+            if(existingItem) { existingItem.qty += 1; } 
+            else { cart.push({ id: productId, name: currentProductData.name, price: Number(currentProductData.price), image: currentProductData.image || "", qty: 1 }); }
             localStorage.setItem('myCart', JSON.stringify(cart));
             updateCartCount();
-
-            // 진동 (모바일 지원 시)
             if(navigator.vibrate) navigator.vibrate(50);
-
-            // 토스트 메시지
-            const toast = document.getElementById('toast');
-            toast.style.display = 'block';
+            const toast = document.getElementById('toast'); toast.style.display = 'block';
             setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            
+            // ✨ [핵심] 장바구니 담기 로그 저장 (언어는 'cart'로 표시)
+            logScanEvent(productId, currentProductData.name, 'cart_add');
         }
-
         loadProduct();
     </script>
 </body>
