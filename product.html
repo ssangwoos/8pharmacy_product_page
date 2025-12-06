@@ -3,20 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="EIGHT PHARMACY">
     <meta property="og:title" content="EIGHT PHARMACY 제품 상세">
     <meta property="og:description" content="약사가 엄선한 K-뷰티 & 필수 의약품 정보를 확인하세요.">
     <meta property="og:image" content="https://8pharmacy.kr/images/og-image.png">
-
     <title>Eight Pharmacy Product Info</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-    
     <style>
-        /* 스타일은 기존과 동일합니다 */
+        /* 기존 스타일 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 80px; } /* padding-bottom 늘림 */
         header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
         header h1 { font-size: 1.2rem; color: #1D5C36; font-weight: 800; cursor: pointer; }
         .product-img-box { width: 100%; height: 350px; background-color: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -30,54 +27,70 @@
         .converted-price { font-size: 1.4rem; color: #1D5C36; font-weight: 700; margin-bottom: 4px; }
         .rate-detail { font-size: 0.85rem; color: #666; display: block; }
         .rate-date { font-size: 0.75rem; color: #999; margin-top: 2px; display: block; }
-
-        .lang-tabs { 
-            display: grid;
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 8px; 
-            background: #fff; 
-            padding: 15px 10px; 
-            margin-bottom: 2px; 
-            border-bottom: 1px solid #eee; 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-        }
+        .lang-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #fff; padding: 15px 10px; margin-bottom: 2px; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100; }
         .lang-btn { border: 1px solid transparent; background: #f8f8f8; border-radius: 8px; cursor: pointer; opacity: 0.6; transition: all 0.2s; padding: 8px 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .lang-btn:hover { background: #eee; }
         .lang-btn.active { opacity: 1; background: #e8f5e9; border: 1px solid #1D5C36; transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .flag-icon { width: 28px; height: auto; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .lang-label { font-size: 0.75rem; color: #555; font-weight: bold; }
-
         .description-container { background: #fff; min-height: 300px; padding: 20px; }
         .desc-content { display: none; }
         .desc-content.active { display: block; animation: fadeIn 0.3s; }
         .desc-text { font-size: 1rem; line-height: 1.7; color: #444; white-space: pre-line; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         #loading { text-align: center; padding: 50px; font-weight: bold; color: #666; display: none; }
+
+        /* ✨ [신규] 하단 고정 장바구니 버튼 */
+        .bottom-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: white; padding: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex; gap: 10px; justify-content: center; z-index: 900;
+        }
+        .btn-add-cart {
+            flex: 1; max-width: 600px;
+            background-color: #1D5C36; color: white; border: none; 
+            padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-add-cart:active { transform: scale(0.98); background-color: #144226; }
+
+        /* ✨ 둥둥 떠다니는 장바구니 아이콘 (FAB) */
+        .fab-cart {
+            position: fixed; bottom: 80px; right: 20px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background-color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 950; border: 2px solid #1D5C36;
+            transition: transform 0.2s;
+        }
+        .fab-cart:active { transform: scale(0.9); }
+        .cart-icon { font-size: 1.8rem; }
+        .cart-badge {
+            position: absolute; top: -5px; right: -5px;
+            background-color: #d32f2f; color: white; font-size: 0.8rem; font-weight: bold;
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid white;
+        }
+
+        /* 토스트 메시지 */
+        #toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px;
+            font-size: 0.9rem; z-index: 1000; display: none;
+        }
     </style>
 </head>
 <body>
-
-    <header>
-        <h1 onclick="location.href='index.html'">EIGHT PHARMACY</h1>
-    </header>
-
+    <header><h1 onclick="location.href='index.html'">EIGHT PHARMACY</h1></header>
     <div id="loading">상품 정보를 불러오는 중...</div>
-
+    
     <div id="content" style="display:none;">
-        <div class="product-img-box">
-            <img src="" alt="Product Image" id="mainImage">
-        </div>
-
+        <div class="product-img-box"><img src="" alt="Product Image" id="mainImage"></div>
         <div class="product-info">
             <div class="product-name" id="pName"></div>
-            
             <div class="price-container">
-                <div class="product-price">
-                    <span id="pPrice">0</span> <span class="currency">KRW</span>
-                </div>
-
+                <div class="product-price"><span id="pPrice">0</span> <span class="currency">KRW</span></div>
                 <div id="convertBox" class="converted-info-box">
                     <div id="convertPrice" class="converted-price"></div>
                     <span id="convertRate" class="rate-detail"></span>
@@ -85,47 +98,38 @@
                 </div>
             </div>
         </div>
-
         <div class="lang-tabs">
-            <button class="lang-btn active" onclick="changeLang('kr')">
-                <img src="./images/flag-kr.png" class="flag-icon"><span class="lang-label">KOR</span>
-            </button>
-            <button class="lang-btn" onclick="changeLang('en')">
-                <img src="./images/flag-en.png" class="flag-icon"><span class="lang-label">ENG</span>
-            </button>
-            <button class="lang-btn" onclick="changeLang('jp')">
-                <img src="./images/flag-jp.png" class="flag-icon"><span class="lang-label">JPN</span>
-            </button>
-            <button class="lang-btn" onclick="changeLang('cn')">
-                <img src="./images/flag-cn.png" class="flag-icon"><span class="lang-label">CHN</span>
-            </button>
-            
-            <button class="lang-btn" onclick="changeLang('th')">
-                <img src="./images/flag-th.png" class="flag-icon"><span class="lang-label">THA</span>
-            </button>
-            <button class="lang-btn" onclick="changeLang('vn')">
-                <img src="./images/flag-vn.png" class="flag-icon"><span class="lang-label">VNM</span>
-            </button>
-            <button class="lang-btn" onclick="changeLang('id')">
-                <img src="./images/flag-id.png" class="flag-icon"><span class="lang-label">IDN</span>
-            </button>
-            <button class="lang-btn" onclick="changeLang('mn')">
-                <img src="./images/flag-mn.png" class="flag-icon"><span class="lang-label">MNG</span>
-            </button>
+            <button class="lang-btn active" onclick="changeLang('kr')"><img src="./images/flag-kr.png" class="flag-icon"><span class="lang-label">KOR</span></button>
+            <button class="lang-btn" onclick="changeLang('en')"><img src="./images/flag-en.png" class="flag-icon"><span class="lang-label">ENG</span></button>
+            <button class="lang-btn" onclick="changeLang('jp')"><img src="./images/flag-jp.png" class="flag-icon"><span class="lang-label">JPN</span></button>
+            <button class="lang-btn" onclick="changeLang('cn')"><img src="./images/flag-cn.png" class="flag-icon"><span class="lang-label">CHN</span></button>
+            <button class="lang-btn" onclick="changeLang('th')"><img src="./images/flag-th.png" class="flag-icon"><span class="lang-label">THA</span></button>
+            <button class="lang-btn" onclick="changeLang('vn')"><img src="./images/flag-vn.png" class="flag-icon"><span class="lang-label">VNM</span></button>
+            <button class="lang-btn" onclick="changeLang('id')"><img src="./images/flag-id.png" class="flag-icon"><span class="lang-label">IDN</span></button>
+            <button class="lang-btn" onclick="changeLang('mn')"><img src="./images/flag-mn.png" class="flag-icon"><span class="lang-label">MNG</span></button>
         </div>
-
         <div class="description-container">
             <div id="desc-kr" class="desc-content active"><h3>상세정보</h3><p class="desc-text"></p></div>
             <div id="desc-en" class="desc-content"><h3>Description</h3><p class="desc-text"></p></div>
             <div id="desc-jp" class="desc-content"><h3>詳細情報</h3><p class="desc-text"></p></div>
             <div id="desc-cn" class="desc-content"><h3>详细信息</h3><p class="desc-text"></p></div>
-            
             <div id="desc-th" class="desc-content"><h3>รายละเอียด</h3><p class="desc-text"></p></div>
             <div id="desc-vn" class="desc-content"><h3>Chi tiết</h3><p class="desc-text"></p></div>
             <div id="desc-id" class="desc-content"><h3>Detail</h3><p class="desc-text"></p></div>
             <div id="desc-mn" class="desc-content"><h3>Дэлгэрэнгүй</h3><p class="desc-text"></p></div>
         </div>
     </div>
+
+    <div class="fab-cart" onclick="location.href='cart.html'">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-badge" id="cartCount">0</span>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="btn-add-cart" onclick="addToCart()">🛒 장바구니 담기 (Add to Cart)</button>
+    </div>
+
+    <div id="toast">✅ 장바구니에 담았습니다!</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -145,14 +149,19 @@
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get('id');
 
-        let globalRates = null; 
-        let globalPriceKRW = 0;
-        let rateDate = "";
+        let globalRates = null; let globalPriceKRW = 0; let rateDate = ""; let currentProductData = null;
+
+        // 장바구니 개수 업데이트
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('myCart')) || [];
+            const total = cart.reduce((sum, item) => sum + item.qty, 0);
+            document.getElementById('cartCount').innerText = total;
+        }
+        updateCartCount(); // 페이지 로드 시 실행
 
         async function loadProduct() {
             const loading = document.getElementById('loading');
             const content = document.getElementById('content');
-
             if (!productId) { loading.innerText = "잘못된 접근입니다."; loading.style.display = 'block'; return; }
             loading.style.display = 'block';
 
@@ -163,6 +172,7 @@
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    currentProductData = data; // 전역 저장 (장바구니 담기용)
                     document.getElementById('pName').innerText = data.name;
                     globalPriceKRW = Number(data.price);
                     document.getElementById('pPrice').innerText = globalPriceKRW.toLocaleString();
@@ -174,47 +184,27 @@
                     setDesc('id', data.desc_id); setDesc('mn', data.desc_mn);
 
                     updateDoc(docRef, { views: increment(1) }).catch(err => {});
-
-                    loading.style.display = 'none';
-                    content.style.display = 'block';
-                } else {
-                    loading.innerText = "등록되지 않은 상품입니다.";
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                loading.innerText = "오류 발생: " + error.message;
-            }
+                    loading.style.display = 'none'; content.style.display = 'block';
+                } else { loading.innerText = "등록되지 않은 상품입니다."; }
+            } catch (error) { loading.innerText = "오류 발생: " + error.message; }
         }
 
-        function setDesc(lang, text) {
-            document.querySelector(`#desc-${lang} .desc-text`).innerText = text || (lang==='kr'?"설명이 없습니다.":"No description.");
-        }
-
-        async function fetchRates() {
-            try {
-                const response = await fetch('https://api.exchangerate-api.com/v4/latest/KRW');
-                const data = await response.json();
-                globalRates = data.rates; 
-                rateDate = data.date; 
-            } catch (err) { console.log("환율 로드 실패"); }
-        }
-
+        // ... (changeLang, fetchRates 등 기존 함수 동일 유지) ...
+        function setDesc(lang, text) { document.querySelector(`#desc-${lang} .desc-text`).innerText = text || (lang==='kr'?"설명이 없습니다.":"No description."); }
+        async function fetchRates() { try { const r = await fetch('https://api.exchangerate-api.com/v4/latest/KRW'); const d = await r.json(); globalRates = d.rates; rateDate = d.date; } catch (e) {} }
         window.changeLang = function(lang) {
             document.querySelectorAll('.desc-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('desc-' + lang).classList.add('active');
-            
             const btns = document.querySelectorAll('.lang-btn');
-            // ✨ [수정] 버튼 순서 매핑 변경 (0:kr, 1:en, 2:jp, 3:cn ...)
             const langMap = {'kr':0, 'en':1, 'jp':2, 'cn':3, 'th':4, 'vn':5, 'id':6, 'mn':7};
             if(btns[langMap[lang]]) btns[langMap[lang]].classList.add('active');
-
+            if(productId) { const docRef = doc(db, "products", productId); updateDoc(docRef, { [`views_${lang}`]: increment(1) }).catch(e=>{}); }
+            
             const box = document.getElementById('convertBox');
             if (!globalRates || lang === 'kr') { box.style.display = 'none'; return; }
             box.style.display = 'block';
-
             let targetRate = 0; let currencyCode = ""; let symbol = ""; let baseUnit = 1;
-
             if (lang === 'en') { targetRate = globalRates.USD; currencyCode = "USD"; symbol = "$"; }
             else if (lang === 'cn') { targetRate = globalRates.CNY; currencyCode = "CNY"; symbol = "¥"; }
             else if (lang === 'jp') { targetRate = globalRates.JPY; currencyCode = "JPY"; symbol = "円"; baseUnit = 100; }
@@ -222,21 +212,48 @@
             else if (lang === 'vn') { targetRate = globalRates.VND; currencyCode = "VND"; symbol = "₫"; baseUnit = 100; }
             else if (lang === 'id') { targetRate = globalRates.IDR; currencyCode = "IDR"; symbol = "Rp"; baseUnit = 100; }
             else if (lang === 'mn') { targetRate = globalRates.MNT; currencyCode = "MNT"; symbol = "₮"; baseUnit = 100; }
-
             let convertedPrice = globalPriceKRW * targetRate;
-            let priceText = "";
-            if(['vn','id','mn','jp'].includes(lang)) { priceText = convertedPrice.toFixed(0); } 
-            else { priceText = convertedPrice.toFixed(2); }
-
+            let priceText = ['vn','id','mn','jp'].includes(lang) ? convertedPrice.toFixed(0) : convertedPrice.toFixed(2);
             const priceEl = document.getElementById('convertPrice');
-            if(['jp','vn','mn','th'].includes(lang)) priceEl.innerText = priceText + symbol; 
-            else priceEl.innerText = symbol + priceText;
-
+            if(['jp','vn','mn','th'].includes(lang)) priceEl.innerText = priceText + symbol; else priceEl.innerText = symbol + priceText;
             let reverseRate = (1 / targetRate);
             if (baseUnit === 100) reverseRate = reverseRate * 100;
-            
             document.getElementById('convertRate').innerText = `Applied Rate: ${baseUnit} ${currencyCode} ≈ ${reverseRate.toFixed(2)} KRW`;
             document.getElementById('convertDate').innerText = `Updated: ${rateDate}`;
+        }
+
+        // ✨ [신규] 장바구니 담기 기능
+        window.addToCart = function() {
+            if(!currentProductData) return;
+            
+            // 로컬스토리지에서 가져오기
+            let cart = JSON.parse(localStorage.getItem('myCart')) || [];
+            
+            // 이미 있는지 확인
+            const existingItem = cart.find(item => item.id === productId);
+            if(existingItem) {
+                existingItem.qty += 1;
+            } else {
+                cart.push({
+                    id: productId,
+                    name: currentProductData.name,
+                    price: Number(currentProductData.price),
+                    image: currentProductData.image || "",
+                    qty: 1
+                });
+            }
+            
+            // 저장
+            localStorage.setItem('myCart', JSON.stringify(cart));
+            updateCartCount();
+
+            // 진동 (모바일 지원 시)
+            if(navigator.vibrate) navigator.vibrate(50);
+
+            // 토스트 메시지
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
         }
 
         loadProduct();

@@ -3,32 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>에이트약국 관리자 (Final)</title>
+    <title>에이트약국 관리자 (Cart & Tax)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 기존 스타일 */
+        /* 기존 스타일 전체 유지 */
         body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; background: #f4f4f4; max-width: 800px; margin: 0 auto; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
         .header-title h1 { color: #1D5C36; margin: 0; font-size: 1.5rem; }
         .header-title p { color: #666; margin: 5px 0 0 0; font-size: 0.9rem; }
         .btn-settings { background: none; border: 2px solid #666; color: #666; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
         .btn-settings:hover { background: #666; color: white; }
-
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; overflow-y: auto; }
         .modal-box { background: white; padding: 30px; border-radius: 10px; text-align: center; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin: 20px 0; }
         .modal-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 0.9rem; box-sizing: border-box; }
         .modal-btn { width: 100%; padding: 12px; background: #1D5C36; color: white; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-top: 10px;}
         .modal-btn-close { background: #888; margin-top: 5px; }
-
-        /* ✨ 좌표 설정용 스타일 개선 */
         .coord-section { background:#f5f5f5; padding:15px; border-radius:8px; border:1px solid #eee; margin-bottom:15px; }
         .coord-title { font-weight:bold; color:#333; margin-bottom:8px; display:block; text-align:left; border-bottom:1px solid #ddd; padding-bottom:5px; margin-top:10px; }
         .coord-row { display: flex; gap: 10px; margin-bottom: 5px; align-items: center; }
         .coord-item { flex: 1; display: flex; align-items: center; gap: 5px; }
-        .coord-tag { font-size: 0.8rem; font-weight: bold; color: #555; width: 15px; } /* X, Y 라벨 */
+        .coord-tag { font-size: 0.8rem; font-weight: bold; color: #555; width: 15px; } 
         .coord-item input { width: 100%; padding: 8px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
-
         .tab-menu { display: flex; background: #fff; border-radius: 8px 8px 0 0; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .tab-btn { flex: 1; padding: 15px; border: none; background: #f0f0f0; cursor: pointer; font-size: 1rem; font-weight: bold; color: #555; border-bottom: 3px solid transparent; }
         .tab-btn.active { background: #fff; color: #1D5C36; border-bottom: 3px solid #1D5C36; }
@@ -64,12 +61,20 @@
         .badge-qr-on:hover { background: #1D5C36; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .badge-qr-off { font-size: 0.75rem; background: #fff3e0; color: #ef6c00; border: 1px solid #ef6c00; padding: 2px 6px; border-radius: 10px; font-weight: normal; cursor: default;}
         .badge-view { font-size: 0.8rem; color: #555; display: flex; align-items: center; gap: 3px; background: #fff; padding: 2px 8px; border-radius: 10px; border: 1px solid #ddd; }
+        .dash-card { background:#fff; border:1px solid #eee; border-radius:10px; padding:20px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.05); }
+        .dash-title { font-size:1.1rem; font-weight:bold; color:#333; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; }
+        .chart-box { height: 250px; position: relative; display: flex; justify-content: center; align-items: center;}
+        .legend-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #eee; }
+        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: #555; }
+        .legend-color { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+        .stat-grid { display:flex; gap:15px; }
+        .stat-item { flex:1; background:#f8f9fa; padding:15px; border-radius:8px; text-align:center; }
+        .stat-num { font-size:2rem; font-weight:bold; color:#1D5C36; display:block; }
+        .stat-label { font-size:0.9rem; color:#666; }
     </style>
 </head>
 <body>
-
     <canvas id="priceTagCanvas" width="2031" height="1252" style="display:none;"></canvas>
-
     <div id="loginOverlay" class="overlay" style="display:flex;">
         <div class="modal-box">
             <h2 style="color:#1D5C36; margin-bottom:10px;">관리자 로그인</h2>
@@ -82,141 +87,65 @@
     <div id="settingsOverlay" class="overlay">
         <div id="settingsAuthBox" class="modal-box">
             <h3 style="margin-top:0;">🔐 슈퍼바이저 인증</h3>
-            <p style="font-size:0.9rem; color:#666;">설정 변경 권한 확인</p>
             <input type="password" id="supervisorPassword" class="modal-input" placeholder="슈퍼바이저 비밀번호">
             <button class="modal-btn" onclick="checkSupervisorLogin()">확인</button>
             <button class="modal-btn modal-btn-close" onclick="closeSettings()">취소</button>
         </div>
-        
         <div id="settingsConfigBox" class="modal-box" style="display:none; width: 450px; max-height:90vh; overflow-y:auto;">
             <h3 style="margin-top:0;">⚙️ 사이트 기본 설정</h3>
             
-            <div style="text-align:left; margin-top:10px; padding-bottom:10px;">
+            <div style="text-align:left; margin-top:10px;">
                 <label style="font-size:0.9rem;">🔑 OpenAI API Key</label>
                 <input type="text" id="configApiKey" class="modal-input" placeholder="sk-..." style="font-size:0.9rem;">
             </div>
 
-            <div style="text-align:left; padding-bottom:10px;">
+            <div style="text-align:left; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:15px;">
+                <label style="font-size:0.9rem; color:#1D5C36;">💰 Tax Refund 예상 환급률 (%)</label>
+                <input type="number" id="configRefundRate" class="modal-input" placeholder="예: 6.5" style="font-size:0.9rem;" step="0.1">
+                <p style="font-size:0.75rem; color:#888;">* 장바구니에서 환급 예상액 계산 시 사용됩니다.</p>
+            </div>
+
+            <div style="text-align:left; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:15px;">
                 <label style="font-size:0.9rem; color:#673ab7;">🖼️ 배경 이미지</label>
                 <input type="file" id="bgFileInput" accept="image/*" style="font-size:0.9rem;">
                 <p id="bgStatus" style="font-size:0.8rem; color:#888; margin: 2px 0;">상태: 확인 중...</p>
             </div>
-
+            
             <div class="coord-section">
                 <h4 style="margin:0 0 10px 0; color:#1D5C36; text-align: left;">📏 가격표 레이아웃 미세조정</h4>
-                
                 <span class="coord-title">📦 상품 이미지 (왼쪽)</span>
-                <div class="coord-row">
-                    <div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_prod_x"></div>
-                    <div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_prod_y"></div>
-                </div>
-                <div class="coord-row">
-                    <div class="coord-item"><span class="coord-tag">W</span><input type="number" id="layout_prod_w" placeholder="최대폭"></div>
-                    <div class="coord-item"><span class="coord-tag">H</span><input type="number" id="layout_prod_h" placeholder="최대높이"></div>
-                </div>
-
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_prod_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_prod_y"></div></div>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">W</span><input type="number" id="layout_prod_w"></div><div class="coord-item"><span class="coord-tag">H</span><input type="number" id="layout_prod_h"></div></div>
                 <span class="coord-title">📷 QR 코드 (오른쪽 상단)</span>
-                <div class="coord-row">
-                    <div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_qr_x"></div>
-                    <div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_qr_y"></div>
-                </div>
-                <div class="coord-row">
-                    <div class="coord-item"><span class="coord-tag" style="width:30px">Size</span><input type="number" id="layout_qr_size" placeholder="크기"></div>
-                </div>
-
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_qr_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_qr_y"></div></div>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">S</span><input type="number" id="layout_qr_size"></div></div>
                 <span class="coord-title">💰 가격 (오른쪽 하단)</span>
-                <div class="coord-row">
-                    <div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_price_x"></div>
-                    <div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_price_y"></div>
-                </div>
-                <div class="coord-row">
-                    <div class="coord-item"><span class="coord-tag" style="width:30px">Size</span><input type="number" id="layout_price_size" placeholder="글자크기"></div>
-                </div>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_price_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_price_y"></div></div>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">S</span><input type="number" id="layout_price_size"></div></div>
             </div>
 
             <div style="text-align:left; margin-top:15px;">
                 <label style="font-size:0.9rem; color:#d32f2f;">🛡️ 관리자 비번 변경</label>
                 <input type="text" id="configAdminPw" class="modal-input" placeholder="0000">
             </div>
-
             <button class="modal-btn" onclick="saveSettings()">모든 설정 저장하기</button>
             <button class="modal-btn modal-btn-close" onclick="closeSettings()">닫기</button>
         </div>
     </div>
 
-    <header>
-        <div class="header-title">
-            <h1>💊 EIGHT PHARMACY ADMIN</h1>
-            <p>상품 등록 및 QR코드 통합 관리 시스템</p>
-        </div>
-        <button class="btn-settings" onclick="openSettings()">⚙️ 설정</button>
-    </header>
+    <header><div class="header-title"><h1>💊 EIGHT PHARMACY ADMIN</h1><p>상품 등록 및 QR코드 통합 관리 시스템</p></div><button class="btn-settings" onclick="openSettings()">⚙️ 설정</button></header>
+    <div class="tab-menu"><button class="tab-btn" onclick="openTab('tab-dashboard')">📊 대시보드</button><button class="tab-btn active" onclick="openTab('tab-register')">📝 상품 등록</button><button class="tab-btn" onclick="openTab('tab-manage')">📋 상품 관리</button></div>
     
-    <div class="tab-menu">
-        <button class="tab-btn active" onclick="openTab('tab-register')">📝 상품 등록 (AI)</button>
-        <button class="tab-btn" onclick="openTab('tab-manage')">📋 상품 관리 (통계)</button>
-    </div>
-
-    <div id="tab-register" class="tab-content active">
-        <button class="btn btn-reset" onclick="resetForm()">🔄 입력창 비우기 (신규 등록)</button>
-        <div class="input-group">
-            <label>상품 ID (자동 생성됨 - 수정 불가)</label>
-            <input type="text" id="productId" placeholder="저장 시 자동으로 생성됩니다" readonly 
-                   style="background-color: #e0e0e0; color: #555; cursor: not-allowed; font-weight: bold;">
-        </div>
-        <div class="row">
-            <div class="col input-group"><label>상품명</label><input type="text" id="name" placeholder="타이레놀"></div>
-            <div class="col input-group"><label>가격</label><input type="number" id="price" placeholder="3500"></div>
-        </div>
-        <div class="input-group"><label>이미지</label><input type="file" id="imageFile" accept="image/*"><img id="preview" class="preview-img"></div>
-        <div class="section-header">🌍 상세 설명</div>
-        <div class="lang-section" style="border:2px solid #6366f1; background:#f0f0ff;"><div class="lang-title">🇰🇷 한국어</div><textarea id="desc_kr" placeholder="설명 입력"></textarea></div>
-        <button class="ai-btn" onclick="translateContent()">✨ AI 번역</button>
-        <div class="section-header">🤖 번역 결과</div>
-        <div class="lang-section"><div class="lang-title">🇺🇸 영어</div><textarea id="desc_en"></textarea></div>
-        <div class="lang-section"><div class="lang-title">🇯🇵 일본어</div><textarea id="desc_jp"></textarea></div>
-        <div class="lang-section"><div class="lang-title">🇨🇳 중국어</div><textarea id="desc_cn"></textarea></div>
-        <div class="lang-section"><div class="lang-title">🇹🇭 태국어</div><textarea id="desc_th"></textarea></div>
-        <div class="lang-section"><div class="lang-title">🇻🇳 베트남어</div><textarea id="desc_vn"></textarea></div>
-        <div class="lang-section"><div class="lang-title">🇮🇩 인도네시아어</div><textarea id="desc_id"></textarea></div>
-        <div class="lang-section"><div class="lang-title">🇲🇳 몽골어</div><textarea id="desc_mn"></textarea></div>
-        <div class="input-group qr-section">
-            <label style="color:#1D5C36;">📷 QR 코드</label>
-            <div style="display:flex; align-items:flex-end; gap:15px; margin-top:10px;">
-                <img id="qrPreview" class="preview-img" style="display:none;"><div id="qrPlaceholder" style="color:#999; font-size:0.9rem;">(자동 생성)</div><a id="qrDownloadBtn" class="btn-small btn-view" style="display:none;">💾 다운</a>
-            </div>
-            <div id="qrCodeContainer"></div>
-        </div>
-        <button class="btn" onclick="saveProduct()" id="saveBtn">저장하기</button>
-    </div>
-
-    <div id="tab-manage" class="tab-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="margin:0;">상품 리스트</h3><button class="btn-small" style="background:#666;" onclick="loadProductList()">🔄 새로고침</button>
-        </div>
-        <div style="margin-bottom:20px;"><input type="text" id="searchInput" placeholder="🔍 검색..." style="padding:12px; border:2px solid #1D5C36; border-radius:50px;"></div>
-        <div id="productList"><p style="text-align:center;">로딩 중...</p></div>
-    </div>
+    <div id="tab-dashboard" class="tab-content"><div class="stat-grid"><div class="stat-item"><span class="stat-label">총 등록 상품</span><span class="stat-num" id="statTotalProducts">0</span></div><div class="stat-item"><span class="stat-label">총 QR 조회수</span><span class="stat-num" id="statTotalViews" style="color:#d32f2f;">0</span></div></div><br><div class="row"><div class="col dash-card"><div class="dash-title">🏆 인기 상품 Top 5 (조회수)</div><div class="chart-box"><canvas id="chartProducts"></canvas></div></div><div class="col dash-card"><div class="dash-title">🌏 언어별 관심도</div><div class="chart-box"><canvas id="chartLangs"></canvas></div><div id="customLegend" class="legend-grid"></div></div></div><button class="btn btn-reset" onclick="loadDashboard()">🔄 통계 새로고침</button></div>
+    
+    <div id="tab-register" class="tab-content active"><button class="btn btn-reset" onclick="resetForm()">🔄 입력창 비우기 (신규 등록)</button><div class="input-group"><label>상품 ID (자동생성)</label><input type="text" id="productId" placeholder="tylenol" readonly style="background-color: #e0e0e0; color: #555; cursor: not-allowed; font-weight: bold;"></div><div class="row"><div class="col input-group"><label>상품명</label><input type="text" id="name" placeholder="타이레놀"></div><div class="col input-group"><label>가격</label><input type="number" id="price" placeholder="3500"></div></div><div class="input-group"><label>이미지</label><input type="file" id="imageFile" accept="image/*"><img id="preview" class="preview-img"></div><div class="section-header">🌍 상세 설명</div><div class="lang-section" style="border:2px solid #6366f1; background:#f0f0ff;"><div class="lang-title">🇰🇷 한국어</div><textarea id="desc_kr" placeholder="설명 입력"></textarea></div><button class="ai-btn" onclick="translateContent()">✨ AI 번역</button><div class="section-header">🤖 번역 결과</div><div class="lang-section"><div class="lang-title">🇺🇸 영어</div><textarea id="desc_en"></textarea></div><div class="lang-section"><div class="lang-title">🇯🇵 일본어</div><textarea id="desc_jp"></textarea></div><div class="lang-section"><div class="lang-title">🇨🇳 중국어</div><textarea id="desc_cn"></textarea></div><div class="lang-section"><div class="lang-title">🇹🇭 태국어</div><textarea id="desc_th"></textarea></div><div class="lang-section"><div class="lang-title">🇻🇳 베트남어</div><textarea id="desc_vn"></textarea></div><div class="lang-section"><div class="lang-title">🇮🇩 인도네시아어</div><textarea id="desc_id"></textarea></div><div class="lang-section"><div class="lang-title">🇲🇳 몽골어</div><textarea id="desc_mn"></textarea></div><div class="input-group qr-section"><label style="color:#1D5C36;">📷 QR 코드</label><div style="display:flex; align-items:flex-end; gap:15px; margin-top:10px;"><img id="qrPreview" class="preview-img" style="display:none;"><div id="qrPlaceholder" style="color:#999; font-size:0.9rem;">(자동 생성)</div><a id="qrDownloadBtn" class="btn-small btn-view" style="display:none;">💾 다운</a></div><div id="qrCodeContainer"></div></div><button class="btn" onclick="saveProduct()" id="saveBtn">저장하기</button></div>
+    
+    <div id="tab-manage" class="tab-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">상품 리스트</h3><button class="btn-small" style="background:#666;" onclick="loadProductList()">🔄 새로고침</button></div><div style="display:flex; gap:10px; margin-bottom:20px;"><select id="sortSelect" style="padding:12px; border:2px solid #1D5C36; border-radius:10px; font-size:1rem;" onchange="applySort()"><option value="newest">🕒 최신 등록순</option><option value="oldest">📅 오래된 순</option><option value="name_asc">🔤 가나다순</option><option value="name_desc">🔠 가나다 역순</option><option value="views">🔥 조회수 순</option></select><input type="text" id="searchInput" placeholder="🔍 검색..." style="flex:1; padding:12px; border:2px solid #1D5C36; border-radius:50px;"></div><div id="productList"><p style="text-align:center;">로딩 중...</p></div></div>
 
     <script>
-        function openTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-            event.currentTarget.classList.add('active');
-            if(tabName === 'tab-manage' && typeof loadProductList === 'function') loadProductList();
-        }
+        function openTab(tabName) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(tabName).classList.add('active'); event.currentTarget.classList.add('active'); if(tabName === 'tab-manage') loadProductList(); if(tabName === 'tab-dashboard') loadDashboard(); }
     </script>
     <script type="module" src="./admin.js"></script>
-    <script type="module">
-        const originalEdit = window.editProduct;
-        window.editProduct = async function(id) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-register').classList.add('active');
-            document.querySelector('.tab-btn:first-child').classList.add('active');
-            if (typeof originalEdit === 'function') originalEdit(id);
-        }
-    </script>
+    <script type="module"> const originalEdit = window.editProduct; window.editProduct = async function(id) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById('tab-register').classList.add('active'); document.querySelector('.tab-btn:nth-child(2)').classList.add('active'); if (typeof originalEdit === 'function') originalEdit(id); } </script>
 </body>
 </html>

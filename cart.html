@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cart - EIGHT PHARMACY</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 기본 설정 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+        header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #eee; position: sticky; top:0; z-index:100;}
+        header h1 { font-size: 1.2rem; color: #1D5C36; font-weight: 800; margin: 0; }
+        
+        .cart-container { padding: 20px; }
+        
+        /* 리스트 스타일 */
+        .cart-item { display: flex; background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); align-items: center; }
+        .item-img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #eee; }
+        .item-info { flex: 1; padding: 0 15px; }
+        .item-name { font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
+        .item-price { color: #d32f2f; font-weight: bold; }
+        
+        .qty-control { display: flex; align-items: center; gap: 10px; }
+        .btn-qty { width: 30px; height: 30px; border: 1px solid #ddd; background: #fff; border-radius: 5px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;}
+        .btn-delete { color: #999; cursor: pointer; padding: 5px; font-size: 1.2rem; }
+
+        /* 계산서 */
+        .bill-box { background: #fff; padding: 20px; border-radius: 10px; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .bill-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1rem; }
+        .total-row { border-top: 2px solid #eee; margin-top: 10px; padding-top: 15px; font-weight: bold; font-size: 1.3rem; color: #1D5C36; }
+        
+        /* 택스리펀 */
+        .tax-section { margin-top: 20px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .gauge-container { height: 12px; background-color: #eee; border-radius: 10px; margin: 15px 0; overflow: hidden; position: relative; }
+        .gauge-fill { height: 100%; width: 0%; transition: width 0.5s ease-in-out, background-color 0.3s; border-radius: 10px; }
+        .fill-orange { background-color: #ff9800; }
+        .fill-green { background-color: #1D5C36; }
+        .tax-msg { font-size: 0.9rem; font-weight: bold; text-align: center; margin-bottom: 5px; }
+        .tax-msg.success { color: #1D5C36; }
+        .tax-msg.more { color: #f57c00; }
+        .tax-breakdown { background: #f1f8e9; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #c8e6c9; display: none; }
+        .tax-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: #555; margin-bottom: 5px; }
+        .tax-total { font-weight: bold; font-size: 1.1rem; color: #1D5C36; margin-top: 10px; border-top: 1px dashed #aaa; padding-top: 10px; text-align: right; }
+
+        /* 환율 버튼바 (그리드) */
+        .currency-bar { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; 
+            padding: 15px 10px; background: #fff; border-bottom: 1px solid #eee;
+        }
+        .curr-btn { 
+            border: 1px solid transparent; background: #f8f8f8; padding: 8px 5px; 
+            border-radius: 8px; cursor: pointer; opacity: 0.6; transition: all 0.2s;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .curr-btn:hover { background: #eee; }
+        .curr-btn.active { opacity: 1; background: #e8f5e9; border: 1px solid #1D5C36; transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .flag-icon { width: 28px; height: auto; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .curr-label { font-size: 0.75rem; color: #555; font-weight: bold; }
+
+        .empty-cart { text-align: center; padding: 50px 20px; color: #888; }
+        
+        /* ✨ [수정] 버튼 스타일 통일 (크고 시원하게) */
+        .btn-home { 
+            display: block; width: 100%; margin-top: 30px; 
+            padding: 15px; background: #1D5C36; color: white; 
+            text-decoration: none; border-radius: 10px; 
+            cursor: pointer; border: none; font-size: 1.1rem; font-weight: bold;
+            text-align: center;
+        }
+        .btn-home:hover { background-color: #144226; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🛒 My Cart</h1>
+    </header>
+
+    <div class="currency-bar">
+        <button class="curr-btn active" onclick="setCurrency('KRW', this)"><img src="./images/flag-kr.png" class="flag-icon"><span class="curr-label">KRW</span></button>
+        <button class="curr-btn" onclick="setCurrency('USD', this)"><img src="./images/flag-en.png" class="flag-icon"><span class="curr-label">USD</span></button>
+        <button class="curr-btn" onclick="setCurrency('JPY', this)"><img src="./images/flag-jp.png" class="flag-icon"><span class="curr-label">JPY</span></button>
+        <button class="curr-btn" onclick="setCurrency('CNY', this)"><img src="./images/flag-cn.png" class="flag-icon"><span class="curr-label">CNY</span></button>
+        <button class="curr-btn" onclick="setCurrency('THB', this)"><img src="./images/flag-th.png" class="flag-icon"><span class="curr-label">THB</span></button>
+        <button class="curr-btn" onclick="setCurrency('VND', this)"><img src="./images/flag-vn.png" class="flag-icon"><span class="curr-label">VND</span></button>
+        <button class="curr-btn" onclick="setCurrency('IDR', this)"><img src="./images/flag-id.png" class="flag-icon"><span class="curr-label">IDR</span></button>
+        <button class="curr-btn" onclick="setCurrency('MNT', this)"><img src="./images/flag-mn.png" class="flag-icon"><span class="curr-label">MNT</span></button>
+    </div>
+
+    <div class="cart-container" id="cartContainer">
+        <div id="itemList"></div>
+        
+        <div class="bill-box" id="billBox" style="display:none;">
+            <div class="bill-row"><span>Items Total</span><span id="txtSubtotal">0</span></div>
+            <div class="bill-row total-row"><span>Total</span><span id="txtTotal">0</span></div>
+        </div>
+        
+        <div id="taxBox" class="tax-section" style="display:none;">
+            <div id="taxMsg" class="tax-msg"></div>
+            <div class="gauge-container"><div id="gaugeFill" class="gauge-fill"></div></div>
+            <div id="taxBreakdown" class="tax-breakdown">
+                <div class="tax-row"><span>VAT (10% included)</span><span id="valVat">0</span></div>
+                <div class="tax-row"><span>Service Fee</span><span id="valFee">0</span></div>
+                <div class="tax-total"><span>Estimated Refund: </span><span id="valRefund">0</span></div>
+                <p style="font-size:0.7rem; color:#888; margin-top:5px; text-align:right;">* Actual refund may vary slightly.</p>
+            </div>
+        </div>
+
+        <div id="bottomNav" style="display:none;">
+            <button onclick="history.back()" class="btn-home">⬅️ 쇼핑 계속하기 (Continue Shopping)</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCygpc_WS2_35_8eYgdTEJwZCtNGJjHvY4",
+            authDomain: "pharmacy-productlist.firebaseapp.com",
+            projectId: "pharmacy-productlist",
+            storageBucket: "pharmacy-productlist.firebasestorage.app",
+            messagingSenderId: "409677826366",
+            appId: "1:409677826366:web:dc825470ef673194e2446f"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let cart = JSON.parse(localStorage.getItem('myCart')) || [];
+        let currentCurrency = 'KRW';
+        let rates = null;
+        let refundRate = 6.0;
+
+        async function loadSettings() {
+            try {
+                const docSnap = await getDoc(doc(db, "settings", "config"));
+                if(docSnap.exists() && docSnap.data().refund_rate) {
+                    refundRate = Number(docSnap.data().refund_rate);
+                }
+                renderCart();
+            } catch(e) {}
+        }
+        loadSettings();
+
+        async function fetchRates() {
+            try {
+                const r = await fetch('https://api.exchangerate-api.com/v4/latest/KRW');
+                const d = await r.json();
+                rates = d.rates;
+            } catch(e) {}
+        }
+        fetchRates();
+
+        window.renderCart = function() {
+            const list = document.getElementById('itemList');
+            const bill = document.getElementById('billBox');
+            const taxBox = document.getElementById('taxBox');
+            const bottomNav = document.getElementById('bottomNav');
+            
+            if(cart.length === 0) {
+                list.innerHTML = `<div class="empty-cart"><p>장바구니가 비어있습니다.<br>(Your cart is empty)</p><button onclick="history.back()" class="btn-home">⬅️ 쇼핑 계속하기 (Go Back)</button></div>`;
+                bill.style.display = 'none';
+                taxBox.style.display = 'none';
+                bottomNav.style.display = 'none'; // 빈 카트일 땐 위쪽 버튼만 보임
+                return;
+            }
+
+            bill.style.display = 'block';
+            taxBox.style.display = 'block';
+            bottomNav.style.display = 'block'; // ✨ 물건이 있으면 하단 버튼 표시
+            
+            let html = '';
+            let totalKRW = 0;
+
+            cart.forEach((item, idx) => {
+                const itemTotal = item.price * item.qty;
+                totalKRW += itemTotal;
+                html += `
+                    <div class="cart-item">
+                        <img src="${item.image || 'https://via.placeholder.com/60'}" class="item-img">
+                        <div class="item-info">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-price">${formatMoney(item.price)}</div>
+                        </div>
+                        <div class="qty-control">
+                            <div class="btn-qty" onclick="updateQty(${idx}, -1)">-</div>
+                            <span>${item.qty}</span>
+                            <div class="btn-qty" onclick="updateQty(${idx}, 1)">+</div>
+                        </div>
+                        <div class="btn-delete" onclick="removeItem(${idx})">×</div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+
+            document.getElementById('txtSubtotal').innerText = formatMoney(totalKRW);
+            document.getElementById('txtTotal').innerText = formatMoney(totalKRW);
+
+            updateTaxGauge(totalKRW);
+        }
+
+        function updateTaxGauge(total) {
+            const threshold = 15000;
+            const gaugeFill = document.getElementById('gaugeFill');
+            const msgEl = document.getElementById('taxMsg');
+            const breakdownEl = document.getElementById('taxBreakdown');
+
+            let percent = (total / threshold) * 100;
+            if(percent > 100) percent = 100;
+
+            gaugeFill.style.width = percent + '%';
+
+            if (total >= threshold) {
+                gaugeFill.className = 'gauge-fill fill-green';
+                msgEl.innerHTML = "✨ TAX FREE Available!";
+                msgEl.className = "tax-msg success";
+                breakdownEl.style.display = 'block';
+
+                const vatKRW = Math.round(total - (total / 1.1));
+                const refundKRW = Math.round(total * (refundRate / 100));
+                const feeKRW = vatKRW - refundKRW;
+
+                document.getElementById('valVat').innerText = formatMoney(vatKRW);
+                document.getElementById('valFee').innerText = "- " + formatMoney(feeKRW);
+                document.getElementById('valRefund').innerText = formatMoney(refundKRW);
+            } else {
+                gaugeFill.className = 'gauge-fill fill-orange';
+                const diff = threshold - total;
+                msgEl.innerHTML = `Add <strong>${formatMoney(diff)}</strong> more to get Tax Refund!`;
+                msgEl.className = "tax-msg more";
+                breakdownEl.style.display = 'none';
+            }
+        }
+
+        function formatMoney(krw) {
+            if(!rates) return krw.toLocaleString() + ' KRW';
+            let rate=1, code='KRW', symbol='₩';
+            
+            if(currentCurrency === 'USD') { rate = rates.USD; code = 'USD'; symbol = '$'; }
+            else if(currentCurrency === 'JPY') { rate = rates.JPY; code = 'JPY'; symbol = '¥'; }
+            else if(currentCurrency === 'CNY') { rate = rates.CNY; code = 'CNY'; symbol = '¥'; }
+            else if(currentCurrency === 'THB') { rate = rates.THB; code = 'THB'; symbol = '฿'; }
+            else if(currentCurrency === 'VND') { rate = rates.VND; code = 'VND'; symbol = '₫'; }
+            else if(currentCurrency === 'IDR') { rate = rates.IDR; code = 'IDR'; symbol = 'Rp'; }
+            else if(currentCurrency === 'MNT') { rate = rates.MNT; code = 'MNT'; symbol = '₮'; }
+
+            let converted = krw * rate;
+            if(['USD'].includes(currentCurrency)) return symbol + converted.toFixed(2);
+            return symbol + Math.round(converted).toLocaleString();
+        }
+
+        window.setCurrency = function(code, btnElement) {
+            currentCurrency = code;
+            document.querySelectorAll('.curr-btn').forEach(b => b.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+            renderCart();
+        }
+
+        window.updateQty = function(idx, change) {
+            cart[idx].qty += change;
+            if(cart[idx].qty < 1) cart[idx].qty = 1;
+            localStorage.setItem('myCart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        window.removeItem = function(idx) {
+            if(confirm("Delete this item?")) {
+                cart.splice(idx, 1);
+                localStorage.setItem('myCart', JSON.stringify(cart));
+                renderCart();
+            }
+        }
+    </script>
+</body>
+</html>
