@@ -155,25 +155,81 @@ document.getElementById('adminPassword').addEventListener("keypress", (e) => { i
 document.getElementById('supervisorPassword').addEventListener("keypress", (e) => { if(e.key==="Enter") checkSupervisorLogin(); });
 
 // 2. AI & QR
+// ==========================================
+// ✨ 2. AI 번역 (업그레이드: 요약 금지 + gpt-4o-mini 적용)
+// ==========================================
 window.translateContent = async function() {
     const krDesc = document.getElementById('desc_kr').value;
     const btn = document.querySelector('.ai-btn');
-    if(!krDesc) return alert("한국어 설명 필수");
+
+    if(!krDesc) return alert("한국어 설명을 먼저 작성해주세요!");
+
     let apiKey = "";
     try { const docSnap = await getDoc(doc(db, "settings", "config")); if(docSnap.exists()) apiKey = docSnap.data().openai_key; } catch(e) {}
-    if(!apiKey) return alert("❌ API Key 없음");
+    if(!apiKey) return alert("❌ API Key가 없습니다. 설정창에서 등록하세요.");
+
     try {
-        btn.disabled = true; btn.innerText = "🤖 번역 중...";
-        const prompt = `Translate Korean to English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, Mongolian. JSON keys: en, cn, jp, th, vn, id, mn.\nText: "${krDesc}"`;
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({ model: "gpt-3.5-turbo", messages: [{ role: "user", content: prompt }], temperature: 0.3 })
+        btn.disabled = true;
+        btn.innerText = "🤖 꼼꼼하게 번역 중... (요약 없이 전체 번역)";
+
+        // ✨ [핵심 수정 1] 프롬프트(명령어)를 아주 구체적으로 변경
+        const prompt = `
+            Role: Professional Medical Translator for a Pharmacy.
+            Task: Translate the provided Korean text into 7 languages: English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, and Mongolian.
+            
+            🚨 IMPORTANT RULES:
+            1. Translate the **FULL TEXT** completely. Do NOT summarize or shorten.
+            2. Maintain the original tone (friendly & professional).
+            3. Preserve line breaks and formatting.
+            4. Output MUST be a pure JSON object ONLY. Do not use Markdown code blocks (like \`\`\`json).
+            
+            JSON Keys: en, cn, jp, th, vn, id, mn
+            
+            Source Text:
+            "${krDesc}"
+        `;
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${apiKey}` 
+            },
+            body: JSON.stringify({
+                // ✨ [핵심 수정 2] 모델 변경: gpt-3.5-turbo -> gpt-4o-mini (더 똑똑하고 쌈)
+                model: "gpt-4o-mini", 
+                messages: [{ role: "system", content: "You are a strict JSON output machine." }, { role: "user", content: prompt }],
+                temperature: 0.2 // 창의성 낮춤 (정확한 번역 위해)
+            })
         });
-        const data = await res.json();
-        const content = JSON.parse(data.choices[0].message.content);
-        ['en','cn','jp','th','vn','id','mn'].forEach(l => document.getElementById('desc_'+l).value = content[l] || "");
-        alert("✅ 번역 완료");
-    } catch (error) { alert("번역 실패"); } finally { btn.disabled = false; btn.innerText = "✨ 한국어 내용을 7개국어로 자동 번역하기"; }
+
+        const data = await response.json();
+        
+        if(data.error) {
+            console.error("OpenAI Error:", data.error);
+            throw new Error(data.error.message);
+        }
+
+        // ✨ [핵심 수정 3] 답변에서 잡동사니 제거하고 순수 JSON만 추출
+        let rawContent = data.choices[0].message.content;
+        // 혹시 모를 마크다운(```json ... ```) 제거
+        rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        const content = JSON.parse(rawContent);
+
+        ['en','cn','jp','th','vn','id','mn'].forEach(lang => {
+            document.getElementById('desc_' + lang).value = content[lang] || "";
+        });
+
+        alert("✅ 전체 내용 번역 완료! (내용이 잘리지 않았는지 확인하세요)");
+
+    } catch (error) {
+        console.error("번역 에러 상세:", error);
+        alert("번역 실패: " + error.message + "\n(잠시 후 다시 시도해보세요)");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "✨ 한국어 내용을 7개국어로 자동 번역하기";
+    }
 }
 window.resetForm = function(force = false) {
     if(!force && !confirm("신규 등록 하시겠습니까?")) return;
