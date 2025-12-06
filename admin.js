@@ -255,26 +255,96 @@ async function generateAndUploadQR(productId) {
         }, 500);
     });
 }
+// ==========================================
+// ✨ [신규] 랜덤 ID 생성기 (알파벳 대소문자 6자리)
+// ==========================================
+function generateRandomId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result; // 예: "aBgXyZ"
+}
+
+// ==========================================
+// 4. 저장 함수 (ID 자동 생성 및 중복 체크 로직 탑재)
+// ==========================================
 window.saveProduct = async function() {
-    const btn = document.getElementById('saveBtn'); const id = document.getElementById('productId').value.trim(); const name = document.getElementById('name').value;
-    if(!id || !name) return alert("ID와 상품명 필수");
+    const btn = document.getElementById('saveBtn');
+    let id = document.getElementById('productId').value.trim(); // 현재 ID 칸 값 확인
+    const name = document.getElementById('name').value;
+    const fileInput = document.getElementById('imageFile');
+    
+    if(!name) return alert("상품명은 필수입니다!");
+
     try {
-        btn.disabled = true; btn.innerText = "⏳ 저장 중...";
+        btn.disabled = true;
+        btn.innerText = "🔍 ID 생성 및 중복 확인 중...";
+
+        // 1. ID가 비어있다면(신규 등록), 랜덤 ID 생성 및 중복 검사
+        if (!id) {
+            let isUnique = false;
+            while (!isUnique) {
+                const tempId = generateRandomId();
+                // DB에 이 ID가 있는지 찔러봄
+                const checkDoc = await getDoc(doc(db, "products", tempId));
+                
+                if (!checkDoc.exists()) {
+                    // 중복 아님! 통과!
+                    id = tempId;
+                    isUnique = true;
+                } else {
+                    console.log("ID 중복 발생 (로또 당첨급 확률)! 다시 생성합니다: " + tempId);
+                    // 다시 while문 처음으로 돌아가서 새 ID 만듦
+                }
+            }
+            // 확정된 ID를 입력창에 보여줌
+            document.getElementById('productId').value = id;
+        }
+
+        btn.innerText = "⏳ 이미지 및 데이터 저장 중...";
+
+        // 2. 이미지 업로드 (기존 로직 동일)
         let imageUrl = "", qrImageUrl = "";
-        const fileInput = document.getElementById('imageFile');
         if (fileInput.files.length > 0) {
             let file = fileInput.files[0];
             try { file = await imageCompression(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1200 }); } catch (e) {}
-            const refImg = ref(storage, 'products/' + id + '.jpg'); await uploadBytes(refImg, file); imageUrl = await getDownloadURL(refImg);
+            const refImg = ref(storage, 'products/' + id + '.jpg');
+            await uploadBytes(refImg, file);
+            imageUrl = await getDownloadURL(refImg);
         }
-        if (document.getElementById('qrPreview').style.display === 'none') { try { qrImageUrl = await generateAndUploadQR(id); } catch(e){} }
-        
-        const data = { name, price: Number(document.getElementById('price').value), updatedAt: new Date() };
+
+        // 3. QR 생성 (기존 로직 동일)
+        const hasQr = document.getElementById('qrPreview').style.display !== 'none';
+        if (!hasQr) {
+            try { qrImageUrl = await generateAndUploadQR(id); } catch(e){} 
+        }
+
+        // 4. 데이터 준비
+        const data = { 
+            name: name, 
+            price: Number(document.getElementById('price').value), 
+            updatedAt: new Date() 
+        };
         ['kr','en','cn','jp','th','vn','id','mn'].forEach(l => data['desc_'+l] = document.getElementById('desc_'+l).value);
-        if(imageUrl) data.image = imageUrl; if(qrImageUrl) data.qrImage = qrImageUrl;
+        if(imageUrl) data.image = imageUrl;
+        if(qrImageUrl) data.qrImage = qrImageUrl;
+
+        // 5. 최종 저장
         await setDoc(doc(db, "products", id), data, { merge: true });
-        alert("✅ 저장 완료"); window.resetForm(true); loadProductList();
-    } catch (e) { alert("오류: " + e.message); } finally { btn.disabled = false; btn.innerText = "상품 및 QR 자동 저장하기"; }
+
+        alert(`✅ 저장 완료!\n생성된 ID: [ ${id} ]`);
+        
+        window.resetForm(true); 
+        loadProductList();
+
+    } catch (e) {
+        alert("오류: " + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "상품 및 QR 자동 저장하기";
+    }
 }
 window.downloadQR = async function(url, filename) {
     try {

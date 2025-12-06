@@ -159,7 +159,11 @@
 
     <div id="tab-register" class="tab-content active">
         <button class="btn btn-reset" onclick="resetForm()">🔄 입력창 비우기 (신규 등록)</button>
-        <div class="input-group"><label>상품 ID</label><input type="text" id="productId" placeholder="tylenol"></div>
+        <div class="input-group">
+            <label>상품 ID (자동 생성됨 - 수정 불가)</label>
+            <input type="text" id="productId" placeholder="저장 시 자동으로 생성됩니다" readonly 
+                   style="background-color: #e0e0e0; color: #555; cursor: not-allowed; font-weight: bold;">
+        </div>
         <div class="row">
             <div class="col input-group"><label>상품명</label><input type="text" id="name" placeholder="타이레놀"></div>
             <div class="col input-group"><label>가격</label><input type="number" id="price" placeholder="3500"></div>
