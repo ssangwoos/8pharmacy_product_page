@@ -93,21 +93,82 @@ window.saveSettings = async function() {
 document.getElementById('adminPassword').addEventListener("keypress", (e) => { if(e.key==="Enter") checkLogin(); });
 document.getElementById('supervisorPassword').addEventListener("keypress", (e) => { if(e.key==="Enter") checkSupervisorLogin(); });
 
+// ==========================================
+// ✨ 2. AI 번역 (업그레이드: 자동 재시도 기능 탑재)
+// ==========================================
 window.translateContent = async function() {
-    const krDesc = document.getElementById('desc_kr').value; const btn = document.querySelector('.ai-btn');
-    if(!krDesc) return alert("한국어 설명 필수");
-    let apiKey = ""; try { const docSnap = await getDoc(doc(db, "settings", "config")); if(docSnap.exists()) apiKey = docSnap.data().openai_key; } catch(e) {}
-    if(!apiKey) return alert("❌ API Key 없음");
+    const krDesc = document.getElementById('desc_kr').value;
+    const btn = document.querySelector('.ai-btn');
+
+    if(!krDesc) return alert("한국어 설명을 먼저 작성해주세요!");
+
+    let apiKey = "";
+    try { const docSnap = await getDoc(doc(db, "settings", "config")); if(docSnap.exists()) apiKey = docSnap.data().openai_key; } catch(e) {}
+    if(!apiKey) return alert("❌ API Key가 없습니다. 설정창에서 등록하세요.");
+
+    // ✨ 재시도 로직 함수
+    const fetchWithRetry = async (retries = 3) => {
+        try {
+            const prompt = `
+                Role: Professional Medical Translator.
+                Task: Translate Korean text to English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, Mongolian.
+                Rules: Keep original tone. Output pure JSON only. No markdown.
+                JSON keys: en, cn, jp, th, vn, id, mn.
+                Text: "${krDesc}"
+            `;
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                    model: "gpt-4o-mini", // ✨ 고품질 모델 유지
+                    messages: [{ role: "user", content: prompt }],
+                    temperature: 0.3
+                })
+            });
+
+            const data = await response.json();
+            
+            // 에러가 있으면 에러를 던져서 재시도 유도
+            if(data.error) throw new Error(data.error.message);
+            
+            return data;
+
+        } catch (err) {
+            if (retries > 0) {
+                console.log(`번역 실패.. ${retries}회 남음. 재시도 중...`);
+                // 1.5초 쉬고 재시도
+                await new Promise(r => setTimeout(r, 1500));
+                return fetchWithRetry(retries - 1);
+            } else {
+                throw err;
+            }
+        }
+    };
+
     try {
-        btn.disabled = true; btn.innerText = "🤖 번역 중...";
-        const prompt = `Translate Korean to English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, Mongolian. JSON keys: en, cn, jp, th, vn, id, mn. Text: "${krDesc}"`;
-        const res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], temperature: 0.3 }) });
-        const data = await res.json();
-        let rawContent = data.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
+        btn.disabled = true;
+        btn.innerText = "🤖 꼼꼼하게 번역 중... (잠시만요)";
+
+        const data = await fetchWithRetry(); // ✨ 재시도 기능 실행
+
+        let rawContent = data.choices[0].message.content;
+        rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
         const content = JSON.parse(rawContent);
-        ['en','cn','jp','th','vn','id','mn'].forEach(l => document.getElementById('desc_'+l).value = content[l] || "");
-        alert("✅ 번역 완료");
-    } catch (error) { alert("번역 실패"); } finally { btn.disabled = false; btn.innerText = "✨ AI 번역"; }
+
+        ['en','cn','jp','th','vn','id','mn'].forEach(lang => {
+            document.getElementById('desc_' + lang).value = content[lang] || "";
+        });
+
+        alert("✅ 번역 완료! (내용을 확인해주세요)");
+
+    } catch (error) {
+        console.error("최종 번역 실패:", error);
+        alert("번역에 실패했습니다.\n잠시 후 다시 시도하거나, 내용이 너무 길지 않은지 확인해주세요.\n오류: " + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "✨ AI 번역";
+    }
 }
 
 // ✨ [수정] resetForm 함수: ID칸을 흰색으로 풀지 않고 회색(잠금) 유지
