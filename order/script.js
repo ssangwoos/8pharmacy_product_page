@@ -1,11 +1,10 @@
 /* ==========================================================================
-   [1] Firebase 설정 및 라이브러리 임포트
+   [1] Firebase 설정
    ========================================================================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, updateDoc, doc, query, where, orderBy, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// ★ 중요: 본인의 Firebase 키값으로 꼭 변경해주세요!
 const firebaseConfig = {
     apiKey: "AIzaSyA250TRzQCM9FMqiXBROX3IknKE1FZp5rc", 
     authDomain: "pharmacy-order-5ddc5.firebaseapp.com",
@@ -20,143 +19,77 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 console.log("🔥 Firebase Connected!");
 
+/* [2] 전역 변수 */
+let currentProduct = null; let currentQty = 1; let currentOptionPrice = 0; let currentOptionId = null;
+let cartItems = []; let deletedItemBackup = null; let undoTimeout = null;
+let calDate = new Date(); let selectedDateStr = null; 
+let currentSupplierId = null; let editingProductId = null; let allProductsData = []; 
+let currentPhotoReqId = null; let tempUploadFile = null;
+let allSuppliersData = []; // [New] 거래처 검색용
 
-/* ==========================================================================
-   [2] 전역 변수 선언
-   ========================================================================== */
-// 주문 관련
-let currentProduct = null;      
-let currentQty = 1;             
-let currentOptionPrice = 0;     
-let currentOptionId = null;     
-let cartItems = [];             
-
-// 장바구니 실행 취소
-let deletedItemBackup = null;   
-let undoTimeout = null;         
-
-// 달력/기록 관련
-let calDate = new Date(); 
-let selectedDateStr = null; 
-
-// 관리자 관련
-let currentSupplierId = null;
-let editingProductId = null; 
-let allProductsData = []; // 상품 검색용
-
-// [New] 거래처 검색용 데이터
-let allSuppliersData = []; 
-
-// 사진 요청 관련
-let currentPhotoReqId = null; 
-let tempUploadFile = null;
-
-
-/* ==========================================================================
-   [3] 공통 초기화
-   ========================================================================== */
+/* [3] 초기화 */
 document.querySelectorAll('[id^="btn-close"]').forEach(btn => {
     btn.addEventListener('click', (e) => {
         const modal = e.target.closest('[id$="-modal"]');
         if(modal) modal.style.display = 'none';
     });
 });
-
 const viewer = document.getElementById('photo-viewer-modal');
 if(viewer) {
     viewer.addEventListener('click', (e) => { if(e.target === viewer) viewer.style.display = 'none'; });
     viewer.querySelector('#viewer-close').addEventListener('click', () => viewer.style.display = 'none');
 }
 
-
-/* ==========================================================================
-   [4] 데이터 불러오기 (상품 목록)
-   ========================================================================== */
+/* [4] 데이터 로드 (상품) */
 async function loadProducts() {
     const listContainer = document.getElementById('product-list');
     if(listContainer) listContainer.innerHTML = "<div style='padding:20px; text-align:center'>로딩중...</div>";
-
     try {
         const querySnapshot = await getDocs(collection(db, "products"));
         let products = [];
-        querySnapshot.forEach(doc => {
-            products.push({ id: doc.id, ...doc.data() });
-        });
-
+        querySnapshot.forEach(doc => products.push({ id: doc.id, ...doc.data() }));
         allProductsData = products; 
-
-        renderMainTree(products); 
-        renderAdminList(products); 
-
-    } catch (error) { console.error("Error loading products:", error); }
+        renderMainTree(products); renderAdminList(products); 
+    } catch (error) { console.error("Error:", error); }
 }
-
+// (기존 트리 렌더링 유지)
 function renderMainTree(productsToRender) {
     const listContainer = document.getElementById('product-list');
     if(!listContainer) return;
-
     const tree = {};
     productsToRender.forEach(p => {
-        const cat = p.category || "기타";
-        const comp = p.company || "미지정";
-        if (!tree[cat]) tree[cat] = {};
-        if (!tree[cat][comp]) tree[cat][comp] = [];
+        const cat = p.category || "기타"; const comp = p.company || "미지정";
+        if (!tree[cat]) tree[cat] = {}; if (!tree[cat][comp]) tree[cat][comp] = [];
         tree[cat][comp].push(p);
     });
-
     listContainer.innerHTML = ""; 
     const isSearchMode = (productsToRender.length < allProductsData.length) && (productsToRender.length > 0);
     const fixedOrder = ["전문의약품", "일반의약품", "의약외품"];
     const allCategories = Object.keys(tree);
-    const sortedCategories = [
-        ...fixedOrder.filter(key => allCategories.includes(key)),
-        ...allCategories.filter(key => !fixedOrder.includes(key)).sort()
-    ];
+    const sortedCategories = [ ...fixedOrder.filter(key => allCategories.includes(key)), ...allCategories.filter(key => !fixedOrder.includes(key)).sort() ];
 
-    if(productsToRender.length === 0) {
-        listContainer.innerHTML = "<div style='padding:20px; text-align:center; color:#ccc;'>검색 결과가 없습니다.</div>";
-        return;
-    }
+    if(productsToRender.length === 0) { listContainer.innerHTML = "<div style='padding:20px; text-align:center;'>결과 없음</div>"; return; }
 
     sortedCategories.forEach(categoryName => {
         const catDiv = document.createElement("div");
-        catDiv.className = "tree-node tree-depth-0 tree-toggle"; 
-        catDiv.textContent = categoryName;
+        catDiv.className = "tree-node tree-depth-0 tree-toggle"; catDiv.textContent = categoryName;
         const catChildContainer = document.createElement("div");
-        catChildContainer.style.display = isSearchMode ? "block" : "none"; 
-        if(isSearchMode) catDiv.classList.add('open');
-
-        catDiv.addEventListener("click", () => {
-            catDiv.classList.toggle("open");
-            catChildContainer.style.display = catChildContainer.style.display === "none" ? "block" : "none";
-        });
-        listContainer.appendChild(catDiv);
-        listContainer.appendChild(catChildContainer);
-
+        catChildContainer.style.display = isSearchMode ? "block" : "none"; if(isSearchMode) catDiv.classList.add('open');
+        catDiv.addEventListener("click", () => { catDiv.classList.toggle("open"); catChildContainer.style.display = catChildContainer.style.display === "none" ? "block" : "none"; });
+        listContainer.appendChild(catDiv); listContainer.appendChild(catChildContainer);
         const companies = tree[categoryName];
         Object.keys(companies).sort().forEach(companyName => {
             const compDiv = document.createElement("div");
-            compDiv.className = "tree-node tree-depth-1 tree-toggle";
-            compDiv.textContent = companyName;
+            compDiv.className = "tree-node tree-depth-1 tree-toggle"; compDiv.textContent = companyName;
             const compChildContainer = document.createElement("div");
-            compChildContainer.style.display = isSearchMode ? "block" : "none";
-            if(isSearchMode) compDiv.classList.add('open');
-
-            compDiv.addEventListener("click", (e) => {
-                e.stopPropagation(); 
-                compDiv.classList.toggle("open");
-                compChildContainer.style.display = compChildContainer.style.display === "none" ? "block" : "none";
-            });
-            catChildContainer.appendChild(compDiv);
-            catChildContainer.appendChild(compChildContainer);
-
+            compChildContainer.style.display = isSearchMode ? "block" : "none"; if(isSearchMode) compDiv.classList.add('open');
+            compDiv.addEventListener("click", (e) => { e.stopPropagation(); compDiv.classList.toggle("open"); compChildContainer.style.display = compChildContainer.style.display === "none" ? "block" : "none"; });
+            catChildContainer.appendChild(compDiv); catChildContainer.appendChild(compChildContainer);
             const itemList = companies[companyName];
             itemList.sort((a, b) => a.name.localeCompare(b.name));
-
             itemList.forEach(item => {
                 const itemDiv = document.createElement("div");
-                itemDiv.className = "tree-node tree-depth-2";
-                itemDiv.setAttribute("data-id", item.id);
+                itemDiv.className = "tree-node tree-depth-2"; itemDiv.setAttribute("data-id", item.id);
                 let displayName = item.name;
                 if(item.stock === false) displayName = `<span style="color:red">[품절]</span> ${item.name}`;
                 itemDiv.innerHTML = displayName;
@@ -166,28 +99,15 @@ function renderMainTree(productsToRender) {
         });
     });
 }
-
 const mainSearchInput = document.getElementById('main-search-input');
 if(mainSearchInput) {
     mainSearchInput.addEventListener('input', (e) => {
         const keyword = e.target.value.toLowerCase().trim();
-        if(keyword.length > 0) {
-            const orderTab = document.querySelector('.menu-item[data-target="order-mgmt"]');
-            if(orderTab) orderTab.click();
-        } else {
-            renderMainTree(allProductsData);
-            return;
-        }
-        if(!allProductsData || allProductsData.length === 0) return;
-        const filtered = allProductsData.filter(p => 
-            (p.name && p.name.toLowerCase().includes(keyword)) || 
-            (p.company && p.company.toLowerCase().includes(keyword)) || 
-            (p.category && p.category.toLowerCase().includes(keyword))
-        );
+        if(keyword.length > 0) { const orderTab = document.querySelector('.menu-item[data-target="order-mgmt"]'); if(orderTab) orderTab.click(); } else { renderMainTree(allProductsData); return; }
+        const filtered = allProductsData.filter(p => (p.name && p.name.toLowerCase().includes(keyword)) || (p.company && p.company.toLowerCase().includes(keyword)) || (p.category && p.category.toLowerCase().includes(keyword)));
         renderMainTree(filtered);
     });
 }
-
 function focusProductInTree(product, optionId = null) {
     if(currentPhotoReqId) {
         if(confirm(`선택한 사진 요청을 '${product.name}' 상품과 매칭하시겠습니까?`)) {
@@ -204,11 +124,7 @@ function focusProductInTree(product, optionId = null) {
             let parent = targetNode.parentElement;
             while(parent) {
                 if(parent.id === 'product-list') break;
-                if(parent.style.display === 'none') {
-                    parent.style.display = 'block';
-                    const toggleBtn = parent.previousElementSibling;
-                    if(toggleBtn && toggleBtn.classList.contains('tree-toggle')) toggleBtn.classList.add('open');
-                }
+                if(parent.style.display === 'none') { parent.style.display = 'block'; const toggleBtn = parent.previousElementSibling; if(toggleBtn) toggleBtn.classList.add('open'); }
                 parent = parent.parentElement;
             }
             targetNode.scrollIntoView({behavior: "smooth", block: "center"});
@@ -216,86 +132,53 @@ function focusProductInTree(product, optionId = null) {
     }, 100);
 }
 
-
-/* ==========================================================================
-   [5] 상세 화면 & 장바구니
-   ========================================================================== */
+/* [5] 상세화면 & 장바구니 */
 function displayOrderForm(item, targetOptionId = null, photoReqId = null) {
-    currentProduct = item; 
-    currentQty = 1; 
-
+    currentProduct = item; currentQty = 1; 
     document.getElementById('detail-empty').style.display = 'none';
     document.getElementById('detail-content').style.display = 'flex'; 
     document.getElementById('detail-category').textContent = item.category;
     document.getElementById('detail-name').textContent = item.name;
     document.getElementById('detail-company').textContent = item.company;
-
     const header = document.querySelector('.order-header');
     if(photoReqId) {
-        header.style.backgroundColor = "#fff8e1"; 
-        header.style.border = "1px solid #f39c12"; 
-        header.style.padding = "10px";
+        header.style.backgroundColor = "#fff8e1"; header.style.border = "1px solid #f39c12"; header.style.padding = "10px";
         header.setAttribute('data-photo-req-id', photoReqId); 
         document.getElementById('detail-name').innerHTML = `${item.name} <span style="font-size:0.8rem; color:#e67e22;">(사진 매칭중)</span>`;
     } else {
-        header.style.backgroundColor = "transparent"; 
-        header.style.border = "none"; 
-        header.removeAttribute('data-photo-req-id');
+        header.style.backgroundColor = "transparent"; header.style.border = "none"; header.removeAttribute('data-photo-req-id');
     }
-
     const optionContainer = document.getElementById('option-list-container');
     optionContainer.innerHTML = ""; 
     const options = item.options || []; 
-
-    if(options.length === 0) {
-        optionContainer.innerHTML = "<div style='padding:20px; color:#aaa; text-align:center;'>옵션 없음</div>";
-        document.getElementById('order-total-price').textContent = "0원";
-        return;
-    }
-
+    if(options.length === 0) { optionContainer.innerHTML = "<div style='padding:20px; color:#aaa; text-align:center;'>옵션 없음</div>"; document.getElementById('order-total-price').textContent = "0원"; return; }
     options.forEach((opt, index) => {
-        const card = document.createElement('div');
-        card.className = 'option-card';
+        const card = document.createElement('div'); card.className = 'option-card';
         const lastOrderHtml = opt.lastOrder ? `<div style="font-size:0.8rem; color:#aaa; margin-top:4px;">최근: ${opt.lastOrder}</div>` : "";
         card.innerHTML = `<div style="flex:1;"><div class="option-name">${opt.name}</div>${lastOrderHtml}</div><div style="text-align:right;"><div class="option-price">${Number(opt.price).toLocaleString()}원</div></div>`;
-        
         let isSelected = false;
         if(targetOptionId) { if(opt.id === targetOptionId) isSelected = true; } else { if(index === 0) isSelected = true; }
         if(isSelected) { card.classList.add('selected'); currentOptionPrice = Number(opt.price); currentOptionId = opt.id; }
-
         card.addEventListener('click', () => {
             document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
-            currentQty = 1; 
-            document.getElementById('order-qty').value = 1;
-            currentOptionPrice = Number(opt.price); 
-            currentOptionId = opt.id; 
-            updateTotalPrice();
+            currentQty = 1; document.getElementById('order-qty').value = 1;
+            currentOptionPrice = Number(opt.price); currentOptionId = opt.id; updateTotalPrice();
         });
         optionContainer.appendChild(card);
     });
-    
-    if(options.length > 0 && !targetOptionId) {
-        currentOptionPrice = Number(options[0].price);
-        currentOptionId = options[0].id;
-    }
-    document.getElementById('order-qty').value = 1;
-    updateTotalPrice();
+    if(options.length > 0 && !targetOptionId) { currentOptionPrice = Number(options[0].price); currentOptionId = options[0].id; }
+    document.getElementById('order-qty').value = 1; updateTotalPrice();
 }
-
 function updateTotalPrice() {
     const total = currentOptionPrice * currentQty;
     document.getElementById('order-total-price').textContent = total.toLocaleString() + "원";
 }
 document.getElementById('qty-plus').addEventListener('click', () => { currentQty++; document.getElementById('order-qty').value = currentQty; updateTotalPrice(); });
 document.getElementById('qty-minus').addEventListener('click', () => { if(currentQty > 1) currentQty--; document.getElementById('order-qty').value = currentQty; updateTotalPrice(); });
-document.getElementById('order-qty').addEventListener('input', function() {
-    let val = parseInt(this.value);
-    if(isNaN(val) || val < 1) val = 1; 
-    currentQty = val; 
-    updateTotalPrice();
-});
+document.getElementById('order-qty').addEventListener('input', function() { let val = parseInt(this.value); if(isNaN(val) || val < 1) val = 1; currentQty = val; updateTotalPrice(); });
 
+// 장바구니 추가
 const btnAddCart = document.getElementById('btn-add-cart');
 if(btnAddCart) btnAddCart.addEventListener('click', async () => {
     if(!currentProduct || !currentOptionId) return;
@@ -303,40 +186,30 @@ if(btnAddCart) btnAddCart.addEventListener('click', async () => {
     const optionName = selectedOptionEl ? selectedOptionEl.querySelector('.option-name').textContent : "기본옵션";
     const header = document.querySelector('.order-header');
     const photoReqId = header.getAttribute('data-photo-req-id'); 
-    const newItem = { 
-        cartId: Date.now(), 
-        optionId: currentOptionId, 
-        product: currentProduct, 
-        optionName: optionName, 
-        qty: currentQty, 
-        unitPrice: currentOptionPrice, 
-        totalPrice: currentOptionPrice * currentQty, 
-        photoReqId: photoReqId 
-    };
-
+    const newItem = { cartId: Date.now(), optionId: currentOptionId, product: currentProduct, optionName: optionName, qty: currentQty, unitPrice: currentOptionPrice, totalPrice: currentOptionPrice * currentQty, photoReqId: photoReqId };
     const existingIndex = cartItems.findIndex(i => i.optionId === currentOptionId && i.photoReqId === photoReqId);
-    if(existingIndex !== -1) {
-        cartItems[existingIndex].qty += currentQty;
-        cartItems[existingIndex].totalPrice = cartItems[existingIndex].unitPrice * cartItems[existingIndex].qty;
-    } else {
-        cartItems.push(newItem);
-    }
+    if(existingIndex !== -1) { cartItems[existingIndex].qty += currentQty; cartItems[existingIndex].totalPrice = cartItems[existingIndex].unitPrice * cartItems[existingIndex].qty; } else { cartItems.push(newItem); }
     renderCart(currentOptionId);
-
     if(photoReqId) {
         try {
-            await updateDoc(doc(db, "photo_requests", photoReqId), { 
-                status: "processed", 
-                matchedProduct: currentProduct.name, 
-                completedAt: new Date() 
-            });
-            currentPhotoReqId = null;
-            header.style.backgroundColor = "transparent"; header.style.border = "none"; header.removeAttribute('data-photo-req-id');
+            await updateDoc(doc(db, "photo_requests", photoReqId), { status: "processed", matchedProduct: currentProduct.name, completedAt: new Date() });
+            currentPhotoReqId = null; header.style.backgroundColor = "transparent"; header.style.border = "none"; header.removeAttribute('data-photo-req-id');
             document.getElementById('detail-name').textContent = currentProduct.name;
-            alert("사진 요청이 처리되어 장바구니에 담겼습니다.");
+            alert("사진 요청 처리 완료");
         } catch(e) { console.error("사진 업데이트 실패:", e); }
     }
 });
+
+// [New] 주문 화면 리셋 함수
+function resetOrderDetail() {
+    document.getElementById('detail-empty').style.display = 'block'; // 안내문구 보이기
+    document.getElementById('detail-content').style.display = 'none'; // 내용 숨기기
+    // 변수 초기화
+    currentProduct = null;
+    currentQty = 1;
+    currentOptionPrice = 0;
+    currentOptionId = null;
+}
 
 function renderCart(highlightId = null) {
     const cartList = document.getElementById('cart-list');
@@ -354,36 +227,211 @@ function renderCart(highlightId = null) {
     document.getElementById('cart-total-price').textContent = totalAmount.toLocaleString() + "원";
     document.getElementById('cart-count').textContent = cartItems.length;
 }
-
-window.deleteCartItem = function(index) {
-    const card = document.querySelectorAll('.cart-item-card')[index];
-    deletedItemBackup = { item: cartItems[index], optionId: cartItems[index].optionId };
-    if(card) card.classList.add('deleting');
-    setTimeout(() => { cartItems.splice(index, 1); renderCart(); showUndoNotification(); }, 200);
-};
-
-function showUndoNotification() {
-    const undoArea = document.getElementById('undo-area');
-    undoArea.style.display = 'block';
-    if(undoTimeout) clearTimeout(undoTimeout);
-    undoTimeout = setTimeout(() => { undoArea.style.display = 'none'; deletedItemBackup = null; }, 5000);
-}
+window.deleteCartItem = function(index) { const card = document.querySelectorAll('.cart-item-card')[index]; deletedItemBackup = { item: cartItems[index], optionId: cartItems[index].optionId }; if(card) card.classList.add('deleting'); setTimeout(() => { cartItems.splice(index, 1); renderCart(); showUndoNotification(); }, 200); };
+function showUndoNotification() { const undoArea = document.getElementById('undo-area'); undoArea.style.display = 'block'; if(undoTimeout) clearTimeout(undoTimeout); undoTimeout = setTimeout(() => { undoArea.style.display = 'none'; deletedItemBackup = null; }, 5000); }
 if(document.getElementById('btn-undo')) document.getElementById('btn-undo').addEventListener('click', () => { if(deletedItemBackup) { cartItems.push(deletedItemBackup.item); renderCart(deletedItemBackup.optionId); document.getElementById('undo-area').style.display = 'none'; } });
 
+// [수정됨] 주문 완료 (DB저장 + 리셋)
 if(document.getElementById('btn-order-complete')) {
     document.getElementById('btn-order-complete').addEventListener('click', async () => {
         if(cartItems.length === 0) return;
         if(!confirm(`총 ${cartItems.length}건 주문완료?`)) return;
         const now = new Date();
         const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-        try { await addDoc(collection(db, "order_history"), { date: dateStr, timestamp: now, items: cartItems }); cartItems = []; renderCart(); } catch(e) { console.error(e); alert("주문 저장 실패"); }
+        try { 
+            await addDoc(collection(db, "order_history"), { date: dateStr, timestamp: now, items: cartItems }); 
+            cartItems = []; 
+            renderCart();
+            resetOrderDetail(); // ★ 화면 리셋 호출
+        } catch(e) { console.error(e); alert("저장 실패"); }
     });
 }
 
+/* [7] 로그 */
+function subscribeToRecentLogs() {
+    const logContainer = document.getElementById('completed-order-list');
+    const q = query(collection(db, "order_history"), orderBy("timestamp", "desc"), limit(50));
+    onSnapshot(q, (snapshot) => {
+        logContainer.innerHTML = "";
+        if(snapshot.empty) { logContainer.innerHTML = '<div style="color:#aaa; padding:10px;">기록 없음</div>'; return; }
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const dateObj = data.timestamp.toDate();
+            const timeStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
+            data.items.forEach(item => {
+                const div = document.createElement('div'); div.className = 'log-item';
+                div.innerHTML = `<div style="display:flex; align-items:center;"><span class="log-time">[${timeStr}]</span><strong>${item.product.name}</strong><span style="color:#888; font-size:0.85rem; margin-left:4px;">(${item.product.company})</span><span style="color:#666; margin-left:5px;">(${item.qty})</span></div><div><span class="log-status">완료</span><button class="btn-log-restore">취소</button></div>`;
+                div.querySelector('.btn-log-restore').addEventListener('click', async () => { if(confirm("취소?")) { cartItems.push(item); renderCart(item.optionId); await deleteDoc(doc(db, "order_history", docSnap.id)); } });
+                logContainer.appendChild(div);
+            });
+        });
+    });
+}
 
-/* ==========================================================================
-   [6] 거래처 관리 & 상품 등록 (검색 및 수정 완벽 구현)
-   ========================================================================== */
+/* [8] 사진 업로드 */
+const btnCamera = document.getElementById('btn-camera-floating');
+const cameraInput = document.getElementById('file-input-camera'); 
+const inputGallery = document.getElementById('file-input-gallery');
+const loadingSpinner = document.getElementById('loading-spinner');
+const sourceModal = document.getElementById('source-select-modal');
+
+function openSourceModal() { if(sourceModal) sourceModal.style.display = 'flex'; }
+if(btnCamera) btnCamera.addEventListener('click', openSourceModal);
+if(document.getElementById('btn-select-camera')) document.getElementById('btn-select-camera').onclick = () => { sourceModal.style.display = 'none'; if(cameraInput) cameraInput.click(); };
+if(document.getElementById('btn-select-gallery')) document.getElementById('btn-select-gallery').onclick = () => { sourceModal.style.display = 'none'; if(inputGallery) inputGallery.click(); };
+if(document.getElementById('btn-select-cancel')) document.getElementById('btn-select-cancel').onclick = () => { sourceModal.style.display = 'none'; };
+
+async function handleFileUpload(e) {
+    const file = e.target.files[0]; if(!file) return;
+    window.tempUploadFile = file; 
+    const reader = new FileReader();
+    reader.onload = (event) => { const img = document.getElementById('upload-preview-img'); if(img) img.src = event.target.result; };
+    reader.readAsDataURL(file);
+    document.getElementById('upload-note').value = "";
+    document.getElementById('upload-confirm-modal').style.display = 'flex';
+    e.target.value = '';
+}
+if(cameraInput) cameraInput.addEventListener('change', handleFileUpload);
+if(inputGallery) inputGallery.addEventListener('change', handleFileUpload);
+if(document.getElementById('btn-upload-cancel')) document.getElementById('btn-upload-cancel').addEventListener('click', () => { document.getElementById('upload-confirm-modal').style.display = 'none'; window.tempUploadFile = null; });
+if(document.getElementById('btn-upload-confirm')) {
+    const btn = document.getElementById('btn-upload-confirm');
+    const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', async () => {
+        const file = window.tempUploadFile; if(!file) return;
+        const note = document.getElementById('upload-note').value;
+        document.getElementById('upload-confirm-modal').style.display = 'none';
+        const options = { maxSizeMB: 1, maxWidthOrHeight: 1024, useWebWorker: true };
+        try {
+            if(loadingSpinner) loadingSpinner.style.display = 'flex';
+            const compressedFile = await imageCompression(file, options);
+            const storageRef = ref(storage, `photo_requests/${Date.now()}_${file.name}`);
+            await uploadBytes(storageRef, compressedFile);
+            const downloadURL = await getDownloadURL(storageRef);
+            await addDoc(collection(db, "photo_requests"), { imageUrl: downloadURL, timestamp: new Date(), status: 'pending', note: note });
+            if(loadingSpinner) loadingSpinner.style.display = 'none';
+            alert("전송 완료");
+        } catch(error) { console.error(error); if(loadingSpinner) loadingSpinner.style.display = 'none'; alert("오류"); }
+    });
+}
+function formatShortTime(timestamp) {
+    if(!timestamp) return "";
+    const d = timestamp.toDate();
+    return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function subscribeToPhotoRequests() {
+    const queueContainer = document.getElementById('photo-grid'); 
+    if(!queueContainer) return;
+    const threeDaysAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
+    const q = query(collection(db, "photo_requests"), where("timestamp", ">", threeDaysAgo), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+        queueContainer.innerHTML = "";
+        if(snapshot.empty) { queueContainer.innerHTML = "<div style='grid-column:1/-1; text-align:center; color:#ccc; padding:50px;'>요청 내역이 없습니다.</div>"; return; }
+        let photoList = [];
+        snapshot.forEach(docSnap => photoList.push({ id: docSnap.id, ...docSnap.data(), docSnap: docSnap }));
+        photoList.sort((a, b) => {
+            const statusOrder = { 'pending': 1, 'hold': 2, 'processed': 3 };
+            if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status];
+            return b.timestamp.seconds - a.timestamp.seconds; 
+        });
+        photoList.forEach(data => {
+            const div = document.createElement('div');
+            let statusClass = 'pending'; if(data.status === 'hold') statusClass = 'hold'; if(data.status === 'processed') statusClass = 'done';
+            div.className = `order-book-item ${statusClass}`;
+            const reqTime = formatShortTime(data.timestamp);
+            const doneTime = data.completedAt ? formatShortTime(data.completedAt) : "";
+            const noteHtml = data.note ? `<div class="photo-note-label">${data.note}</div>` : "";
+            div.innerHTML = `<img src="${data.imageUrl}"><div class="photo-time-label time-top">요청: ${reqTime}</div>${statusClass === 'done' ? `<div class="photo-time-label time-bottom">완료: ${doneTime}</div>` : ''}${noteHtml}`;
+            div.addEventListener('click', () => showPhotoViewer(data.id, data.imageUrl, data.status, data.note));
+            queueContainer.appendChild(div);
+        });
+    });
+}
+function showPhotoViewer(docId, imageUrl, currentStatus, note) {
+    let viewer = document.getElementById('photo-viewer-modal');
+    if(!viewer) {
+        viewer = document.createElement('div'); viewer.id = 'photo-viewer-modal';
+        viewer.style.cssText = "display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:99999; align-items:center; justify-content:center; flex-direction:column;";
+        document.body.appendChild(viewer);
+    }
+    viewer.innerHTML = `<div style="position:relative; max-width:90%; max-height:70%;"><img id="viewer-img" src="${imageUrl}" style="max-width:100%; max-height:70vh; border-radius:8px;"><button id="viewer-close" style="position:absolute; top:-40px; right:0; background:none; border:none; color:white; font-size:2.5rem; cursor:pointer;">&times;</button></div><div id="viewer-note" style="background:rgba(255,255,255,0.9); padding:10px 20px; border-radius:20px; margin-top:15px; font-weight:bold; color:#333; max-width:90%; text-align:center; display:${note ? 'block' : 'none'}">📝 메모: ${note || ''}</div><div id="viewer-buttons" style="margin-top:15px; display:flex; gap:10px;"></div>`;
+    const btnContainer = viewer.querySelector('#viewer-buttons');
+    const createBtn = (text, color, action) => {
+        const btn = document.createElement('button'); btn.textContent = text;
+        btn.style.cssText = `padding:12px 20px; font-size:1.1rem; border-radius:30px; border:none; cursor:pointer; font-weight:bold; color:white; background-color:${color}; box-shadow:0 4px 10px rgba(0,0,0,0.3);`;
+        btn.onclick = action; return btn;
+    };
+    const updateStatus = async (newStatus, requireReason = false) => {
+        let noteUpdate = {};
+        if(requireReason) { const reason = prompt("보류 사유"); if(reason === null) return; noteUpdate.note = reason; }
+        const updateData = { status: newStatus, ...noteUpdate };
+        if(newStatus === 'processed') updateData.completedAt = new Date(); else if(newStatus === 'pending') updateData.completedAt = null;
+        try { await updateDoc(doc(db, "photo_requests", docId), updateData); viewer.style.display = 'none'; } catch(e) { alert("오류"); }
+    };
+    if(currentStatus === 'pending') { btnContainer.appendChild(createBtn('주문완료', '#27ae60', () => updateStatus('processed'))); btnContainer.appendChild(createBtn('주문보류', '#f39c12', () => updateStatus('hold', true))); } 
+    else if(currentStatus === 'hold') { btnContainer.appendChild(createBtn('주문완료', '#27ae60', () => updateStatus('processed'))); btnContainer.appendChild(createBtn('대기로 복구', '#34495e', () => updateStatus('pending'))); }
+    else { btnContainer.appendChild(createBtn('주문취소 (복구)', '#e74c3c', () => updateStatus('pending'))); }
+    viewer.querySelector('#viewer-close').onclick = () => viewer.style.display = 'none';
+    viewer.onclick = (e) => { if(e.target === viewer) viewer.style.display = 'none'; };
+    viewer.style.display = 'flex';
+}
+
+/* [9] 관리자 & 거래처 관리 (수정됨: 검색 + SMS 버튼) */
+const adminSearchInput = document.getElementById('admin-product-search');
+if(adminSearchInput) {
+    adminSearchInput.addEventListener('input', (e) => {
+        const keyword = e.target.value.toLowerCase();
+        const filtered = allProductsData.filter(p => p.name.toLowerCase().includes(keyword) || p.company.toLowerCase().includes(keyword) || p.category.toLowerCase().includes(keyword));
+        renderAdminList(filtered);
+    });
+}
+// [수정] 거래처 로드 (전역변수 저장)
+async function loadSuppliers() {
+    const listContainer = document.getElementById('supplier-list');
+    if(!listContainer) return;
+    listContainer.innerHTML = "<div style='text-align:center;'>로딩중...</div>";
+    try {
+        const supSnapshot = await getDocs(collection(db, "suppliers"));
+        let suppliers = [];
+        supSnapshot.forEach(doc => suppliers.push({ id: doc.id, ...doc.data() }));
+        const prodSnapshot = await getDocs(collection(db, "products"));
+        const companyProductMap = {}; 
+        prodSnapshot.forEach(doc => { const p = { id: doc.id, ...doc.data() }; const comp = p.company || "미지정"; if(!companyProductMap[comp]) companyProductMap[comp] = []; companyProductMap[comp].push(p); });
+        
+        suppliers.forEach(sup => { sup.products = companyProductMap[sup.name] || []; });
+        allSuppliersData = suppliers; // 검색용 저장
+        
+        document.getElementById('sup-total-count').textContent = suppliers.length;
+        renderSupplierList(suppliers);
+
+    } catch (e) { console.error(e); }
+}
+
+// [New] 거래처 리스트 렌더링 (검색 및 SMS 버튼 추가)
+function renderSupplierList(suppliersToRender) {
+    const listContainer = document.getElementById('supplier-list');
+    listContainer.innerHTML = "";
+    if(suppliersToRender.length === 0) { listContainer.innerHTML = "<div style='text-align:center; padding:20px; color:#aaa;'>결과 없음</div>"; return; }
+    
+    suppliersToRender.sort((a, b) => a.name.localeCompare(b.name));
+
+    suppliersToRender.forEach(sup => {
+        const div = document.createElement('div'); div.className = 'supplier-card';
+        let tagsHtml = "";
+        const products = sup.products || [];
+        products.slice(0, 10).forEach(p => tagsHtml += `<span class="product-tag-chip" onclick="event.stopPropagation(); triggerTagAction('${p.id}')">#${p.name}</span>`);
+        if(products.length > 10) tagsHtml += `<span style="font-size:0.7rem; color:#888;">+${products.length - 10} more</span>`;
+        if(products.length === 0) tagsHtml = `<span style="font-size:0.75rem; color:#ccc;">상품 없음</span>`;
+        
+        // [New] 리스트에 문자 버튼 추가
+        const smsBtn = sup.curManagerPhone ? `<a href="sms:${sup.curManagerPhone}" onclick="event.stopPropagation()" class="btn-sms" style="margin-left:5px; font-size:1rem; width:24px; height:24px; background:#2ecc71;">✉️</a>` : '';
+
+        div.innerHTML = `<div class="sup-header"><div class="sup-name">${sup.name}</div></div><div class="sup-manager-info" style="display:flex; align-items:center;">👤 ${sup.curManagerName || '-'} (${sup.curManagerPhone || '-'}) ${smsBtn}</div><div class="sup-product-tags">${tagsHtml}</div>`;
+        div.addEventListener('click', () => { document.querySelectorAll('.supplier-card').forEach(c => c.classList.remove('active')); div.classList.add('active'); fillSupplierForm(sup); });
+        listContainer.appendChild(div);
+    });
+}
+
 // [New] 거래처 검색 리스너
 const supplierSearchInput = document.getElementById('supplier-search');
 if(supplierSearchInput) {
@@ -398,81 +446,7 @@ if(supplierSearchInput) {
     });
 }
 
-// 거래처 로드 (상품 매핑 포함)
-async function loadSuppliers() {
-    const listContainer = document.getElementById('supplier-list');
-    if(!listContainer) return;
-    listContainer.innerHTML = "<div style='text-align:center; padding:20px; color:#aaa;'>로딩중...</div>";
-    try {
-        const supSnapshot = await getDocs(collection(db, "suppliers"));
-        let suppliers = [];
-        supSnapshot.forEach(doc => suppliers.push({ id: doc.id, ...doc.data() }));
-        
-        const prodSnapshot = await getDocs(collection(db, "products"));
-        const companyProductMap = {}; 
-        prodSnapshot.forEach(doc => {
-            const p = { id: doc.id, ...doc.data() };
-            const comp = p.company || "미지정";
-            if(!companyProductMap[comp]) companyProductMap[comp] = [];
-            companyProductMap[comp].push(p);
-        });
-
-        suppliers.forEach(sup => { sup.products = companyProductMap[sup.name] || []; });
-        
-        // 전역 변수에 저장
-        allSuppliersData = suppliers;
-        document.getElementById('sup-total-count').textContent = suppliers.length;
-        
-        renderSupplierList(allSuppliersData); // 화면 그리기
-
-    } catch (e) { console.error(e); }
-}
-
-function renderSupplierList(suppliersToRender) {
-    const listContainer = document.getElementById('supplier-list');
-    listContainer.innerHTML = "";
-    
-    if(suppliersToRender.length === 0) {
-        listContainer.innerHTML = "<div style='text-align:center; padding:20px; color:#aaa;'>검색 결과가 없습니다.</div>";
-        return;
-    }
-
-    suppliersToRender.sort((a, b) => a.name.localeCompare(b.name));
-
-    suppliersToRender.forEach(sup => {
-        const div = document.createElement('div');
-        div.className = 'supplier-card';
-        let tagsHtml = "";
-        const products = sup.products || [];
-        products.slice(0, 10).forEach(p => {
-            tagsHtml += `<span class="product-tag-chip" onclick="event.stopPropagation(); triggerTagAction('${p.id}')">#${p.name}</span>`;
-        });
-        if(products.length > 10) tagsHtml += `<span style="font-size:0.7rem; color:#888;">+${products.length - 10} more</span>`;
-        if(products.length === 0) tagsHtml = `<span style="font-size:0.75rem; color:#ccc;">등록 상품 없음</span>`;
-
-        div.innerHTML = `
-            <div class="sup-header"><div class="sup-name">${sup.name}</div></div>
-            <div class="sup-manager-info">👤 ${sup.curManagerName || '-'} (${sup.curManagerPhone || '-'})</div>
-            <div class="sup-product-tags">${tagsHtml}</div>
-        `;
-        div.addEventListener('click', () => {
-            document.querySelectorAll('.supplier-card').forEach(c => c.classList.remove('active'));
-            div.classList.add('active');
-            fillSupplierForm(sup);
-        });
-        listContainer.appendChild(div);
-    });
-}
-
-// 공통 함수들
-window.triggerTagAction = function(productId) {
-    document.querySelector('.menu-item[data-target="order-mgmt"]').click();
-    setTimeout(() => {
-        const targetNode = document.querySelector(`.tree-node[data-id="${productId}"]`);
-        if(targetNode) targetNode.click();
-    }, 100);
-};
-
+// [수정] 상세 폼 채우기 (문자 버튼 업데이트)
 function fillSupplierForm(sup) {
     currentSupplierId = sup.id;
     document.getElementById('supplier-form-title').textContent = `${sup.name} 수정`;
@@ -485,33 +459,18 @@ function fillSupplierForm(sup) {
     document.getElementById('sup-cur-phone').value = sup.curManagerPhone || "";
     document.getElementById('sup-prev-manager').value = sup.prevManagerName || "";
     document.getElementById('sup-prev-phone').value = sup.prevManagerPhone || "";
-    document.getElementById('btn-delete-supplier').style.display = "block"; // 삭제버튼 보이기
+    document.getElementById('btn-delete-supplier').style.display = "block";
+    
+    // [New] 문자 버튼 업데이트
+    const smsBtn = document.getElementById('btn-sms-cur');
+    if(sup.curManagerPhone) {
+        smsBtn.href = `sms:${sup.curManagerPhone}`;
+        smsBtn.style.display = 'flex';
+    } else {
+        smsBtn.style.display = 'none';
+    }
 }
-
-const btnNewSupplier = document.getElementById('btn-new-supplier');
-if(btnNewSupplier) btnNewSupplier.addEventListener('click', () => {
-    currentSupplierId = null;
-    document.getElementById('supplier-form-title').textContent = "신규 등록";
-    document.querySelectorAll('input[id^="sup-"]').forEach(input => input.value = "");
-    document.getElementById('sup-name').focus();
-    document.getElementById('btn-delete-supplier').style.display = "none"; // 삭제버튼 숨김
-});
-
-const btnSaveSupplier = document.getElementById('btn-save-supplier');
-if(btnSaveSupplier) btnSaveSupplier.addEventListener('click', async () => {
-    const name = document.getElementById('sup-name').value;
-    if(!name) return;
-    const data = { name: name, website: document.getElementById('sup-website').value, siteId: document.getElementById('sup-site-id').value, sitePw: document.getElementById('sup-site-pw').value, curManagerName: document.getElementById('sup-cur-manager').value, curManagerPhone: document.getElementById('sup-cur-phone').value, prevManagerName: document.getElementById('sup-prev-manager').value, prevManagerPhone: document.getElementById('sup-prev-phone').value };
-    if(currentSupplierId) await deleteDoc(doc(db, "suppliers", currentSupplierId));
-    await addDoc(collection(db, "suppliers"), data);
-    alert("저장완료"); loadSuppliers(); btnNewSupplier.click();
-});
-const btnDeleteSupplier = document.getElementById('btn-delete-supplier');
-if(btnDeleteSupplier) btnDeleteSupplier.addEventListener('click', async () => { if(currentSupplierId && confirm("삭제?")) { await deleteDoc(doc(db, "suppliers", currentSupplierId)); alert("삭제됨"); loadSuppliers(); btnNewSupplier.click(); } });
-document.getElementById('btn-toggle-pw').addEventListener('click', () => { const pwInput = document.getElementById('sup-site-pw'); if(pwInput.type === "password") { if(prompt("PIN (0000)") === "0000") pwInput.type = "text"; } else pwInput.type = "password"; });
-document.getElementById('btn-manager-handover').addEventListener('click', () => { const cur = document.getElementById('sup-cur-manager').value; if(cur && confirm("이관?")) { document.getElementById('sup-prev-manager').value = cur; document.getElementById('sup-cur-manager').value = ""; } });
-
-// 상품 관리
+// (나머지 관리자 함수들 유지)
 function renderAdminList(productsToRender) {
     const adminListContainer = document.getElementById('admin-product-list');
     const countEl = document.getElementById('admin-list-count');
@@ -532,17 +491,9 @@ function renderAdminList(productsToRender) {
         btn.addEventListener('click', async (e) => { if(confirm("영구 삭제?")) { await deleteDoc(doc(db, "products", e.target.getAttribute('data-id'))); loadProducts(); } });
     });
 }
-const adminSearchInput = document.getElementById('admin-product-search');
-if(adminSearchInput) {
-    adminSearchInput.addEventListener('input', (e) => {
-        const keyword = e.target.value.toLowerCase();
-        const filtered = allProductsData.filter(p => p.name.toLowerCase().includes(keyword) || p.company.toLowerCase().includes(keyword) || p.category.toLowerCase().includes(keyword));
-        renderAdminList(filtered);
-    });
-}
-async function startEditMode(item) {
+function startEditMode(item) {
     editingProductId = item.id; 
-    await loadSupplierDropdown();
+    loadSupplierDropdown();
     document.getElementById('reg-category').value = item.category;
     document.getElementById('reg-company').value = item.company;
     document.getElementById('reg-name').value = item.name;
@@ -593,10 +544,8 @@ async function loadSupplierDropdown() {
     if(!select) return;
     try {
         const supSnapshot = await getDocs(collection(db, "suppliers"));
-        let suppliers = []; supSnapshot.forEach(doc => suppliers.push(doc.data()));
-        suppliers.sort((a, b) => a.name.localeCompare(b.name));
         let optionsHtml = '<option value="">거래처를 선택하세요</option>';
-        suppliers.forEach(data => { optionsHtml += `<option value="${data.name}">${data.name}</option>`; });
+        supSnapshot.forEach(doc => { const data = doc.data(); optionsHtml += `<option value="${data.name}">${data.name}</option>`; });
         select.innerHTML = optionsHtml;
     } catch(e) { console.error(e); }
 }
@@ -609,215 +558,29 @@ window.addOptionRow = function(name="", price="") {
     container.appendChild(div);
 };
 if(document.getElementById('btn-add-option-row')) document.getElementById('btn-add-option-row').addEventListener('click', () => addOptionRow());
-
-
-/* ==========================================================================
-   [7] 하단 로그 패널
-   ========================================================================== */
-function subscribeToRecentLogs() {
-    const logContainer = document.getElementById('completed-order-list');
-    const q = query(collection(db, "order_history"), orderBy("timestamp", "desc"), limit(50));
-    onSnapshot(q, (snapshot) => {
-        logContainer.innerHTML = "";
-        if(snapshot.empty) { logContainer.innerHTML = '<div style="color:#aaa; padding:10px;">기록 없음</div>'; return; }
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            const dateObj = data.timestamp.toDate();
-            const timeStr = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
-            data.items.forEach(item => {
-                const div = document.createElement('div'); div.className = 'log-item';
-                div.innerHTML = `<div style="display:flex; align-items:center;"><span class="log-time">[${timeStr}]</span><strong>${item.product.name}</strong><span style="color:#888; font-size:0.85rem; margin-left:4px;">(${item.product.company})</span><span style="color:#666; margin-left:5px;">(${item.qty})</span></div><div><span class="log-status">완료</span><button class="btn-log-restore">취소</button></div>`;
-                div.querySelector('.btn-log-restore').addEventListener('click', async () => { if(confirm("취소?")) { cartItems.push(item); renderCart(item.optionId); await deleteDoc(doc(db, "order_history", docSnap.id)); } });
-                logContainer.appendChild(div);
-            });
-        });
-    });
-}
-
-/* ==========================================================================
-   [8] 사진 업로드 & 대기열
-   ========================================================================== */
-const btnCamera = document.getElementById('btn-camera-floating');
-const cameraInput = document.getElementById('file-input-camera'); 
-const inputGallery = document.getElementById('file-input-gallery');
-const loadingSpinner = document.getElementById('loading-spinner');
-const sourceModal = document.getElementById('source-select-modal');
-
-function openSourceModal() { if(sourceModal) sourceModal.style.display = 'flex'; }
-if(btnCamera) btnCamera.addEventListener('click', openSourceModal);
-
-if(document.getElementById('btn-select-camera')) document.getElementById('btn-select-camera').onclick = () => { sourceModal.style.display = 'none'; if(cameraInput) cameraInput.click(); };
-if(document.getElementById('btn-select-gallery')) document.getElementById('btn-select-gallery').onclick = () => { sourceModal.style.display = 'none'; if(inputGallery) inputGallery.click(); };
-if(document.getElementById('btn-select-cancel')) document.getElementById('btn-select-cancel').onclick = () => { sourceModal.style.display = 'none'; };
-
-async function handleFileUpload(e) {
-    const file = e.target.files[0]; if(!file) return;
-    window.tempUploadFile = file; 
-    const reader = new FileReader();
-    reader.onload = (event) => { const img = document.getElementById('upload-preview-img'); if(img) img.src = event.target.result; };
-    reader.readAsDataURL(file);
-    document.getElementById('upload-note').value = "";
-    document.getElementById('upload-confirm-modal').style.display = 'flex';
-    e.target.value = '';
-}
-if(cameraInput) cameraInput.addEventListener('change', handleFileUpload);
-if(inputGallery) inputGallery.addEventListener('change', handleFileUpload);
-if(document.getElementById('btn-upload-cancel')) document.getElementById('btn-upload-cancel').addEventListener('click', () => { document.getElementById('upload-confirm-modal').style.display = 'none'; window.tempUploadFile = null; });
-
-if(document.getElementById('btn-upload-confirm')) {
-    const btn = document.getElementById('btn-upload-confirm');
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-
-    newBtn.addEventListener('click', async () => {
-        const file = window.tempUploadFile;
-        if(!file) return;
-        
-        const note = document.getElementById('upload-note').value;
-        document.getElementById('upload-confirm-modal').style.display = 'none';
-        
-        const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true };
-
-        try {
-            if(loadingSpinner) loadingSpinner.style.display = 'flex';
-            const compressedFile = await imageCompression(file, options);
-            const storageRef = ref(storage, `photo_requests/${Date.now()}_${file.name}`);
-            await uploadBytes(storageRef, compressedFile);
-            const downloadURL = await getDownloadURL(storageRef);
-
-            await addDoc(collection(db, "photo_requests"), {
-                imageUrl: downloadURL,
-                timestamp: new Date(),
-                status: 'pending',
-                note: note
-            });
-
-            if(loadingSpinner) loadingSpinner.style.display = 'none';
-            alert("전송 완료");
-        } catch(error) {
-            console.error(error);
-            if(loadingSpinner) loadingSpinner.style.display = 'none';
-            alert("오류 발생");
-        }
-    });
-}
-
-function formatShortTime(timestamp) {
-    if(!timestamp) return "";
-    const d = timestamp.toDate();
-    return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-
-function subscribeToPhotoRequests() {
-    const queueContainer = document.getElementById('photo-grid'); 
-    if(!queueContainer) return;
-    const threeDaysAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
-    const q = query(collection(db, "photo_requests"), where("timestamp", ">", threeDaysAgo), orderBy("timestamp", "desc"));
-
-    onSnapshot(q, (snapshot) => {
-        queueContainer.innerHTML = "";
-        if(snapshot.empty) { queueContainer.innerHTML = "<div style='grid-column:1/-1; text-align:center; color:#ccc; padding:50px;'>요청 내역이 없습니다.</div>"; return; }
-        
-        let photoList = [];
-        snapshot.forEach(docSnap => photoList.push({ id: docSnap.id, ...docSnap.data(), docSnap: docSnap }));
-        
-        photoList.sort((a, b) => {
-            const statusOrder = { 'pending': 1, 'hold': 2, 'processed': 3 };
-            if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status];
-            return b.timestamp.seconds - a.timestamp.seconds; 
-        });
-
-        photoList.forEach(data => {
-            const div = document.createElement('div');
-            let statusClass = 'pending';
-            if(data.status === 'hold') statusClass = 'hold';
-            if(data.status === 'processed') statusClass = 'done';
-            div.className = `order-book-item ${statusClass}`;
-            
-            const reqTime = formatShortTime(data.timestamp);
-            const doneTime = data.completedAt ? formatShortTime(data.completedAt) : "";
-            const noteHtml = data.note ? `<div class="photo-note-label">${data.note}</div>` : "";
-
-            div.innerHTML = `<img src="${data.imageUrl}"><div class="photo-time-label time-top">요청: ${reqTime}</div>${statusClass === 'done' ? `<div class="photo-time-label time-bottom">완료: ${doneTime}</div>` : ''}${noteHtml}`;
-            div.addEventListener('click', () => showPhotoViewer(data.id, data.imageUrl, data.status, data.note));
-            queueContainer.appendChild(div);
-        });
-    });
-}
-
-function showPhotoViewer(docId, imageUrl, currentStatus, note) {
-    let viewer = document.getElementById('photo-viewer-modal');
-    if(!viewer) {
-        viewer = document.createElement('div'); viewer.id = 'photo-viewer-modal';
-        viewer.style.cssText = "display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:99999; align-items:center; justify-content:center; flex-direction:column;";
-        document.body.appendChild(viewer);
-    }
-
-    viewer.innerHTML = `
-        <div style="position:relative; max-width:90%; max-height:70%;">
-            <img id="viewer-img" src="${imageUrl}" style="max-width:100%; max-height:70vh; border-radius:8px;">
-            <button id="viewer-close" style="position:absolute; top:-40px; right:0; background:none; border:none; color:white; font-size:2.5rem; cursor:pointer;">&times;</button>
-        </div>
-        <div id="viewer-note" style="background:rgba(255,255,255,0.9); padding:10px 20px; border-radius:20px; margin-top:15px; font-weight:bold; color:#333; max-width:90%; text-align:center; display:${note ? 'block' : 'none'}">📝 메모: ${note || ''}</div>
-        <div id="viewer-buttons" style="margin-top:15px; display:flex; gap:10px;"></div>
-    `;
-
-    const btnContainer = viewer.querySelector('#viewer-buttons');
-
-    const createBtn = (text, color, action) => {
-        const btn = document.createElement('button');
-        btn.textContent = text;
-        btn.style.cssText = `padding:12px 20px; font-size:1.1rem; border-radius:30px; border:none; cursor:pointer; font-weight:bold; color:white; background-color:${color}; box-shadow:0 4px 10px rgba(0,0,0,0.3);`;
-        btn.onclick = action;
-        return btn;
-    };
-
-    const updateStatus = async (newStatus, requireReason = false) => {
-        let noteUpdate = {};
-        if(requireReason) {
-            const reason = prompt("보류 사유를 입력하세요");
-            if(reason === null) return;
-            noteUpdate.note = reason; 
-        }
-        const updateData = { status: newStatus, ...noteUpdate };
-        if(newStatus === 'processed') updateData.completedAt = new Date();
-        else if(newStatus === 'pending') updateData.completedAt = null;
-
-        try { await updateDoc(doc(db, "photo_requests", docId), updateData); viewer.style.display = 'none'; } 
-        catch(e) { alert("처리 실패"); }
-    };
-
-    if(currentStatus === 'pending') {
-        btnContainer.appendChild(createBtn('주문완료', '#27ae60', () => updateStatus('processed')));
-        btnContainer.appendChild(createBtn('주문보류', '#f39c12', () => updateStatus('hold', true)));
-    } 
-    else if(currentStatus === 'hold') {
-        btnContainer.appendChild(createBtn('주문완료', '#27ae60', () => updateStatus('processed')));
-        btnContainer.appendChild(createBtn('대기로 복구', '#34495e', () => updateStatus('pending')));
-    }
-    else {
-        btnContainer.appendChild(createBtn('주문취소 (복구)', '#e74c3c', () => updateStatus('pending')));
-    }
-
-    viewer.querySelector('#viewer-close').onclick = () => viewer.style.display = 'none';
-    viewer.onclick = (e) => { if(e.target === viewer) viewer.style.display = 'none'; };
-    
-    viewer.style.display = 'flex';
-}
-
-
-/* ==========================================================================
-   [11] 달력 / 탭 전환
-   ========================================================================== */
+const btnNewSupplier = document.getElementById('btn-new-supplier');
+if(btnNewSupplier) btnNewSupplier.addEventListener('click', () => { currentSupplierId = null; document.getElementById('supplier-form-title').textContent = "신규 등록"; document.querySelectorAll('input[id^="sup-"]').forEach(input => input.value = ""); document.getElementById('sup-name').focus(); document.getElementById('btn-delete-supplier').style.display = "none"; });
+const btnSaveSupplier = document.getElementById('btn-save-supplier');
+if(btnSaveSupplier) btnSaveSupplier.addEventListener('click', async () => {
+    const name = document.getElementById('sup-name').value;
+    if(!name) return;
+    const data = { name: name, website: document.getElementById('sup-website').value, siteId: document.getElementById('sup-site-id').value, sitePw: document.getElementById('sup-site-pw').value, curManagerName: document.getElementById('sup-cur-manager').value, curManagerPhone: document.getElementById('sup-cur-phone').value, prevManagerName: document.getElementById('sup-prev-manager').value, prevManagerPhone: document.getElementById('sup-prev-phone').value };
+    if(currentSupplierId) await deleteDoc(doc(db, "suppliers", currentSupplierId));
+    await addDoc(collection(db, "suppliers"), data);
+    alert("저장완료"); loadSuppliers(); btnNewSupplier.click();
+});
+const btnDeleteSupplier = document.getElementById('btn-delete-supplier');
+if(btnDeleteSupplier) btnDeleteSupplier.addEventListener('click', async () => { if(currentSupplierId && confirm("삭제?")) { await deleteDoc(doc(db, "suppliers", currentSupplierId)); alert("삭제됨"); loadSuppliers(); btnNewSupplier.click(); } });
+document.getElementById('btn-toggle-pw').addEventListener('click', () => { const pwInput = document.getElementById('sup-site-pw'); if(pwInput.type === "password") { if(prompt("PIN (0000)") === "0000") pwInput.type = "text"; } else pwInput.type = "password"; });
+document.getElementById('btn-manager-handover').addEventListener('click', () => { const cur = document.getElementById('sup-cur-manager').value; if(cur && confirm("이관?")) { document.getElementById('sup-prev-manager').value = cur; document.getElementById('sup-cur-manager').value = ""; } });
+window.triggerTagAction = function(productId) { document.querySelector('.menu-item[data-target="order-mgmt"]').click(); setTimeout(() => { const targetNode = document.querySelector(`.tree-node[data-id="${productId}"]`); if(targetNode) targetNode.click(); }, 100); };
 function renderCalendar() {
     const grid = document.getElementById('calendar-grid'); const monthEl = document.getElementById('cal-current-month');
-    if(!grid) return;
-    grid.innerHTML = "";
+    if(!grid) return; grid.innerHTML = "";
     const year = calDate.getFullYear(); const month = calDate.getMonth(); 
     monthEl.textContent = `${year}.${String(month + 1).padStart(2, '0')}`;
     const firstDay = new Date(year, month, 1).getDay(); const lastDate = new Date(year, month + 1, 0).getDate(); 
     const today = new Date(); const isThisMonth = (today.getFullYear() === year && today.getMonth() === month);
-
     for(let i=0; i<firstDay; i++) { const div = document.createElement('div'); div.className = 'calendar-date empty'; grid.appendChild(div); }
     for(let i=1; i<=lastDate; i++) {
         const div = document.createElement('div'); div.className = 'calendar-date'; div.textContent = i;
@@ -825,59 +588,33 @@ function renderCalendar() {
         div.setAttribute('data-date', dateStr);
         if(isThisMonth && today.getDate() === i) div.classList.add('today');
         if(selectedDateStr === dateStr) div.classList.add('selected');
-        div.addEventListener('click', () => {
-            document.querySelectorAll('.calendar-date.selected').forEach(d => d.classList.remove('selected'));
-            div.classList.add('selected');
-            selectedDateStr = dateStr;
-            loadHistoryByDate(dateStr);
-        });
+        div.addEventListener('click', () => { document.querySelectorAll('.calendar-date').forEach(d => d.classList.remove('selected')); div.classList.add('selected'); selectedDateStr = dateStr; loadHistoryByDate(dateStr); });
         grid.appendChild(div);
     }
-    const startStr = `${year}-${String(month+1).padStart(2,'0')}-01`;
-    const endStr = `${year}-${String(month+1).padStart(2,'0')}-31`;
+    const startStr = `${year}-${String(month+1).padStart(2,'0')}-01`; const endStr = `${year}-${String(month+1).padStart(2,'0')}-31`;
     const q = query(collection(db, "order_history"), where("date", ">=", startStr), where("date", "<=", endStr));
-    getDocs(q).then(snap => {
-        const dates = new Set(); 
-        snap.forEach(d => dates.add(d.data().date));
-        document.querySelectorAll('.calendar-date').forEach(el => { 
-            if(dates.has(el.getAttribute('data-date'))) el.classList.add('has-data'); 
-        });
-    });
+    getDocs(q).then(snap => { const dates = new Set(); snap.forEach(d => dates.add(d.data().date)); document.querySelectorAll('.calendar-date').forEach(el => { if(dates.has(el.getAttribute('data-date'))) el.classList.add('has-data'); }); });
 }
-const btnCalPrev = document.getElementById('cal-prev');
-const btnCalNext = document.getElementById('cal-next');
-if(btnCalPrev) {
-    btnCalPrev.onclick = () => { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); };
-}
-if(btnCalNext) {
-    btnCalNext.onclick = () => { calDate.setMonth(calDate.getMonth() + 1); renderCalendar(); };
-}
-
+const btnCalPrev = document.getElementById('cal-prev'); const btnCalNext = document.getElementById('cal-next');
+if(btnCalPrev) btnCalPrev.onclick = () => { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); };
+if(btnCalNext) btnCalNext.onclick = () => { calDate.setMonth(calDate.getMonth() + 1); renderCalendar(); };
 async function loadHistoryByDate(dateStr) {
-    const listContainer = document.getElementById('history-list');
-    const titleEl = document.getElementById('history-title');
-    titleEl.textContent = `${dateStr} 주문 상세 내역`;
-    listContainer.innerHTML = "<div style='text-align:center; margin-top:50px;'>로딩중...</div>";
+    const listContainer = document.getElementById('history-list'); const titleEl = document.getElementById('history-title');
+    titleEl.textContent = `${dateStr} 주문 상세 내역`; listContainer.innerHTML = "<div style='text-align:center; margin-top:50px;'>로딩중...</div>";
     try {
         const q = query(collection(db, "order_history"), where("date", "==", dateStr));
         const querySnapshot = await getDocs(q);
         listContainer.innerHTML = "";
         if(querySnapshot.empty) { listContainer.innerHTML = "<div style='text-align:center; color:#ccc; margin-top:50px;'>기록 없음</div>"; return; }
-        
         let historyData = [];
         querySnapshot.forEach(doc => historyData.push({ id: doc.id, ...doc.data() }));
         historyData.sort((a, b) => b.timestamp.seconds - a.timestamp.seconds);
-
         historyData.forEach(data => {
-            const items = data.items; 
-            const card = document.createElement('div');
-            card.className = 'history-card';
+            const items = data.items; const card = document.createElement('div'); card.className = 'history-card';
             const dateObj = data.timestamp.toDate(); 
             const timeStr = `${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
             let itemsHtml = "";
-            items.forEach(item => {
-                itemsHtml += `<div class="history-item-row"><span>${item.product.name} <span style="color:#888; font-size:0.85rem;">(${item.product.company})</span> <span style="color:#666;">(${item.optionName})</span></span><strong>${item.qty}개</strong></div>`;
-            });
+            items.forEach(item => { itemsHtml += `<div class="history-item-row"><span>${item.product.name} <span style="color:#888; font-size:0.85rem;">(${item.product.company})</span> <span style="color:#666;">(${item.optionName})</span></span><strong>${item.qty}개</strong></div>`; });
             card.innerHTML = `<div class="history-time">⏰ ${timeStr} (총 ${items.length}품목)</div><div style="border-top:1px solid #eee; margin-top:5px; padding-top:5px;">${itemsHtml}</div>`;
             listContainer.appendChild(card);
         });
@@ -899,23 +636,11 @@ menuItems.forEach(item => {
             if(['product-mgmt', 'history-mgmt', 'supplier-mgmt', 'order-book'].includes(targetId)) targetPage.style.flexDirection = 'column';
         }
         if(targetId === 'supplier-mgmt') loadSuppliers(); 
-        if(targetId === 'history-mgmt') { 
-            calDate = new Date(); 
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            const todayStr = `${y}-${m}-${d}`;
-            selectedDateStr = todayStr;
-            renderCalendar(); 
-            loadHistoryByDate(todayStr); 
-        }
+        if(targetId === 'history-mgmt') { calDate = new Date(); renderCalendar(); loadHistoryByDate(`${calDate.getFullYear()}-${String(calDate.getMonth()+1).padStart(2,'0')}-${String(calDate.getDate()).padStart(2,'0')}`); }
         if(targetId === 'product-mgmt') { loadSupplierDropdown(); if(!editingProductId && document.getElementById('reg-options-container').children.length === 0) addOptionRow(); }
         window.scrollTo(0, 0); 
     });
 });
-
-// [12] 초기 실행
 loadProducts();
 subscribeToRecentLogs();
 subscribeToPhotoRequests();
