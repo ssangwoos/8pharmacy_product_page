@@ -123,8 +123,61 @@
     <div class="tab-menu"><button class="tab-btn" onclick="openTab('tab-dashboard')">📊 대시보드</button><button class="tab-btn active" onclick="openTab('tab-register')">📝 상품 등록</button><button class="tab-btn" onclick="openTab('tab-manage')">📋 상품 관리</button></div>
     
     <div id="tab-dashboard" class="tab-content"><div class="date-filter"><span style="font-weight:bold;">📅 기간 조회 (KST)</span><input type="date" id="startDate" class="date-input"><span>~</span><input type="date" id="endDate" class="date-input"><button class="btn-small" style="background:#1D5C36;" onclick="loadDashboard()">🔍 조회</button></div><div class="stat-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;"><div class="stat-item"><span class="stat-label">📦 총 상품수</span><span class="stat-num" id="statTotalProducts">0</span></div><div class="stat-item"><span class="stat-label">👀 조회수</span><span class="stat-num" id="statPeriodViews" style="color:#d32f2f;">0</span></div><div class="stat-item"><span class="stat-label">🛒 장바구니</span><span class="stat-num" id="statCartAdds" style="color:#2980b9;">0</span></div><div class="stat-item"><span class="stat-label">📈 전환율</span><span class="stat-num" id="statConversion" style="color:#8e44ad;">0%</span></div></div><br><div class="row"><div class="col dash-card"><div class="dash-title">⏰ 시간대별 방문 추이</div><div class="chart-box"><canvas id="chartHourly"></canvas></div></div><div class="col dash-card"><div class="dash-title">🏆 기간 내 인기 상품 (Top 5)</div><div class="chart-box"><canvas id="chartProducts"></canvas></div></div></div><div class="row"><div class="col dash-card"><div class="dash-title">🌏 언어별 관심도</div><div class="chart-box"><canvas id="chartLangs"></canvas></div><div id="customLegend" class="legend-grid"></div></div><div class="col dash-card"><div class="dash-title"><span>📜 실시간 로그</span><button class="btn-small" style="background:#27ae60;" onclick="downloadExcel()">📥 엑셀 저장</button></div><div id="logContainer" class="log-container"><div style="text-align:center; padding-top:80px; color:#888;">데이터 로딩 중...</div></div></div></div></div>
-    <div id="tab-register" class="tab-content active"><button class="btn btn-reset" onclick="resetForm()">🔄 입력창 비우기 (신규 등록)</button><div class="input-group"><label>상품 ID (자동생성)</label><input type="text" id="productId" placeholder="tylenol" readonly style="background-color: #e0e0e0; color: #555; cursor: not-allowed; font-weight: bold;"></div><div class="row"><div class="col input-group"><label>상품명</label><input type="text" id="name" placeholder="타이레놀"></div><div class="col input-group"><label>가격</label><input type="number" id="price" placeholder="3500"></div></div><div class="input-group"><label>이미지</label><input type="file" id="imageFile" accept="image/*"><img id="preview" class="preview-img"></div><div class="section-header">🌍 상세 설명</div><div class="lang-section" style="border:2px solid #6366f1; background:#f0f0ff;"><div class="lang-title">🇰🇷 한국어</div><textarea id="desc_kr" placeholder="설명 입력"></textarea></div><button class="ai-btn" onclick="translateContent()">✨ AI 번역</button><div class="section-header">🤖 번역 결과</div><div class="lang-section"><div class="lang-title">🇺🇸 영어</div><textarea id="desc_en"></textarea></div><div class="lang-section"><div class="lang-title">🇯🇵 일본어</div><textarea id="desc_jp"></textarea></div><div class="lang-section"><div class="lang-title">🇨🇳 중국어</div><textarea id="desc_cn"></textarea></div><div class="lang-section"><div class="lang-title">🇹🇭 태국어</div><textarea id="desc_th"></textarea></div><div class="lang-section"><div class="lang-title">🇻🇳 베트남어</div><textarea id="desc_vn"></textarea></div><div class="lang-section"><div class="lang-title">🇮🇩 인도네시아어</div><textarea id="desc_id"></textarea></div><div class="lang-section"><div class="lang-title">🇲🇳 몽골어</div><textarea id="desc_mn"></textarea></div><div class="input-group qr-section"><label style="color:#1D5C36;">📷 QR 코드</label><div style="display:flex; align-items:flex-end; gap:15px; margin-top:10px;"><img id="qrPreview" class="preview-img" style="display:none;"><div id="qrPlaceholder" style="color:#999; font-size:0.9rem;">(자동 생성)</div><a id="qrDownloadBtn" class="btn-small btn-view" style="display:none;">💾 다운</a></div><div id="qrCodeContainer"></div></div><button class="btn" onclick="saveProduct()" id="saveBtn">저장하기</button></div>
-    <div id="tab-manage" class="tab-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">상품 리스트</h3><button class="btn-small" style="background:#666;" onclick="loadProductList()">🔄 새로고침</button></div><div style="display:flex; gap:10px; margin-bottom:20px;"><select id="sortSelect" style="padding:12px; border:2px solid #1D5C36; border-radius:10px; font-size:1rem;" onchange="applySort()"><option value="newest">🕒 최신 등록순</option><option value="oldest">📅 오래된 순</option><option value="name_asc">🔤 가나다순</option><option value="name_desc">🔠 가나다 역순</option><option value="views">🔥 조회수 순</option></select><input type="text" id="searchInput" placeholder="🔍 검색..." style="flex:1; padding:12px; border:2px solid #1D5C36; border-radius:50px;"></div><div id="productList"><p style="text-align:center;">로딩 중...</p></div></div>
+    <div id="tab-register" class="tab-content active">
+        <button class="btn btn-reset" onclick="resetForm()">🔄 입력창 비우기 (신규 등록)</button>
+
+        <div class="input-group">
+            <label>상품 ID (자동생성)</label>
+            <input type="text" id="productId" placeholder="저장 버튼을 누르면 자동으로 생성됩니다" readonly 
+                   style="background-color: #e0e0e0; color: #555; cursor: not-allowed; font-weight: bold;">
+        </div>
+
+        <div class="row">
+            <div class="col input-group">
+                <label>상품명 (한국어)</label>
+                <input type="text" id="name" placeholder="상품 이름을 입력하세요">
+            </div>
+            <div class="col input-group">
+                <label>가격</label>
+                <input type="number" id="price" placeholder="숫자만 입력 (예: 5000)">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>대표 상품 이미지</label>
+            <input type="file" id="imageFile" accept="image/*">
+            <img id="preview" class="preview-img">
+        </div>
+
+        <div class="section-header">🌍 상세 설명</div>
+        <div class="lang-section" style="border:2px solid #6366f1; background:#f0f0ff;">
+            <div class="lang-title">🇰🇷 한국어 설명 (필수 입력)</div>
+            <textarea id="desc_kr" placeholder="여기에 상세 설명을 적으세요. (이곳은 2배 더 넓습니다)"></textarea>
+        </div>
+
+        <button class="ai-btn" onclick="translateContent()">✨ AI 번역</button>
+
+        <div class="section-header">🤖 번역 결과</div>
+        <div class="lang-section"><div class="lang-title">🇺🇸 영어</div><textarea id="desc_en"></textarea></div>
+        <div class="lang-section"><div class="lang-title">🇯🇵 일본어</div><textarea id="desc_jp"></textarea></div>
+        <div class="lang-section"><div class="lang-title">🇨🇳 중국어</div><textarea id="desc_cn"></textarea></div>
+        <div class="lang-section"><div class="lang-title">🇹🇭 태국어</div><textarea id="desc_th"></textarea></div>
+        <div class="lang-section"><div class="lang-title">🇻🇳 베트남어</div><textarea id="desc_vn"></textarea></div>
+        <div class="lang-section"><div class="lang-title">🇮🇩 인도네시아어</div><textarea id="desc_id"></textarea></div>
+        <div class="lang-section"><div class="lang-title">🇲🇳 몽골어</div><textarea id="desc_mn"></textarea></div>
+
+        <div class="input-group qr-section">
+            <label style="color:#1D5C36;">📷 QR 코드</label>
+            <div style="display:flex; align-items:flex-end; gap:15px; margin-top:10px;">
+                <img id="qrPreview" class="preview-img" style="display:none;">
+                <div id="qrPlaceholder" style="color:#999; font-size:0.9rem;">(저장 시 자동 생성됩니다)</div>
+                <a id="qrDownloadBtn" class="btn-small btn-view" style="display:none;">💾 다운</a>
+            </div>
+            <div id="qrCodeContainer"></div>
+        </div>
+
+        <button class="btn" onclick="saveProduct()" id="saveBtn">저장하기</button>
+    </div><div id="tab-manage" class="tab-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">상품 리스트</h3><button class="btn-small" style="background:#666;" onclick="loadProductList()">🔄 새로고침</button></div><div style="display:flex; gap:10px; margin-bottom:20px;"><select id="sortSelect" style="padding:12px; border:2px solid #1D5C36; border-radius:10px; font-size:1rem;" onchange="applySort()"><option value="newest">🕒 최신 등록순</option><option value="oldest">📅 오래된 순</option><option value="name_asc">🔤 가나다순</option><option value="name_desc">🔠 가나다 역순</option><option value="views">🔥 조회수 순</option></select><input type="text" id="searchInput" placeholder="🔍 검색..." style="flex:1; padding:12px; border:2px solid #1D5C36; border-radius:50px;"></div><div id="productList"><p style="text-align:center;">로딩 중...</p></div></div>
 
     <script>
         const now = new Date();

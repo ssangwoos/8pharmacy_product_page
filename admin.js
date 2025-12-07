@@ -1,4 +1,4 @@
-// admin.js (ID 입력창 UI 오류 수정됨)
+// admin.js (ID 입력창 초기화 오류 수정됨)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, doc, setDoc, deleteDoc, collection, getDocs, getDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
@@ -19,7 +19,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 let allProducts = []; 
-let allLogs = [];
+let allLogs = []; // 엑셀용 로그 저장
 const DEFAULT_LAYOUT = { 
     prod_x: 100, prod_y: 200, prod_w: 1000, prod_h: 850, prod_scale: 1.0,
     qr_x: 1511, qr_y: 220, qr_size: 400, 
@@ -110,19 +110,16 @@ window.translateContent = async function() {
     } catch (error) { alert("번역 실패"); } finally { btn.disabled = false; btn.innerText = "✨ AI 번역"; }
 }
 
-// ✨ [수정] resetForm: ID칸을 항상 회색(readOnly)으로 유지
+// ✨ [수정] resetForm 함수: ID칸을 흰색으로 풀지 않고 회색(잠금) 유지
 window.resetForm = function(force = false) {
     if(!force && !confirm("신규 등록 하시겠습니까?")) return;
-    
-    const idInput = document.getElementById('productId');
-    idInput.value = ''; 
-    idInput.placeholder = "저장 시 자동 생성"; // 안내 문구 복구
-    // ✨ 핵심: 사용 가능하게(흰색) 풀지 않고, 계속 잠금 상태 유지
-    idInput.readOnly = true; 
-    idInput.style.backgroundColor = '#e0e0e0';
-    idInput.style.color = '#555';
-    idInput.style.cursor = 'not-allowed';
 
+    const idInput = document.getElementById('productId');
+    idInput.value = '';
+    idInput.placeholder = "저장 시 자동 생성"; // 원래 문구로 복구
+    idInput.disabled = true; // 비활성화 유지
+    idInput.style.backgroundColor = '#e0e0e0'; // 회색 유지
+    
     document.getElementById('name').value = ''; document.getElementById('price').value = '';
     document.querySelectorAll('textarea').forEach(t => t.value = '');
     document.getElementById('imageFile').value = ''; document.getElementById('preview').style.display = 'none';
