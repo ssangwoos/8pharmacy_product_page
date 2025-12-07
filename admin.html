@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>에이트약국 관리자 (Super Dashboard)</title>
+    <title>에이트약국 관리자 (High Quality & Scale)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    
     <style>
-        /* 기존 스타일 유지 */
+        /* 기존 스타일 전체 유지 */
         body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; background: #f4f4f4; max-width: 800px; margin: 0 auto; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
         .header-title h1 { color: #1D5C36; margin: 0; font-size: 1.5rem; }
@@ -56,7 +55,7 @@
         .item-price { color: #d32f2f; font-weight: bold; }
         .btn-group { display: flex; gap: 5px; }
         .btn-small { padding: 8px 12px; font-size: 0.9rem; border-radius: 4px; cursor: pointer; border: none; color: white; }
-        .btn-edit { background-color: #f39c12; } .btn-delete { background-color: #c0392b; } .btn-view { background-color: #3498db; } .btn-tag { background-color: #673ab7; color: white; }
+        .btn-edit { background-color: #f39c12; } .btn-delete { background-color: #c0392b; } .btn-view { background-color: #3498db; } .btn-tag { background-color: #673ab7; color: white; } .btn-tag:hover { background-color: #512da8; }
         #qrCodeContainer { display: none; }
         .badge-id { font-size: 0.8rem; background: #eee; padding: 2px 6px; border-radius: 4px; color: #666; }
         .badge-qr-on { font-size: 0.75rem; background: #e8f5e9; color: #1D5C36; border: 1px solid #1D5C36; padding: 2px 8px; border-radius: 20px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; transition: all 0.2s;}
@@ -84,72 +83,46 @@
 </head>
 <body>
     <canvas id="priceTagCanvas" width="2031" height="1252" style="display:none;"></canvas>
-    
     <div id="loginOverlay" class="overlay" style="display:flex;"><div class="modal-box"><h2 style="color:#1D5C36; margin-bottom:10px;">관리자 로그인</h2><p style="color:#666; margin-bottom:20px;">상품 관리 권한 확인</p><input type="password" id="adminPassword" class="modal-input" placeholder="비밀번호 입력"><button class="modal-btn" onclick="checkLogin()">접속하기</button></div></div>
-    <div id="settingsOverlay" class="overlay"><div id="settingsAuthBox" class="modal-box"><h3 style="margin-top:0;">🔐 슈퍼바이저 인증</h3><input type="password" id="supervisorPassword" class="modal-input" placeholder="슈퍼바이저 비밀번호"><button class="modal-btn" onclick="checkSupervisorLogin()">확인</button><button class="modal-btn modal-btn-close" onclick="closeSettings()">취소</button></div><div id="settingsConfigBox" class="modal-box" style="display:none; width: 450px; max-height:90vh; overflow-y:auto;"><h3 style="margin-top:0;">⚙️ 사이트 기본 설정</h3><div style="text-align:left; margin-top:10px; padding-bottom:10px;"><label style="font-size:0.9rem;">🔑 OpenAI API Key</label><input type="text" id="configApiKey" class="modal-input" placeholder="sk-..." style="font-size:0.9rem;"></div><div style="text-align:left; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:15px;"><label style="font-size:0.9rem; color:#1D5C36;">💰 Tax Refund 예상 환급률 (%)</label><input type="number" id="configRefundRate" class="modal-input" placeholder="예: 6.5" style="font-size:0.9rem;" step="0.1"></div><div style="text-align:left; padding-bottom:10px;"><label style="font-size:0.9rem; color:#673ab7;">🖼️ 배경 이미지</label><input type="file" id="bgFileInput" accept="image/*" style="font-size:0.9rem;"><p id="bgStatus" style="font-size:0.8rem; color:#888; margin: 2px 0;">상태: 확인 중...</p></div><div class="coord-section"><h4 style="margin:0 0 10px 0; color:#1D5C36; text-align: left;">📏 가격표 레이아웃 미세조정</h4><span class="coord-title">📦 상품 이미지 (왼쪽)</span><div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_prod_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_prod_y"></div></div><div class="coord-row"><div class="coord-item"><span class="coord-tag">W</span><input type="number" id="layout_prod_w"></div><div class="coord-item"><span class="coord-tag">H</span><input type="number" id="layout_prod_h"></div></div><span class="coord-title">📷 QR 코드 (오른쪽 상단)</span><div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_qr_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_qr_y"></div></div><div class="coord-row"><div class="coord-item"><span class="coord-tag">S</span><input type="number" id="layout_qr_size"></div></div><span class="coord-title">💰 가격 (오른쪽 하단)</span><div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_price_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_price_y"></div></div><div class="coord-row"><div class="coord-item"><span class="coord-tag">S</span><input type="number" id="layout_price_size"></div></div></div><div style="text-align:left; margin-top:15px;"><label style="font-size:0.9rem; color:#d32f2f;">🛡️ 관리자 비번 변경</label><input type="text" id="configAdminPw" class="modal-input" placeholder="0000"></div><button class="modal-btn" onclick="saveSettings()">모든 설정 저장하기</button><button class="modal-btn modal-btn-close" onclick="closeSettings()">닫기</button></div></div>
-
-    <header>
-        <div class="header-title"><h1>💊 EIGHT PHARMACY ADMIN</h1><p>상품 등록 및 QR코드 통합 관리 시스템</p></div>
-        <button class="btn-settings" onclick="openSettings()">⚙️ 설정</button>
-    </header>
     
-    <div class="tab-menu"><button class="tab-btn" onclick="openTab('tab-dashboard')">📊 대시보드</button><button class="tab-btn active" onclick="openTab('tab-register')">📝 상품 등록</button><button class="tab-btn" onclick="openTab('tab-manage')">📋 상품 관리</button></div>
-    
-    <div id="tab-dashboard" class="tab-content">
-        <div class="date-filter">
-            <span style="font-weight:bold;">📅 기간 조회 (KST)</span>
-            <input type="date" id="startDate" class="date-input">
-            <span>~</span>
-            <input type="date" id="endDate" class="date-input">
-            <button class="btn-small" style="background:#1D5C36;" onclick="loadDashboard()">🔍 조회</button>
-        </div>
-
-        <div class="stat-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-            <div class="stat-item">
-                <span class="stat-label">📦 총 상품수</span>
-                <span class="stat-num" id="statTotalProducts">0</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">👀 조회수</span>
-                <span class="stat-num" id="statPeriodViews" style="color:#d32f2f;">0</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">🛒 장바구니</span>
-                <span class="stat-num" id="statCartAdds" style="color:#2980b9;">0</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">📈 전환율</span>
-                <span class="stat-num" id="statConversion" style="color:#8e44ad;">0%</span>
-            </div>
-        </div>
-        <br>
-        
-        <div class="row">
-            <div class="col dash-card">
-                <div class="dash-title">⏰ 시간대별 방문 추이</div>
-                <div class="chart-box"><canvas id="chartHourly"></canvas></div>
-            </div>
-            <div class="col dash-card">
-                <div class="dash-title">🏆 기간 내 인기 상품 (Top 5)</div>
-                <div class="chart-box"><canvas id="chartProducts"></canvas></div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col dash-card">
-                <div class="dash-title">🌏 언어별 관심도</div>
-                <div class="chart-box"><canvas id="chartLangs"></canvas></div>
-                <div id="customLegend" class="legend-grid"></div>
-            </div>
-            <div class="col dash-card">
-                <div class="dash-title">
-                    <span>📜 실시간 로그</span>
-                    <button class="btn-small" style="background:#27ae60;" onclick="downloadExcel()">📥 엑셀 저장</button>
+    <div id="settingsOverlay" class="overlay">
+        <div id="settingsAuthBox" class="modal-box"><h3 style="margin-top:0;">🔐 슈퍼바이저 인증</h3><input type="password" id="supervisorPassword" class="modal-input" placeholder="슈퍼바이저 비밀번호"><button class="modal-btn" onclick="checkSupervisorLogin()">확인</button><button class="modal-btn modal-btn-close" onclick="closeSettings()">취소</button></div>
+        <div id="settingsConfigBox" class="modal-box" style="display:none; width: 450px; max-height:90vh; overflow-y:auto;">
+            <h3 style="margin-top:0;">⚙️ 사이트 기본 설정</h3>
+            <div style="text-align:left; margin-top:10px; padding-bottom:10px;"><label style="font-size:0.9rem;">🔑 OpenAI API Key</label><input type="text" id="configApiKey" class="modal-input" placeholder="sk-..." style="font-size:0.9rem;"></div>
+            <div style="text-align:left; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:15px;"><label style="font-size:0.9rem; color:#1D5C36;">💰 Tax Refund 예상 환급률 (%)</label><input type="number" id="configRefundRate" class="modal-input" placeholder="예: 6.5" style="font-size:0.9rem;" step="0.1"></div>
+            <div style="text-align:left; padding-bottom:10px;"><label style="font-size:0.9rem; color:#673ab7;">🖼️ 배경 이미지</label><input type="file" id="bgFileInput" accept="image/*" style="font-size:0.9rem;"><p id="bgStatus" style="font-size:0.8rem; color:#888; margin: 2px 0;">상태: 확인 중...</p></div>
+            
+            <div class="coord-section">
+                <h4 style="margin:0 0 10px 0; color:#1D5C36; text-align: left;">📏 가격표 레이아웃 미세조정</h4>
+                <span class="coord-title">📦 상품 이미지 (왼쪽)</span>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_prod_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_prod_y"></div></div>
+                <div class="coord-row">
+                    <div class="coord-item"><span class="coord-tag">W</span><input type="number" id="layout_prod_w" placeholder="최대폭"></div>
+                    <div class="coord-item"><span class="coord-tag">H</span><input type="number" id="layout_prod_h" placeholder="최대높이"></div>
                 </div>
-                <div id="logContainer" class="log-container"><div style="text-align:center; padding-top:80px; color:#888;">데이터 로딩 중...</div></div>
+                <div class="coord-row" style="margin-top:5px; border-top:1px dashed #ddd; padding-top:5px;">
+                    <div class="coord-item"><span class="coord-tag" style="width:35px; color:#d32f2f;">Scale</span><input type="number" id="layout_prod_scale" placeholder="기본 1.0" step="0.1"></div>
+                </div>
+
+                <span class="coord-title">📷 QR 코드 (오른쪽 상단)</span>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_qr_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_qr_y"></div></div>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag" style="width:30px">Size</span><input type="number" id="layout_qr_size" placeholder="크기"></div></div>
+                <span class="coord-title">💰 가격 (오른쪽 하단)</span>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag">X</span><input type="number" id="layout_price_x"></div><div class="coord-item"><span class="coord-tag">Y</span><input type="number" id="layout_price_y"></div></div>
+                <div class="coord-row"><div class="coord-item"><span class="coord-tag" style="width:30px">Size</span><input type="number" id="layout_price_size" placeholder="글자크기"></div></div>
             </div>
+
+            <div style="text-align:left; margin-top:15px;"><label style="font-size:0.9rem; color:#d32f2f;">🛡️ 관리자 비번 변경</label><input type="text" id="configAdminPw" class="modal-input" placeholder="0000"></div>
+            <button class="modal-btn" onclick="saveSettings()">모든 설정 저장하기</button>
+            <button class="modal-btn modal-btn-close" onclick="closeSettings()">닫기</button>
         </div>
     </div>
 
+    <header><div class="header-title"><h1>💊 EIGHT PHARMACY ADMIN</h1><p>상품 등록 및 QR코드 통합 관리 시스템</p></div><button class="btn-settings" onclick="openSettings()">⚙️ 설정</button></header>
+    <div class="tab-menu"><button class="tab-btn" onclick="openTab('tab-dashboard')">📊 대시보드</button><button class="tab-btn active" onclick="openTab('tab-register')">📝 상품 등록</button><button class="tab-btn" onclick="openTab('tab-manage')">📋 상품 관리</button></div>
+    
+    <div id="tab-dashboard" class="tab-content"><div class="date-filter"><span style="font-weight:bold;">📅 기간 조회 (KST)</span><input type="date" id="startDate" class="date-input"><span>~</span><input type="date" id="endDate" class="date-input"><button class="btn-small" style="background:#1D5C36;" onclick="loadDashboard()">🔍 조회</button></div><div class="stat-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;"><div class="stat-item"><span class="stat-label">📦 총 상품수</span><span class="stat-num" id="statTotalProducts">0</span></div><div class="stat-item"><span class="stat-label">👀 조회수</span><span class="stat-num" id="statPeriodViews" style="color:#d32f2f;">0</span></div><div class="stat-item"><span class="stat-label">🛒 장바구니</span><span class="stat-num" id="statCartAdds" style="color:#2980b9;">0</span></div><div class="stat-item"><span class="stat-label">📈 전환율</span><span class="stat-num" id="statConversion" style="color:#8e44ad;">0%</span></div></div><br><div class="row"><div class="col dash-card"><div class="dash-title">⏰ 시간대별 방문 추이</div><div class="chart-box"><canvas id="chartHourly"></canvas></div></div><div class="col dash-card"><div class="dash-title">🏆 기간 내 인기 상품 (Top 5)</div><div class="chart-box"><canvas id="chartProducts"></canvas></div></div></div><div class="row"><div class="col dash-card"><div class="dash-title">🌏 언어별 관심도</div><div class="chart-box"><canvas id="chartLangs"></canvas></div><div id="customLegend" class="legend-grid"></div></div><div class="col dash-card"><div class="dash-title"><span>📜 실시간 로그</span><button class="btn-small" style="background:#27ae60;" onclick="downloadExcel()">📥 엑셀 저장</button></div><div id="logContainer" class="log-container"><div style="text-align:center; padding-top:80px; color:#888;">데이터 로딩 중...</div></div></div></div></div>
     <div id="tab-register" class="tab-content active"><button class="btn btn-reset" onclick="resetForm()">🔄 입력창 비우기 (신규 등록)</button><div class="input-group"><label>상품 ID (자동생성)</label><input type="text" id="productId" placeholder="tylenol" readonly style="background-color: #e0e0e0; color: #555; cursor: not-allowed; font-weight: bold;"></div><div class="row"><div class="col input-group"><label>상품명</label><input type="text" id="name" placeholder="타이레놀"></div><div class="col input-group"><label>가격</label><input type="number" id="price" placeholder="3500"></div></div><div class="input-group"><label>이미지</label><input type="file" id="imageFile" accept="image/*"><img id="preview" class="preview-img"></div><div class="section-header">🌍 상세 설명</div><div class="lang-section" style="border:2px solid #6366f1; background:#f0f0ff;"><div class="lang-title">🇰🇷 한국어</div><textarea id="desc_kr" placeholder="설명 입력"></textarea></div><button class="ai-btn" onclick="translateContent()">✨ AI 번역</button><div class="section-header">🤖 번역 결과</div><div class="lang-section"><div class="lang-title">🇺🇸 영어</div><textarea id="desc_en"></textarea></div><div class="lang-section"><div class="lang-title">🇯🇵 일본어</div><textarea id="desc_jp"></textarea></div><div class="lang-section"><div class="lang-title">🇨🇳 중국어</div><textarea id="desc_cn"></textarea></div><div class="lang-section"><div class="lang-title">🇹🇭 태국어</div><textarea id="desc_th"></textarea></div><div class="lang-section"><div class="lang-title">🇻🇳 베트남어</div><textarea id="desc_vn"></textarea></div><div class="lang-section"><div class="lang-title">🇮🇩 인도네시아어</div><textarea id="desc_id"></textarea></div><div class="lang-section"><div class="lang-title">🇲🇳 몽골어</div><textarea id="desc_mn"></textarea></div><div class="input-group qr-section"><label style="color:#1D5C36;">📷 QR 코드</label><div style="display:flex; align-items:flex-end; gap:15px; margin-top:10px;"><img id="qrPreview" class="preview-img" style="display:none;"><div id="qrPlaceholder" style="color:#999; font-size:0.9rem;">(자동 생성)</div><a id="qrDownloadBtn" class="btn-small btn-view" style="display:none;">💾 다운</a></div><div id="qrCodeContainer"></div></div><button class="btn" onclick="saveProduct()" id="saveBtn">저장하기</button></div>
     <div id="tab-manage" class="tab-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">상품 리스트</h3><button class="btn-small" style="background:#666;" onclick="loadProductList()">🔄 새로고침</button></div><div style="display:flex; gap:10px; margin-bottom:20px;"><select id="sortSelect" style="padding:12px; border:2px solid #1D5C36; border-radius:10px; font-size:1rem;" onchange="applySort()"><option value="newest">🕒 최신 등록순</option><option value="oldest">📅 오래된 순</option><option value="name_asc">🔤 가나다순</option><option value="name_desc">🔠 가나다 역순</option><option value="views">🔥 조회수 순</option></select><input type="text" id="searchInput" placeholder="🔍 검색..." style="flex:1; padding:12px; border:2px solid #1D5C36; border-radius:50px;"></div><div id="productList"><p style="text-align:center;">로딩 중...</p></div></div>
 
@@ -160,7 +133,6 @@
         const today = kstDate.toISOString().split('T')[0];
         document.getElementById('startDate').value = today;
         document.getElementById('endDate').value = today;
-
         function openTab(tabName) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(tabName).classList.add('active'); event.currentTarget.classList.add('active'); if(tabName === 'tab-manage') loadProductList(); if(tabName === 'tab-dashboard') loadDashboard(); }
     </script>
     <script type="module" src="./admin.js"></script>

@@ -1,4 +1,4 @@
-// admin.js (시간대 분석, 전환율, 엑셀 다운로드 기능 완비)
+// admin.js (ID 입력창 UI 오류 수정됨)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, doc, setDoc, deleteDoc, collection, getDocs, getDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
@@ -19,11 +19,12 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 let allProducts = []; 
-let allLogs = []; // ✨ 엑셀 다운로드를 위한 전역 변수
-const DEFAULT_LAYOUT = { prod_x:100, prod_y:200, prod_w:1000, prod_h:850, qr_x:1511, qr_y:220, qr_size:400, price_x:1711, price_y:670, price_size:170 };
-
-// ... (보안/설정/AI/QR/저장 코드는 기존과 완벽히 동일하므로 생략하지 않고 모두 포함) ...
-// (스크롤 압박 방지를 위해 1~3번 기능은 위쪽 코드 그대로 씁니다)
+let allLogs = [];
+const DEFAULT_LAYOUT = { 
+    prod_x: 100, prod_y: 200, prod_w: 1000, prod_h: 850, prod_scale: 1.0,
+    qr_x: 1511, qr_y: 220, qr_size: 400, 
+    price_x: 1711, price_y: 670, price_size: 170 
+};
 
 // 1. 보안 & 설정
 window.checkLogin = async function() {
@@ -37,7 +38,7 @@ window.checkLogin = async function() {
         let superPw = null; if (superSnap.exists()) superPw = superSnap.data().password;
         if ((adminPw && inputPw === adminPw) || (superPw && inputPw === superPw)) { overlay.style.display = 'none'; loadProductList(); } 
         else { alert("비밀번호 불일치"); }
-    } catch (e) { alert("오류: " + e.message); }
+    } catch (e) { alert("로그인 오류: " + e.message); }
 }
 window.openSettings = function() { document.getElementById('settingsOverlay').style.display = 'flex'; document.getElementById('settingsAuthBox').style.display = 'block'; document.getElementById('settingsConfigBox').style.display = 'none'; document.getElementById('supervisorPassword').value = ''; }
 window.closeSettings = function() { document.getElementById('settingsOverlay').style.display = 'none'; }
@@ -66,6 +67,7 @@ async function loadConfig() {
         if(bgImage) { bgStatus.innerText = "✅ 배경 등록됨"; bgStatus.style.color = "green"; } else { bgStatus.innerText = "❌ 배경 없음"; bgStatus.style.color = "red"; }
         document.getElementById('layout_prod_x').value = layout.prod_x; document.getElementById('layout_prod_y').value = layout.prod_y;
         document.getElementById('layout_prod_w').value = layout.prod_w; document.getElementById('layout_prod_h').value = layout.prod_h;
+        document.getElementById('layout_prod_scale').value = layout.prod_scale;
         document.getElementById('layout_qr_x').value = layout.qr_x; document.getElementById('layout_qr_y').value = layout.qr_y; document.getElementById('layout_qr_size').value = layout.qr_size;
         document.getElementById('layout_price_x').value = layout.price_x; document.getElementById('layout_price_y').value = layout.price_y; document.getElementById('layout_price_size').value = layout.price_size;
     } catch(e) {}
@@ -79,14 +81,14 @@ window.saveSettings = async function() {
         if(bgFile) { const bgRef = ref(storage, 'settings/pricetag_bg.jpg'); await uploadBytes(bgRef, bgFile); configData.bgImage = await getDownloadURL(bgRef); }
         const layout = {
             prod_x: Number(document.getElementById('layout_prod_x').value), prod_y: Number(document.getElementById('layout_prod_y').value),
-            prod_w: Number(document.getElementById('layout_prod_w').value), prod_h: Number(document.getElementById('layout_prod_h').value),
+            prod_w: Number(document.getElementById('layout_prod_w').value), prod_h: Number(document.getElementById('layout_prod_h').value), prod_scale: Number(document.getElementById('layout_prod_scale').value) || 1.0,
             qr_x: Number(document.getElementById('layout_qr_x').value), qr_y: Number(document.getElementById('layout_qr_y').value), qr_size: Number(document.getElementById('layout_qr_size').value),
             price_x: Number(document.getElementById('layout_price_x').value), price_y: Number(document.getElementById('layout_price_y').value), price_size: Number(document.getElementById('layout_price_size').value)
         };
         configData.layout = layout;
         await setDoc(doc(db, "settings", "config"), configData, { merge: true }); await setDoc(doc(db, "settings", "admin"), { password: newAdminPw }, { merge: true });
         alert("✅ 설정 저장 완료"); closeSettings();
-    } catch(e) { alert("저장 실패"); }
+    } catch(e) { alert("저장 실패: " + e.message); }
 }
 document.getElementById('adminPassword').addEventListener("keypress", (e) => { if(e.key==="Enter") checkLogin(); });
 document.getElementById('supervisorPassword').addEventListener("keypress", (e) => { if(e.key==="Enter") checkSupervisorLogin(); });
@@ -107,15 +109,27 @@ window.translateContent = async function() {
         alert("✅ 번역 완료");
     } catch (error) { alert("번역 실패"); } finally { btn.disabled = false; btn.innerText = "✨ AI 번역"; }
 }
+
+// ✨ [수정] resetForm: ID칸을 항상 회색(readOnly)으로 유지
 window.resetForm = function(force = false) {
     if(!force && !confirm("신규 등록 하시겠습니까?")) return;
-    document.getElementById('productId').value = ''; document.getElementById('productId').disabled = false; document.getElementById('productId').style.backgroundColor = 'white';
+    
+    const idInput = document.getElementById('productId');
+    idInput.value = ''; 
+    idInput.placeholder = "저장 시 자동 생성"; // 안내 문구 복구
+    // ✨ 핵심: 사용 가능하게(흰색) 풀지 않고, 계속 잠금 상태 유지
+    idInput.readOnly = true; 
+    idInput.style.backgroundColor = '#e0e0e0';
+    idInput.style.color = '#555';
+    idInput.style.cursor = 'not-allowed';
+
     document.getElementById('name').value = ''; document.getElementById('price').value = '';
     document.querySelectorAll('textarea').forEach(t => t.value = '');
     document.getElementById('imageFile').value = ''; document.getElementById('preview').style.display = 'none';
     document.getElementById('qrPreview').style.display = 'none'; document.getElementById('qrPlaceholder').style.display = 'block'; document.getElementById('qrDownloadBtn').style.display = 'none';
     document.getElementById('saveBtn').innerText = "상품 및 QR 자동 저장하기";
 }
+
 function generateRandomId() { const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'; let r=''; for(let i=0;i<6;i++) r+=c.charAt(Math.floor(Math.random()*c.length)); return r; }
 async function generateAndUploadQR(productId) {
     return new Promise((resolve, reject) => {
@@ -145,7 +159,7 @@ window.saveProduct = async function() {
         const fileInput = document.getElementById('imageFile');
         if (fileInput.files.length > 0) {
             let file = fileInput.files[0];
-            try { file = await imageCompression(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1200 }); } catch (e) {}
+            try { file = await imageCompression(file, { maxSizeMB: 1.5, maxWidthOrHeight: 2000 }); } catch (e) {}
             const refImg = ref(storage, 'products/' + id + '.jpg'); await uploadBytes(refImg, file); imageUrl = await getDownloadURL(refImg);
         }
         if (document.getElementById('qrPreview').style.display === 'none') { try { qrImageUrl = await generateAndUploadQR(id); } catch(e){} }
@@ -185,143 +199,47 @@ function renderProductList(products) {
     });
     list.innerHTML = html;
 }
-
-// 🔥 [핵심] 대시보드 - 시간대/전환율/엑셀 추가됨
 window.loadDashboard = async function() {
-    const startDateStr = document.getElementById('startDate').value;
-    const endDateStr = document.getElementById('endDate').value;
+    const startDateStr = document.getElementById('startDate').value; const endDateStr = document.getElementById('endDate').value;
     if(!startDateStr || !endDateStr) return alert("기간 선택 필수");
-
-    const start = new Date(`${startDateStr}T00:00:00+09:00`);
-    const end = new Date(`${endDateStr}T23:59:59+09:00`);
-
-    const logList = document.getElementById('logContainer');
-    logList.innerHTML = '<div style="text-align:center; padding-top:20px; color:#888;">분석 중...</div>';
-
+    const start = new Date(`${startDateStr}T00:00:00+09:00`); const end = new Date(`${endDateStr}T23:59:59+09:00`);
+    const logList = document.getElementById('logContainer'); logList.innerHTML = '<div style="text-align:center; padding-top:20px;">분석 중...</div>';
     try {
         const q = query(collection(db, "scan_logs"), where("timestamp", ">=", start), where("timestamp", "<=", end), orderBy("timestamp", "desc"));
-        const snapshot = await getDocs(q);
-        const logs = [];
-        snapshot.forEach(doc => logs.push(doc.data()));
-        
-        allLogs = logs; // ✨ 엑셀용 데이터 저장
-
-        const productCounts = {};
-        const langCounts = {kr:0, en:0, jp:0, cn:0, th:0, vn:0, id:0, mn:0};
-        const hourCounts = new Array(24).fill(0); // 0~23시 카운트
-        let cartAdds = 0; // 장바구니 담기 횟수
-
+        const snapshot = await getDocs(q); const logs = []; snapshot.forEach(doc => logs.push(doc.data())); allLogs = logs;
+        const productCounts = {}; const langCounts = {kr:0, en:0, jp:0, cn:0, th:0, vn:0, id:0, mn:0}; const hourCounts = new Array(24).fill(0); let cartAdds = 0;
         const actionMap = { 'kr': 'KR한국어', 'en': 'US영어', 'jp': 'JP일본어', 'cn': 'CN중국어', 'th': 'TH태국어', 'vn': 'VN베트남', 'id': 'ID인니', 'mn': 'MN몽골', 'cart_add': '🛒장바구니' };
-
         let logHtml = "";
         logs.forEach(log => {
-            // 시간대 분석
-            if(log.timestamp) {
-                const date = new Date(log.timestamp.seconds * 1000);
-                const hour = date.getHours(); // 0~23
-                hourCounts[hour]++;
-            }
-
-            // 전환율 & 언어 분석
-            if(log.language === 'cart_add') {
-                cartAdds++;
-            } else {
-                if(langCounts[log.language] !== undefined) langCounts[log.language]++;
-            }
-
-            if(log.productName && log.language !== 'cart_add') {
-                productCounts[log.productName] = (productCounts[log.productName] || 0) + 1;
-            }
-
+            if(log.timestamp) { const d = new Date(log.timestamp.seconds * 1000); hourCounts[d.getHours()]++; }
+            if(log.language === 'cart_add') cartAdds++; else if(langCounts[log.language] !== undefined) langCounts[log.language]++;
+            if(log.productName && log.language !== 'cart_add') productCounts[log.productName] = (productCounts[log.productName] || 0) + 1;
             const date = log.timestamp ? new Date(log.timestamp.seconds * 1000) : new Date();
             const timeStr = date.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
-            const actionText = actionMap[log.language] || log.language;
-            logHtml += `<div class="log-item"><span><span class="log-time">${timeStr}</span> <span class="log-product">${log.productName}</span></span><span class="log-action">${actionText}</span></div>`;
+            logHtml += `<div class="log-item"><span><span class="log-time">${timeStr}</span> <span class="log-product">${log.productName}</span></span><span class="log-action">${actionMap[log.language]||log.language}</span></div>`;
         });
-
-        // 요약 통계
-        const totalViews = logs.filter(l => l.language !== 'cart_add').length; // 순수 조회수
-        const conversionRate = totalViews > 0 ? ((cartAdds / totalViews) * 100).toFixed(1) : 0;
-
-        document.getElementById('statTotalProducts').innerText = allProducts.length;
-        document.getElementById('statPeriodViews').innerText = totalViews;
-        document.getElementById('statCartAdds').innerText = cartAdds;
-        document.getElementById('statConversion').innerText = conversionRate + "%";
-        
+        const totalViews = logs.filter(l => l.language !== 'cart_add').length;
+        document.getElementById('statTotalProducts').innerText = allProducts.length; document.getElementById('statPeriodViews').innerText = totalViews;
+        document.getElementById('statCartAdds').innerText = cartAdds; document.getElementById('statConversion').innerText = (totalViews > 0 ? ((cartAdds/totalViews)*100).toFixed(1) : 0) + "%";
         logList.innerHTML = logs.length === 0 ? '<div style="text-align:center; padding-top:80px; color:#888;">기록 없음</div>' : logHtml;
-
-        // 차트 1: 인기 상품 (주황색)
         const sortedProducts = Object.entries(productCounts).sort(([,a], [,b]) => b - a).slice(0, 5);
-        const ctxProd = document.getElementById('chartProducts').getContext('2d');
-        if(window.prodChart) window.prodChart.destroy();
-        window.prodChart = new Chart(ctxProd, {
-            type: 'bar',
-            data: { labels: sortedProducts.map(([name]) => name), datasets: [{ label: '조회수', data: sortedProducts.map(([,cnt]) => cnt), backgroundColor: '#f39c12', borderRadius: 5 }] },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-
-        // 차트 2: 언어별 (도넛)
-        const langs = ['kr', 'en','jp','cn','th','vn','id','mn'];
-        const langLabels = {'kr':'한국어', 'en':'영어', 'jp':'일어', 'cn':'중국어', 'th':'태국어', 'vn':'베트남', 'id':'인니', 'mn':'몽골'};
-        const colors = ['#1D5C36', '#3498db', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
-        const langChartData = langs.map(l => langCounts[l]);
-        
-        const ctxLang = document.getElementById('chartLangs').getContext('2d');
-        if(window.langChart) window.langChart.destroy();
-        if(langChartData.reduce((a,b)=>a+b,0) === 0) {
-            window.langChart = new Chart(ctxLang, { type: 'doughnut', data: { labels: ['데이터 없음'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: false } } } });
-        } else {
-            window.langChart = new Chart(ctxLang, { type: 'doughnut', data: { labels: langs.map(l => langLabels[l]), datasets: [{ data: langChartData, backgroundColor: colors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } } });
-        }
+        const ctxProd = document.getElementById('chartProducts').getContext('2d'); if(window.prodChart) window.prodChart.destroy();
+        window.prodChart = new Chart(ctxProd, { type: 'bar', data: { labels: sortedProducts.map(([n]) => n), datasets: [{ label: '조회수', data: sortedProducts.map(([,c]) => c), backgroundColor: '#f39c12', borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false } });
+        const langs = ['kr', 'en','jp','cn','th','vn','id','mn']; const langLabels = {'kr':'한국어', 'en':'영어', 'jp':'일어', 'cn':'중국어', 'th':'태국어', 'vn':'베트남', 'id':'인니', 'mn':'몽골'}; const colors = ['#1D5C36', '#3498db', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
+        const langData = langs.map(l => langCounts[l]); const ctxLang = document.getElementById('chartLangs').getContext('2d'); if(window.langChart) window.langChart.destroy();
+        const noData = langData.reduce((a,b)=>a+b,0) === 0;
+        window.langChart = new Chart(ctxLang, { type: 'doughnut', data: { labels: noData?['데이터 없음']:langs.map(l=>langLabels[l]), datasets: [{ data: noData?[1]:langData, backgroundColor: noData?['#e0e0e0']:colors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: false } } } });
         const legendBox = document.getElementById('customLegend'); legendBox.innerHTML = '';
-        langs.forEach((l, index) => {
-            const item = document.createElement('div'); item.className = 'legend-item'; item.innerHTML = `<div class="legend-color" style="background:${colors[index]}"></div> ${langLabels[l]}: ${langCounts[l]}`; legendBox.appendChild(item);
-        });
-
-        // 차트 3: ✨ 시간대별 방문 추이 (꺾은선)
-        const ctxHourly = document.getElementById('chartHourly').getContext('2d');
-        if(window.hourChart) window.hourChart.destroy();
-        window.hourChart = new Chart(ctxHourly, {
-            type: 'line',
-            data: {
-                labels: Array.from({length:24}, (_,i) => i + "시"),
-                datasets: [{
-                    label: '방문수',
-                    data: hourCounts,
-                    borderColor: '#2980b9',
-                    backgroundColor: 'rgba(41, 128, 185, 0.2)',
-                    fill: true, tension: 0.3
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-
+        langs.forEach((l, i) => { const div = document.createElement('div'); div.className='legend-item'; div.innerHTML=`<div class="legend-color" style="background:${colors[i]}"></div>${langLabels[l]}: ${langCounts[l]}`; legendBox.appendChild(div); });
+        const ctxHourly = document.getElementById('chartHourly').getContext('2d'); if(window.hourChart) window.hourChart.destroy();
+        window.hourChart = new Chart(ctxHourly, { type: 'line', data: { labels: Array.from({length:24},(_,i)=>i+"시"), datasets: [{ label: '방문', data: hourCounts, borderColor: '#2980b9', backgroundColor: 'rgba(41,128,185,0.2)', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false } });
     } catch(e) { console.error(e); logList.innerHTML = '<div style="text-align:center; padding-top:20px; color:red;">로드 실패</div>'; }
 }
-
-// ✨ [신규] 엑셀 다운로드 기능
 window.downloadExcel = function() {
-    if(!allLogs || allLogs.length === 0) return alert("다운로드할 데이터가 없습니다.");
-    
-    // 데이터 가공 (보기 좋게)
-    const excelData = allLogs.map(log => {
-        const date = log.timestamp ? new Date(log.timestamp.seconds * 1000) : new Date();
-        return {
-            "날짜": date.toLocaleDateString(),
-            "시간": date.toLocaleTimeString(),
-            "상품명": log.productName,
-            "행동": log.language === 'cart_add' ? '장바구니 담기' : log.language + ' 조회',
-            "ID": log.productId
-        };
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Scan Logs");
-    XLSX.writeFile(workbook, `Pharmacy_Logs_${new Date().toISOString().slice(0,10)}.xlsx`);
+    if(!allLogs || allLogs.length === 0) return alert("데이터 없음");
+    const data = allLogs.map(l => { const d = l.timestamp ? new Date(l.timestamp.seconds*1000) : new Date(); return { "날짜": d.toLocaleDateString(), "시간": d.toLocaleTimeString(), "상품": l.productName, "행동": l.language==='cart_add'?'장바구니':l.language, "ID": l.productId }; });
+    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Logs"); XLSX.writeFile(wb, `Log_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
-
-// (가격표 생성 등 나머지 함수는 기존과 동일하게 유지)
 window.createPriceTag = async function(id, btn) {
     const product = allProducts.find(p => p.id === id); if(!product) return alert("정보 없음");
     let bgUrl = "", layout = { ...DEFAULT_LAYOUT };
@@ -331,12 +249,17 @@ window.createPriceTag = async function(id, btn) {
     try {
         const canvas = document.getElementById('priceTagCanvas'); const ctx = canvas.getContext('2d');
         const bgImg = await loadImage(bgUrl); ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        
         if(product.image) {
             const pImg = await loadImage(product.image);
-            const ratio = Math.min(layout.prod_w / pImg.width, layout.prod_h / pImg.height);
+            ctx.save();
+            ctx.beginPath(); ctx.rect(layout.prod_x, layout.prod_y, layout.prod_w, layout.prod_h); ctx.clip();
+            const scale = layout.prod_scale || 1.0;
+            const ratio = Math.min(layout.prod_w / pImg.width, layout.prod_h / pImg.height) * scale;
             const w = pImg.width * ratio; const h = pImg.height * ratio;
             const cx = (layout.prod_w - w) / 2; const cy = (layout.prod_h - h) / 2;
             ctx.drawImage(pImg, layout.prod_x + cx, layout.prod_y + cy, w, h);
+            ctx.restore();
         }
         const qrImg = await loadImage(product.qrImage); ctx.drawImage(qrImg, layout.qr_x, layout.qr_y, layout.qr_size, layout.qr_size);
         const priceText = "₩" + Number(product.price).toLocaleString();
@@ -355,7 +278,8 @@ window.editProduct = async function(id) {
     const d = await getDoc(doc(db, "products", id));
     if(d.exists()) {
         const data = d.data();
-        document.getElementById('productId').value = id; document.getElementById('name').value = data.name; document.getElementById('price').value = data.price;
+        document.getElementById('productId').value = id; document.getElementById('productId').disabled = true; document.getElementById('productId').style.backgroundColor = '#e0e0e0';
+        document.getElementById('name').value = data.name; document.getElementById('price').value = data.price;
         ['kr','en','cn','jp','th','vn','id','mn'].forEach(l => document.getElementById('desc_'+l).value = data['desc_'+l] || '');
         if(data.image) { document.getElementById('preview').src = data.image; document.getElementById('preview').style.display = 'block'; }
         if(data.qrImage) {
