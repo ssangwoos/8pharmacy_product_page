@@ -3,17 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="EIGHT PHARMACY">
     <meta property="og:title" content="EIGHT PHARMACY 제품 상세">
     <meta property="og:description" content="약사가 엄선한 K-뷰티 & 필수 의약품 정보를 확인하세요.">
     <meta property="og:image" content="https://8pharmacy.kr/images/og-image.png">
+
     <title>Eight Pharmacy Product Info</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        /* 기존 스타일 전체 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
+        
+        /* ✨ [수정] 폰트 패밀리에 'Noto Sans SC' 추가 */
+        body { 
+            font-family: 'Noto Sans KR', 'Noto Sans SC', sans-serif; 
+            background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 80px; 
+        }
+
         header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #eee; position: sticky; top:0; z-index:100; height: 60px;}
         header h1 { font-size: 1.2rem; color: #1D5C36; font-weight: 800; cursor: pointer; margin: 0; }
         .product-img-box { width: 100%; height: 350px; background-color: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -27,16 +38,21 @@
         .converted-price { font-size: 1.4rem; color: #1D5C36; font-weight: 700; margin-bottom: 4px; }
         .rate-detail { font-size: 0.85rem; color: #666; display: block; }
         .rate-date { font-size: 0.75rem; color: #999; margin-top: 2px; display: block; }
+        
         .lang-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #fff; padding: 15px 10px; margin-bottom: 2px; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100; }
         .lang-btn { border: 1px solid transparent; background: #f8f8f8; border-radius: 8px; cursor: pointer; opacity: 0.6; transition: all 0.2s; padding: 8px 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .lang-btn:hover { background: #eee; }
         .lang-btn.active { opacity: 1; background: #e8f5e9; border: 1px solid #1D5C36; transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .flag-icon { width: 28px; height: auto; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .lang-label { font-size: 0.75rem; color: #555; font-weight: bold; }
+        
         .description-container { background: #fff; min-height: 300px; padding: 20px; }
         .desc-content { display: none; }
         .desc-content.active { display: block; animation: fadeIn 0.3s; }
-        .desc-text { font-size: 1rem; line-height: 1.7; color: #444; white-space: pre-line; }
+        
+        /* 설명 텍스트: 여기서도 폰트가 잘 적용되도록 상속 */
+        .desc-text { font-size: 1rem; line-height: 1.7; color: #444; white-space: pre-line; font-family: 'Noto Sans KR', 'Noto Sans SC', sans-serif; }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         #loading { text-align: center; padding: 50px; font-weight: bold; color: #666; display: none; }
         .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; gap: 10px; justify-content: center; z-index: 900; }
@@ -92,7 +108,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        // ✨ [추가] addDoc, collection, serverTimestamp 가져오기
         import { getFirestore, doc, getDoc, updateDoc, increment, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -117,16 +132,8 @@
         }
         updateCartCount();
 
-        // ✨ [신규] 로그 저장 함수 (이제부터 모든 기록을 남깁니다)
         async function logScanEvent(prodId, prodName, lang) {
-            try {
-                await addDoc(collection(db, "scan_logs"), {
-                    productId: prodId,
-                    productName: prodName,
-                    language: lang,
-                    timestamp: serverTimestamp() // 서버 시간 기준 저장
-                });
-            } catch(e) { console.log("로그 저장 실패(무시)", e); }
+            try { await addDoc(collection(db, "scan_logs"), { productId: prodId, productName: prodName, language: lang, timestamp: serverTimestamp() }); } catch(e) {}
         }
 
         async function loadProduct() {
@@ -153,10 +160,7 @@
                     setDesc('th', data.desc_th); setDesc('vn', data.desc_vn);
                     setDesc('id', data.desc_id); setDesc('mn', data.desc_mn);
 
-                    // 기존 단순 카운터 +1
                     updateDoc(docRef, { views: increment(1) }).catch(err => {});
-                    
-                    // ✨ [핵심] 상세 로그 저장 (한국어 접속)
                     logScanEvent(productId, data.name, 'kr');
 
                     loading.style.display = 'none'; content.style.display = 'block';
@@ -175,13 +179,8 @@
             const langMap = {'kr':0, 'en':1, 'jp':2, 'cn':3, 'th':4, 'vn':5, 'id':6, 'mn':7};
             if(btns[langMap[lang]]) btns[langMap[lang]].classList.add('active');
 
-            // 기존 카운터 +1
             if(productId) { const docRef = doc(db, "products", productId); updateDoc(docRef, { [`views_${lang}`]: increment(1) }).catch(e=>{}); }
-            
-            // ✨ [핵심] 언어 변경 로그 저장
-            if(currentProductData) {
-                logScanEvent(productId, currentProductData.name, lang);
-            }
+            if(currentProductData) logScanEvent(productId, currentProductData.name, lang);
 
             const box = document.getElementById('convertBox');
             if (!globalRates || lang === 'kr') { box.style.display = 'none'; return; }
@@ -217,8 +216,6 @@
             if(navigator.vibrate) navigator.vibrate(50);
             const toast = document.getElementById('toast'); toast.style.display = 'block';
             setTimeout(() => { toast.style.display = 'none'; }, 2000);
-            
-            // ✨ [핵심] 장바구니 담기 로그 저장 (언어는 'cart'로 표시)
             logScanEvent(productId, currentProductData.name, 'cart_add');
         }
         loadProduct();
