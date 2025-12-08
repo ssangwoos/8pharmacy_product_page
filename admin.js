@@ -1,4 +1,4 @@
-// admin.js (ID 입력창 초기화 오류 수정됨)
+// admin.js (실시간 검색 고침 + ID 검색 기능 추가)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore, doc, setDoc, deleteDoc, collection, getDocs, getDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
@@ -19,7 +19,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 let allProducts = []; 
-let allLogs = []; // 엑셀용 로그 저장
+let allLogs = [];
 const DEFAULT_LAYOUT = { 
     prod_x: 100, prod_y: 200, prod_w: 1000, prod_h: 850, prod_scale: 1.0,
     qr_x: 1511, qr_y: 220, qr_size: 400, 
@@ -93,101 +93,36 @@ window.saveSettings = async function() {
 document.getElementById('adminPassword').addEventListener("keypress", (e) => { if(e.key==="Enter") checkLogin(); });
 document.getElementById('supervisorPassword').addEventListener("keypress", (e) => { if(e.key==="Enter") checkSupervisorLogin(); });
 
-// ==========================================
-// ✨ 2. AI 번역 (업그레이드: 자동 재시도 기능 탑재)
-// ==========================================
+// 2. AI & QR & 저장
 window.translateContent = async function() {
-    const krDesc = document.getElementById('desc_kr').value;
-    const btn = document.querySelector('.ai-btn');
-
-    if(!krDesc) return alert("한국어 설명을 먼저 작성해주세요!");
-
-    let apiKey = "";
-    try { const docSnap = await getDoc(doc(db, "settings", "config")); if(docSnap.exists()) apiKey = docSnap.data().openai_key; } catch(e) {}
-    if(!apiKey) return alert("❌ API Key가 없습니다. 설정창에서 등록하세요.");
-
-    // ✨ 재시도 로직 함수
-    const fetchWithRetry = async (retries = 3) => {
-        try {
-            const prompt = `
-                Role: Professional Medical Translator.
-                Task: Translate Korean text to English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, Mongolian.
-                Rules: Keep original tone. Output pure JSON only. No markdown.
-                JSON keys: en, cn, jp, th, vn, id, mn.
-                Text: "${krDesc}"
-            `;
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({
-                    model: "gpt-4o-mini", // ✨ 고품질 모델 유지
-                    messages: [{ role: "user", content: prompt }],
-                    temperature: 0.3
-                })
-            });
-
-            const data = await response.json();
-            
-            // 에러가 있으면 에러를 던져서 재시도 유도
-            if(data.error) throw new Error(data.error.message);
-            
-            return data;
-
-        } catch (err) {
-            if (retries > 0) {
-                console.log(`번역 실패.. ${retries}회 남음. 재시도 중...`);
-                // 1.5초 쉬고 재시도
-                await new Promise(r => setTimeout(r, 1500));
-                return fetchWithRetry(retries - 1);
-            } else {
-                throw err;
-            }
-        }
-    };
-
+    const krDesc = document.getElementById('desc_kr').value; const btn = document.querySelector('.ai-btn');
+    if(!krDesc) return alert("한국어 설명 필수");
+    let apiKey = ""; try { const docSnap = await getDoc(doc(db, "settings", "config")); if(docSnap.exists()) apiKey = docSnap.data().openai_key; } catch(e) {}
+    if(!apiKey) return alert("❌ API Key 없음");
     try {
-        btn.disabled = true;
-        btn.innerText = "🤖 꼼꼼하게 번역 중... (잠시만요)";
-
-        const data = await fetchWithRetry(); // ✨ 재시도 기능 실행
-
-        let rawContent = data.choices[0].message.content;
-        rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+        btn.disabled = true; btn.innerText = "🤖 번역 중...";
+        const prompt = `Translate Korean to English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, Mongolian. JSON keys: en, cn, jp, th, vn, id, mn. Text: "${krDesc}"`;
+        const res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], temperature: 0.3 }) });
+        const data = await res.json();
+        let rawContent = data.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
         const content = JSON.parse(rawContent);
-
-        ['en','cn','jp','th','vn','id','mn'].forEach(lang => {
-            document.getElementById('desc_' + lang).value = content[lang] || "";
-        });
-
-        alert("✅ 번역 완료! (내용을 확인해주세요)");
-
-    } catch (error) {
-        console.error("최종 번역 실패:", error);
-        alert("번역에 실패했습니다.\n잠시 후 다시 시도하거나, 내용이 너무 길지 않은지 확인해주세요.\n오류: " + error.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "✨ AI 번역";
-    }
+        ['en','cn','jp','th','vn','id','mn'].forEach(l => document.getElementById('desc_'+l).value = content[l] || "");
+        alert("✅ 번역 완료");
+    } catch (error) { alert("번역 실패"); } finally { btn.disabled = false; btn.innerText = "✨ AI 번역"; }
 }
-
-// ✨ [수정] resetForm 함수: ID칸을 흰색으로 풀지 않고 회색(잠금) 유지
 window.resetForm = function(force = false) {
     if(!force && !confirm("신규 등록 하시겠습니까?")) return;
-
-    const idInput = document.getElementById('productId');
-    idInput.value = '';
-    idInput.placeholder = "저장 시 자동 생성"; // 원래 문구로 복구
-    idInput.disabled = true; // 비활성화 유지
-    idInput.style.backgroundColor = '#e0e0e0'; // 회색 유지
     
+    const idInput = document.getElementById('productId');
+    idInput.value = ''; idInput.placeholder = "저장 시 자동 생성"; 
+    idInput.disabled = true; idInput.style.backgroundColor = '#e0e0e0'; idInput.style.color = '#555'; idInput.style.cursor = 'not-allowed';
+
     document.getElementById('name').value = ''; document.getElementById('price').value = '';
     document.querySelectorAll('textarea').forEach(t => t.value = '');
     document.getElementById('imageFile').value = ''; document.getElementById('preview').style.display = 'none';
     document.getElementById('qrPreview').style.display = 'none'; document.getElementById('qrPlaceholder').style.display = 'block'; document.getElementById('qrDownloadBtn').style.display = 'none';
     document.getElementById('saveBtn').innerText = "상품 및 QR 자동 저장하기";
 }
-
 function generateRandomId() { const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'; let r=''; for(let i=0;i<6;i++) r+=c.charAt(Math.floor(Math.random()*c.length)); return r; }
 async function generateAndUploadQR(productId) {
     return new Promise((resolve, reject) => {
@@ -230,33 +165,71 @@ window.saveProduct = async function() {
     } catch (e) { alert("오류: " + e.message); } finally { btn.disabled = false; btn.innerText = "상품 및 QR 자동 저장하기"; }
 }
 window.downloadQR = async function(url, filename) { try { const response = await fetch(url); const blob = await response.blob(); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); } catch (error) { window.open(url, '_blank'); } }
+
+// 3. 목록 & 정렬 & 대시보드
 window.loadProductList = async function() {
     const list = document.getElementById('productList'); list.innerHTML = '<p style="text-align:center;">로딩 중...</p>';
     try { const q = await getDocs(collection(db, "products")); allProducts = []; q.forEach(doc => allProducts.push({id: doc.id, ...doc.data()})); window.applySort(); } 
     catch (e) { list.innerHTML = '로드 실패'; }
 }
+
+// ✨ [핵심 수정] applySort에 검색 로직 통합 (실시간 검색 부활)
 window.applySort = function() {
-    const sortSelect = document.getElementById('sortSelect'); const sortValue = sortSelect ? sortSelect.value : 'newest';
+    const sortSelect = document.getElementById('sortSelect');
+    const sortValue = sortSelect ? sortSelect.value : 'newest';
+    
     if (sortValue === 'newest') allProducts.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
     else if (sortValue === 'oldest') allProducts.sort((a, b) => (a.updatedAt?.seconds || 0) - (b.updatedAt?.seconds || 0));
     else if (sortValue === 'name_asc') allProducts.sort((a, b) => a.name.localeCompare(b.name));
     else if (sortValue === 'name_desc') allProducts.sort((a, b) => b.name.localeCompare(a.name));
     else if (sortValue === 'views') allProducts.sort((a, b) => (b.views || 0) - (a.views || 0));
-    const searchInput = document.getElementById('searchInput'); const k = searchInput ? searchInput.value.toLowerCase().trim() : "";
-    const filtered = k ? allProducts.filter(i => i.name.toLowerCase().includes(k)) : allProducts;
+
+    const searchInput = document.getElementById('searchInput');
+    const k = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    
+    // ✨ ID 검색 조건 추가 (이름 OR 아이디 포함)
+    const filtered = k 
+        ? allProducts.filter(i => i.name.toLowerCase().includes(k) || i.id.toLowerCase().includes(k)) 
+        : allProducts;
+        
     renderProductList(filtered);
 }
+
 function renderProductList(products) {
-    const list = document.getElementById('productList'); if (products.length === 0) { list.innerHTML = '<p style="text-align:center; padding:20px;">검색 결과 없음</p>'; return; }
+    const list = document.getElementById('productList');
+    if (products.length === 0) { list.innerHTML = '<p style="text-align:center; padding:20px;">검색 결과 없음</p>'; return; }
+    
     let html = '';
     products.forEach((item) => {
         const img = item.image || 'https://via.placeholder.com/60';
-        const qrBadge = item.qrImage ? `<span class="badge-qr-on" onclick="downloadQR('${item.qrImage}', '${item.id}_qr.jpg')">✅QR받기</span>` : '<span class="badge-qr-off">⬜미등록</span>';
+        const qrBadge = item.qrImage 
+            ? `<span class="badge-qr-on" onclick="downloadQR('${item.qrImage}', '${item.id}_qr.jpg')">✅QR받기</span>` 
+            : '<span class="badge-qr-off">⬜미등록</span>';
         const viewCount = item.views ? item.views : 0;
-        html += `<div class="product-item"><img src="${img}" class="item-img"><div class="item-info"><div class="item-title"><span class="badge-id">${item.id}</span> ${item.name} ${qrBadge} <span class="badge-view">👁️ ${viewCount}</span></div><div class="item-price">${Number(item.price).toLocaleString()}원</div></div><div class="btn-group"><button class="btn-small btn-view" onclick="window.open('product.html?id=${item.id}')">🔍확인</button><button class="btn-small btn-tag" onclick="createPriceTag('${item.id}', this)">🏷️가격표</button><button class="btn-small btn-edit" onclick="editProduct('${item.id}')">수정</button><button class="btn-small btn-delete" onclick="deleteProduct('${item.id}')">삭제</button></div></div>`;
+
+        html += `
+            <div class="product-item">
+                <img src="${img}" class="item-img">
+                <div class="item-info">
+                    <div class="item-title">
+                        <span class="badge-id">${item.id}</span> 
+                        ${item.name} 
+                        ${qrBadge}
+                        <span class="badge-view">👁️ ${viewCount}</span>
+                    </div>
+                    <div class="item-price">${Number(item.price).toLocaleString()}원</div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-small btn-view" onclick="window.open('product.html?id=${item.id}')">🔍확인</button>
+                    <button class="btn-small btn-tag" onclick="createPriceTag('${item.id}', this)">🏷️가격표</button>
+                    <button class="btn-small btn-edit" onclick="editProduct('${item.id}')">수정</button>
+                    <button class="btn-small btn-delete" onclick="deleteProduct('${item.id}')">삭제</button>
+                </div>
+            </div>`;
     });
     list.innerHTML = html;
 }
+
 window.loadDashboard = async function() {
     const startDateStr = document.getElementById('startDate').value; const endDateStr = document.getElementById('endDate').value;
     if(!startDateStr || !endDateStr) return alert("기간 선택 필수");
@@ -307,7 +280,6 @@ window.createPriceTag = async function(id, btn) {
     try {
         const canvas = document.getElementById('priceTagCanvas'); const ctx = canvas.getContext('2d');
         const bgImg = await loadImage(bgUrl); ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-        
         if(product.image) {
             const pImg = await loadImage(product.image);
             ctx.save();

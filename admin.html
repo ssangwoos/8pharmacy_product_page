@@ -177,7 +177,11 @@
         </div>
 
         <button class="btn" onclick="saveProduct()" id="saveBtn">저장하기</button>
-    </div><div id="tab-manage" class="tab-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">상품 리스트</h3><button class="btn-small" style="background:#666;" onclick="loadProductList()">🔄 새로고침</button></div><div style="display:flex; gap:10px; margin-bottom:20px;"><select id="sortSelect" style="padding:12px; border:2px solid #1D5C36; border-radius:10px; font-size:1rem;" onchange="applySort()"><option value="newest">🕒 최신 등록순</option><option value="oldest">📅 오래된 순</option><option value="name_asc">🔤 가나다순</option><option value="name_desc">🔠 가나다 역순</option><option value="views">🔥 조회수 순</option></select><input type="text" id="searchInput" placeholder="🔍 검색..." style="flex:1; padding:12px; border:2px solid #1D5C36; border-radius:50px;"></div><div id="productList"><p style="text-align:center;">로딩 중...</p></div></div>
+    </div><div id="tab-manage" class="tab-content"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h3 style="margin:0;">상품 리스트</h3><button class="btn-small" style="background:#666;" onclick="loadProductList()">🔄 새로고침</button></div><div style="display:flex; gap:10px; margin-bottom:20px;"><select id="sortSelect" style="padding:12px; border:2px solid #1D5C36; border-radius:10px; font-size:1rem;" onchange="applySort()"><option value="newest">🕒 최신 등록순</option><option value="oldest">📅 오래된 순</option><option value="name_asc">🔤 가나다순</option><option value="name_desc">🔠 가나다 역순</option><option value="views">🔥 조회수 순</option></select>
+        <input type="text" id="searchInput" placeholder="🔍 상품명 또는 ID로 검색..." 
+               style="flex:1; padding:12px; border:2px solid #1D5C36; border-radius:50px;" 
+               onkeyup="applySort()">
+    </div><div id="productList"><p style="text-align:center;">로딩 중...</p></div></div>
 
     <script>
         const now = new Date();
