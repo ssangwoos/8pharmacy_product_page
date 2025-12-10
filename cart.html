@@ -178,11 +178,17 @@
                 totalKRW += itemTotal;
                 html += `
                     <div class="cart-item">
-                        <img src="${item.image || 'https://via.placeholder.com/60'}" class="item-img">
-                        <div class="item-info">
+                        <img src="${item.image || 'https://via.placeholder.com/60'}" class="item-img" 
+                             onclick="location.href='product.html?id=${item.id}'" 
+                             style="cursor: pointer;">
+                        
+                        <div class="item-info" 
+                             onclick="location.href='product.html?id=${item.id}'" 
+                             style="cursor: pointer;">
                             <div class="item-name">${item.name}</div>
                             <div class="item-price">${formatMoney(item.price)}</div>
                         </div>
+
                         <div class="qty-control">
                             <div class="btn-qty" onclick="updateQty(${idx}, -1)">-</div>
                             <span>${item.qty}</span>
