@@ -94,21 +94,74 @@ document.getElementById('adminPassword').addEventListener("keypress", (e) => { i
 document.getElementById('supervisorPassword').addEventListener("keypress", (e) => { if(e.key==="Enter") checkSupervisorLogin(); });
 
 // 2. AI & QR & 저장
+// admin.js 의 translateContent 함수 교체
+
 window.translateContent = async function() {
-    const krDesc = document.getElementById('desc_kr').value; const btn = document.querySelector('.ai-btn');
-    if(!krDesc) return alert("한국어 설명 필수");
-    let apiKey = ""; try { const docSnap = await getDoc(doc(db, "settings", "config")); if(docSnap.exists()) apiKey = docSnap.data().openai_key; } catch(e) {}
-    if(!apiKey) return alert("❌ API Key 없음");
+    const krDesc = document.getElementById('desc_kr').value;
+    const btn = document.querySelector('.ai-btn');
+
+    if(!krDesc) return alert("한국어 설명을 먼저 작성해주세요!");
+
+    let apiKey = "";
+    try { const docSnap = await getDoc(doc(db, "settings", "config")); if(docSnap.exists()) apiKey = docSnap.data().openai_key; } catch(e) {}
+
+    if(!apiKey) return alert("❌ API Key가 없습니다. 설정에서 등록해주세요.");
+
     try {
-        btn.disabled = true; btn.innerText = "🤖 번역 중...";
-        const prompt = `Translate Korean to English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, Mongolian. JSON keys: en, cn, jp, th, vn, id, mn. Text: "${krDesc}"`;
-        const res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "user", content: prompt }], temperature: 0.3 }) });
-        const data = await res.json();
-        let rawContent = data.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
-        const content = JSON.parse(rawContent);
-        ['en','cn','jp','th','vn','id','mn'].forEach(l => document.getElementById('desc_'+l).value = content[l] || "");
-        alert("✅ 번역 완료");
-    } catch (error) { alert("번역 실패"); } finally { btn.disabled = false; btn.innerText = "✨ AI 번역"; }
+        btn.disabled = true;
+        btn.innerText = "🤖 GPT-4o가 완벽하게 번역 중...";
+
+        const prompt = `
+            Role: Professional Medical Translator.
+            Task: Translate Korean text to English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, Mongolian.
+            
+            IMPORTANT: 
+            - Use friendly and professional pharmacy tone.
+            - Handle special characters (quotes, brackets) correctly in JSON.
+            - Output MUST be valid JSON.
+            
+            JSON keys: en, cn, jp, th, vn, id, mn.
+            
+            Source Text: "${krDesc}"
+        `;
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${apiKey}` 
+            },
+            body: JSON.stringify({
+                model: "gpt-4o", // ✨ [변경] 최고급 모델 사용 (비용 조금 상승, 품질 최상)
+                messages: [
+                    { role: "system", content: "You are a helpful assistant designed to output JSON." }, // ✨ JSON 모드 활성화 힌트
+                    { role: "user", content: prompt }
+                ],
+                response_format: { type: "json_object" }, // ✨ [핵심] JSON 강제 모드 (오류 박멸)
+                temperature: 0.2
+            })
+        });
+
+        const data = await response.json();
+        
+        if(data.error) throw new Error(data.error.message);
+        
+        // JSON 모드를 쓰면 마크다운 기호 없이 순수 JSON만 줍니다.
+        const content = JSON.parse(data.choices[0].message.content);
+
+        ['en','cn','jp','th','vn','id','mn'].forEach(lang => {
+            document.getElementById('desc_' + lang).value = content[lang] || "";
+        });
+
+        alert("✅ GPT-4o 번역 완료! (특수문자 완벽 처리)");
+
+    } catch (error) {
+        console.error(error);
+        alert("번역 실패: " + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "✨ AI 번역 (GPT-4o)";
+    }
 }
 window.resetForm = function(force = false) {
     if(!force && !confirm("신규 등록 하시겠습니까?")) return;
@@ -230,41 +283,162 @@ function renderProductList(products) {
     list.innerHTML = html;
 }
 
+// admin.js 파일의 window.loadDashboard 함수 전체를 이걸로 덮어쓰세요.
+
 window.loadDashboard = async function() {
-    const startDateStr = document.getElementById('startDate').value; const endDateStr = document.getElementById('endDate').value;
+    const startDateStr = document.getElementById('startDate').value;
+    const endDateStr = document.getElementById('endDate').value;
     if(!startDateStr || !endDateStr) return alert("기간 선택 필수");
-    const start = new Date(`${startDateStr}T00:00:00+09:00`); const end = new Date(`${endDateStr}T23:59:59+09:00`);
-    const logList = document.getElementById('logContainer'); logList.innerHTML = '<div style="text-align:center; padding-top:20px;">분석 중...</div>';
+
+    // KST 시간 (UTC+9)
+    const start = new Date(`${startDateStr}T00:00:00+09:00`);
+    const end = new Date(`${endDateStr}T23:59:59+09:00`);
+
+    const logList = document.getElementById('logContainer');
+    logList.innerHTML = '<div style="text-align:center; padding-top:20px; color:#888;">분석 중...</div>';
+
     try {
-        const q = query(collection(db, "scan_logs"), where("timestamp", ">=", start), where("timestamp", "<=", end), orderBy("timestamp", "desc"));
-        const snapshot = await getDocs(q); const logs = []; snapshot.forEach(doc => logs.push(doc.data())); allLogs = logs;
-        const productCounts = {}; const langCounts = {kr:0, en:0, jp:0, cn:0, th:0, vn:0, id:0, mn:0}; const hourCounts = new Array(24).fill(0); let cartAdds = 0;
+        const q = query(
+            collection(db, "scan_logs"),
+            where("timestamp", ">=", start),
+            where("timestamp", "<=", end),
+            orderBy("timestamp", "desc")
+        );
+        
+        const snapshot = await getDocs(q);
+        const logs = [];
+        snapshot.forEach(doc => logs.push(doc.data()));
+        allLogs = logs; // 엑셀용 데이터 저장
+
+        const productCounts = {};
+        const langCounts = {kr:0, en:0, jp:0, cn:0, th:0, vn:0, id:0, mn:0};
+        const hourCounts = new Array(24).fill(0); 
+        let cartAdds = 0;
+
         const actionMap = { 'kr': 'KR한국어', 'en': 'US영어', 'jp': 'JP일본어', 'cn': 'CN중국어', 'th': 'TH태국어', 'vn': 'VN베트남', 'id': 'ID인니', 'mn': 'MN몽골', 'cart_add': '🛒장바구니' };
+
         let logHtml = "";
         logs.forEach(log => {
-            if(log.timestamp) { const d = new Date(log.timestamp.seconds * 1000); hourCounts[d.getHours()]++; }
-            if(log.language === 'cart_add') cartAdds++; else if(langCounts[log.language] !== undefined) langCounts[log.language]++;
-            if(log.productName && log.language !== 'cart_add') productCounts[log.productName] = (productCounts[log.productName] || 0) + 1;
+            if(log.timestamp) {
+                const date = new Date(log.timestamp.seconds * 1000);
+                const hour = date.getHours();
+                hourCounts[hour]++;
+            }
+
+            if(log.language === 'cart_add') {
+                cartAdds++;
+            } else {
+                if(langCounts[log.language] !== undefined) langCounts[log.language]++;
+            }
+
+            if(log.productName && log.language !== 'cart_add') {
+                productCounts[log.productName] = (productCounts[log.productName] || 0) + 1;
+            }
+
             const date = log.timestamp ? new Date(log.timestamp.seconds * 1000) : new Date();
             const timeStr = date.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
-            logHtml += `<div class="log-item"><span><span class="log-time">${timeStr}</span> <span class="log-product">${log.productName}</span></span><span class="log-action">${actionMap[log.language]||log.language}</span></div>`;
+            const actionText = actionMap[log.language] || log.language;
+
+            logHtml += `
+                <div class="log-item">
+                    <span><span class="log-time">${timeStr}</span> <span class="log-product">${log.productName}</span></span>
+                    <span class="log-action">${actionText}</span>
+                </div>`;
         });
+
+        // 요약 통계
         const totalViews = logs.filter(l => l.language !== 'cart_add').length;
-        document.getElementById('statTotalProducts').innerText = allProducts.length; document.getElementById('statPeriodViews').innerText = totalViews;
-        document.getElementById('statCartAdds').innerText = cartAdds; document.getElementById('statConversion').innerText = (totalViews > 0 ? ((cartAdds/totalViews)*100).toFixed(1) : 0) + "%";
+        const conversionRate = totalViews > 0 ? ((cartAdds / totalViews) * 100).toFixed(1) : 0;
+
+        document.getElementById('statTotalProducts').innerText = allProducts.length;
+        document.getElementById('statPeriodViews').innerText = totalViews;
+        document.getElementById('statCartAdds').innerText = cartAdds;
+        document.getElementById('statConversion').innerText = conversionRate + "%";
+        
         logList.innerHTML = logs.length === 0 ? '<div style="text-align:center; padding-top:80px; color:#888;">기록 없음</div>' : logHtml;
-        const sortedProducts = Object.entries(productCounts).sort(([,a], [,b]) => b - a).slice(0, 5);
-        const ctxProd = document.getElementById('chartProducts').getContext('2d'); if(window.prodChart) window.prodChart.destroy();
-        window.prodChart = new Chart(ctxProd, { type: 'bar', data: { labels: sortedProducts.map(([n]) => n), datasets: [{ label: '조회수', data: sortedProducts.map(([,c]) => c), backgroundColor: '#f39c12', borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false } });
-        const langs = ['kr', 'en','jp','cn','th','vn','id','mn']; const langLabels = {'kr':'한국어', 'en':'영어', 'jp':'일어', 'cn':'중국어', 'th':'태국어', 'vn':'베트남', 'id':'인니', 'mn':'몽골'}; const colors = ['#1D5C36', '#3498db', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
-        const langData = langs.map(l => langCounts[l]); const ctxLang = document.getElementById('chartLangs').getContext('2d'); if(window.langChart) window.langChart.destroy();
-        const noData = langData.reduce((a,b)=>a+b,0) === 0;
-        window.langChart = new Chart(ctxLang, { type: 'doughnut', data: { labels: noData?['데이터 없음']:langs.map(l=>langLabels[l]), datasets: [{ data: noData?[1]:langData, backgroundColor: noData?['#e0e0e0']:colors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: false } } } });
-        const legendBox = document.getElementById('customLegend'); legendBox.innerHTML = '';
-        langs.forEach((l, i) => { const div = document.createElement('div'); div.className='legend-item'; div.innerHTML=`<div class="legend-color" style="background:${colors[i]}"></div>${langLabels[l]}: ${langCounts[l]}`; legendBox.appendChild(div); });
-        const ctxHourly = document.getElementById('chartHourly').getContext('2d'); if(window.hourChart) window.hourChart.destroy();
-        window.hourChart = new Chart(ctxHourly, { type: 'line', data: { labels: Array.from({length:24},(_,i)=>i+"시"), datasets: [{ label: '방문', data: hourCounts, borderColor: '#2980b9', backgroundColor: 'rgba(41,128,185,0.2)', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false } });
-    } catch(e) { console.error(e); logList.innerHTML = '<div style="text-align:center; padding-top:20px; color:red;">로드 실패</div>'; }
+
+        // 📊 차트 1: 인기 상품 (✨ 가로형으로 변경)
+        const sortedProducts = Object.entries(productCounts)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5);
+        
+        const ctxProd = document.getElementById('chartProducts').getContext('2d');
+        if(window.prodChart) window.prodChart.destroy();
+        
+        window.prodChart = new Chart(ctxProd, {
+            type: 'bar',
+            data: {
+                labels: sortedProducts.map(([name]) => name),
+                datasets: [{ 
+                    label: '조회수', 
+                    data: sortedProducts.map(([,cnt]) => cnt), 
+                    backgroundColor: '#f39c12', 
+                    borderRadius: 5,
+                    barPercentage: 0.6 // 막대 두께 조절
+                }]
+            },
+            options: { 
+                indexAxis: 'y', // ✨ [핵심] 가로 그래프로 변경!
+                responsive: true, 
+                maintainAspectRatio: false,
+                scales: {
+                    x: { beginAtZero: true, suggestedMax: 5 } // 눈금 여유
+                }
+            }
+        });
+
+        // 차트 2: 언어별 (도넛) - 기존 유지
+        const langs = ['kr', 'en','jp','cn','th','vn','id','mn'];
+        const langLabels = {'kr':'한국어', 'en':'영어', 'jp':'일어', 'cn':'중국어', 'th':'태국어', 'vn':'베트남', 'id':'인니', 'mn':'몽골'};
+        const colors = ['#1D5C36', '#3498db', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
+        const langChartData = langs.map(l => langCounts[l]);
+        const totalLangChart = langChartData.reduce((a,b)=>a+b,0);
+
+        const ctxLang = document.getElementById('chartLangs').getContext('2d');
+        if(window.langChart) window.langChart.destroy();
+
+        if(totalLangChart === 0) {
+            window.langChart = new Chart(ctxLang, { type: 'doughnut', data: { labels: ['데이터 없음'], datasets: [{ data: [1], backgroundColor: ['#e0e0e0'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: false } } } });
+        } else {
+            window.langChart = new Chart(ctxLang, {
+                type: 'doughnut',
+                data: { labels: langs.map(l => langLabels[l]), datasets: [{ data: langChartData, backgroundColor: colors, borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+            });
+        }
+        
+        // 범례 생성
+        const legendBox = document.getElementById('customLegend');
+        legendBox.innerHTML = '';
+        langs.forEach((l, index) => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.innerHTML = `<div class="legend-color" style="background:${colors[index]}"></div> ${langLabels[l]}: ${langCounts[l]}`;
+            legendBox.appendChild(item);
+        });
+
+        // 차트 3: 시간대별 (꺾은선) - 기존 유지
+        const ctxHourly = document.getElementById('chartHourly').getContext('2d');
+        if(window.hourChart) window.hourChart.destroy();
+        window.hourChart = new Chart(ctxHourly, {
+            type: 'line',
+            data: {
+                labels: Array.from({length:24}, (_,i) => i + "시"),
+                datasets: [{
+                    label: '방문수',
+                    data: hourCounts,
+                    borderColor: '#2980b9',
+                    backgroundColor: 'rgba(41, 128, 185, 0.2)',
+                    fill: true, tension: 0.3
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+    } catch(e) {
+        console.error(e);
+        logList.innerHTML = '<div style="text-align:center; padding-top:20px; color:red;">데이터 로드 실패</div>';
+    }
 }
 window.downloadExcel = function() {
     if(!allLogs || allLogs.length === 0) return alert("데이터 없음");
