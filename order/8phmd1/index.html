@@ -12,7 +12,10 @@
     <header class="top-header">
         <div class="logo">PharmaOrder OS <span id="header-shop-name" style="font-size:0.8em; color:#7f8c8d; margin-left:10px;"></span></div>
         <div class="search-bar">
-            <input id="main-search-input" type="text" placeholder="🔍 약품명, 성분명, 제약사 검색 (Enter)">
+            <div style="position:relative; width:400px;">
+                <input id="main-search-input" type="text" placeholder="🔍 약품명, 성분명, 제약사 검색 (Enter)" style="width: 100%; padding: 10px; padding-right: 40px; border: 2px solid #3498db; border-radius: 4px; outline: none;">
+                <button id="btn-clear-main-search" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); z-index:10; border:none; background:transparent; font-size:1.2rem; color:#999; cursor:pointer;">&times;</button>
+            </div>
         </div>
         <div class="user-info">약국장: <span id="header-manager-name"></span> 님 <span style="color:#27ae60">● Online</span></div>
     </header>
