@@ -8,7 +8,7 @@
 export const SHOP_ID = "8ph_md1"; 
 
 // 2. 약국 표시 이름 (화면 왼쪽 상단에 뜸)
-export const SHOP_NAME = "에이트 명동1번가 약국"; // 지점은 "비트약국" 등으로 변경
+export const SHOP_NAME = "에이트\n명동1번가 약국"; // 지점은 "비트약국" 등으로 변경
 
 // 3. Firebase 키값 (모든 약국이 공유)
 export const firebaseConfig = {
@@ -18,4 +18,5 @@ export const firebaseConfig = {
     storageBucket: "pharmacy-order-5ddc5.firebasestorage.app", 
     messagingSenderId: "713414389922",
     appId: "1:713414389922:web:606452de8b27fe847ca7fb"
+
 };
