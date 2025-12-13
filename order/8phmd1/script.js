@@ -11,9 +11,18 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 console.log(`🔥 Connected: ${SHOP_NAME} (${SHOP_ID})`);
 
-// 상호명 표시
-document.getElementById('header-shop-name').textContent = `[${SHOP_NAME}]`;
-document.getElementById('sidebar-brand-name').textContent = SHOP_NAME;
+// [수정] 상호명 줄바꿈 처리 로직
+const displayName = SHOP_NAME.replace(/\\n|\n/g, '<br>'); // 화면용 (줄바꿈 O)
+const titleName = SHOP_NAME.replace(/\\n|\n/g, ' ');      // 브라우저 탭용 (줄바꿈 X, 공백 치환)
+
+// 1. 헤더 (한 줄로 표시하되 공백으로 구분)
+document.getElementById('header-shop-name').textContent = `[${titleName}]`;
+
+// 2. 사이드바 (두 줄 허용) -> innerHTML 사용 중요!
+document.getElementById('sidebar-brand-name').innerHTML = displayName;
+
+// 3. 브라우저 탭 제목 (줄바꿈 불가하므로 공백 처리)
+document.title = `${titleName} - PharmaOrder`;
 
 /* ==========================================================================
    [2] 전역 변수
@@ -449,44 +458,149 @@ function showPhotoViewer(docId, imageUrl, currentStatus, note) {
 /* ==========================================================================
    [7] 거래처 관리 (공유/개별)
    ========================================================================== */
+/* ==========================================================================
+   [수정] 거래처 목록 로드 (검색용 데이터 저장 강화)
+   ========================================================================== */
 async function loadSuppliers() {
     const listContainer = document.getElementById('supplier-list');
-    if(!listContainer) return;
+    if (!listContainer) return;
+    
     listContainer.innerHTML = "<div style='text-align:center;'>로딩중...</div>";
+    
     try {
+        // 1. 거래처 목록 가져오기
         const supSnapshot = await getDocs(collection(db, "suppliers"));
         let suppliers = []; 
         supSnapshot.forEach(doc => suppliers.push({ id: doc.id, ...doc.data() }));
+        
+        // 2. 상품 정보 가져와서 매칭 (어떤 상품 취급하는지)
         const prodSnapshot = await getDocs(collection(db, "products"));
         const companyProductMap = {}; 
+        
         prodSnapshot.forEach(doc => { 
             const p = { id: doc.id, ...doc.data() }; 
             const comp = p.company || "미지정"; 
-            if(!companyProductMap[comp]) companyProductMap[comp] = []; 
+            if (!companyProductMap[comp]) companyProductMap[comp] = []; 
             companyProductMap[comp].push(p); 
         });
-        suppliers.forEach(sup => { sup.products = companyProductMap[sup.name] || []; });
+        
+        suppliers.forEach(sup => { 
+            sup.products = companyProductMap[sup.name] || []; 
+        });
+        
+        // [중요] 검색을 위해 전역 변수에 백업
         allSuppliersData = suppliers; 
-        document.getElementById('sup-total-count').textContent = suppliers.length;
+        
+        // 개수 표시
+        const countEl = document.getElementById('sup-total-count');
+        if (countEl) countEl.textContent = suppliers.length;
+        
+        // 리스트 그리기
         renderSupplierList(suppliers);
-    } catch (e) { console.error(e); }
+        
+        // [추가] 데이터 로드 후 검색 이벤트도 다시 연결 (안전장치)
+        setupSupplierSearch();
+
+    } catch (e) { 
+        console.error("거래처 로드 실패:", e); 
+        listContainer.innerHTML = "<div style='text-align:center; color:red;'>로드 실패</div>";
+    }
 }
 
+/* ==========================================================================
+   [수정] 거래처 검색 이벤트 연결 함수
+   ========================================================================== */
+function setupSupplierSearch() {
+    const searchInput = document.getElementById('supplier-search');
+    
+    if (searchInput) {
+        // 기존 리스너 중복 방지를 위해 복제 후 교체
+        const newInput = searchInput.cloneNode(true);
+        searchInput.parentNode.replaceChild(newInput, searchInput);
+        
+        newInput.addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase().trim();
+            
+            // 데이터가 없으면 중단
+            if (!allSuppliersData || allSuppliersData.length === 0) return;
+
+            const filtered = allSuppliersData.filter(sup => {
+                // 1. 거래처 이름 검색
+                const name = sup.name ? sup.name.toLowerCase() : '';
+                const nameMatch = name.includes(keyword);
+                
+                // 2. 취급 품목 검색 (선택사항)
+                let productMatch = false;
+                if (sup.products && Array.isArray(sup.products)) {
+                    productMatch = sup.products.some(p => p.name && p.name.toLowerCase().includes(keyword));
+                }
+                
+                return nameMatch || productMatch;
+            });
+            
+            renderSupplierList(filtered);
+        });
+    }
+}
+
+/* ==========================================================================
+   [수정] 거래처 리스트 렌더링 (상품 태그 & 이동 기능 복구)
+   ========================================================================== */
 function renderSupplierList(suppliersToRender) {
     const listContainer = document.getElementById('supplier-list');
-    listContainer.innerHTML = "";
-    if(suppliersToRender.length === 0) { listContainer.innerHTML = "<div style='text-align:center; padding:20px; color:#aaa;'>결과 없음</div>"; return; }
+    if (!listContainer) return;
     
+    listContainer.innerHTML = "";
+    
+    if(suppliersToRender.length === 0) { 
+        listContainer.innerHTML = "<div style='text-align:center; padding:20px; color:#aaa;'>결과 없음</div>"; 
+        return; 
+    }
+    
+    // 가나다순 정렬
     suppliersToRender.sort((a, b) => a.name.localeCompare(b.name));
+    
     suppliersToRender.forEach(sup => {
-        const div = document.createElement('div'); div.className = 'supplier-card';
-        // Private Data를 아직 모르므로 여기선 버튼만 그림 (클릭 시 로드)
-        div.innerHTML = `<div class="sup-header"><div class="sup-name">${sup.name}</div></div><div class="sup-manager-info">클릭하여 상세정보 확인</div>`;
+        const div = document.createElement('div'); 
+        div.className = 'supplier-card';
+        
+        // 1. 상품 태그 HTML 생성
+        let tagsHtml = "";
+        const products = sup.products || []; // loadSuppliers에서 미리 매칭해둔 상품들
+        
+        // 너무 많으면 10개만 표시하고 '...' 처리 (성능 최적화)
+        products.slice(0, 10).forEach(p => {
+            // [중요] event.stopPropagation() : 태그 눌렀을 때 거래처 상세정보가 열리는 것 방지
+            tagsHtml += `<span class="product-tag-chip" onclick="event.stopPropagation(); window.triggerTagAction('${p.id}')">#${p.name}</span>`;
+        });
+        
+        if(products.length > 10) {
+            tagsHtml += `<span style="font-size:0.7rem; color:#888; margin-left:5px;">+${products.length - 10}개 더있음</span>`;
+        }
+        if(products.length === 0) {
+            tagsHtml = `<span style="font-size:0.75rem; color:#ccc;">등록된 상품 없음</span>`;
+        }
+
+        // 2. 카드 화면 구성
+        div.innerHTML = `
+            <div class="sup-header">
+                <div class="sup-name">${sup.name}</div>
+            </div>
+            <div class="sup-manager-info" style="font-size:0.8rem; color:#999; margin-bottom:8px;">
+                클릭하여 담당자 정보 및 ID/PW 확인
+            </div>
+            <div class="sup-product-tags" style="display:flex; flex-wrap:wrap; gap:4px;">
+                ${tagsHtml}
+            </div>
+        `;
+        
+        // 3. 카드 클릭 이벤트 (상세정보 로드)
         div.addEventListener('click', () => {
             document.querySelectorAll('.supplier-card').forEach(c => c.classList.remove('active'));
             div.classList.add('active');
-            fillSupplierForm(sup);
+            fillSupplierForm(sup); 
         });
+        
         listContainer.appendChild(div);
     });
 }
@@ -952,30 +1066,53 @@ function subscribeToRecentLogs() {
     });
 }
 
-// 탭 전환
+/* ==========================================================================
+   [수정] 탭 전환 (상품관리 탭 초기화 버그 수정)
+   ========================================================================== */
 const menuItems = document.querySelectorAll('.menu-item');
 const pages = document.querySelectorAll('.content-group');
+
 menuItems.forEach(item => {
     item.addEventListener('click', () => {
+        // 1. 메뉴 활성화 표시
         menuItems.forEach(menu => menu.classList.remove('active'));
         item.classList.add('active');
+        
+        // 2. 페이지 전환
         const targetId = item.getAttribute('data-target');
         pages.forEach(page => page.style.display = 'none');
         const targetPage = document.getElementById(`page-${targetId}`);
         if (targetPage) {
-            targetPage.style.display = ['order-book','order-mgmt','history-mgmt','supplier-mgmt','return-mgmt','product-mgmt'].includes(targetId) ? 'flex' : 'block';
-            if(targetId !== 'order-mgmt') targetPage.style.flexDirection = 'column';
+            const isFlex = ['order-book','order-mgmt','history-mgmt','supplier-mgmt','return-mgmt','product-mgmt'].includes(targetId);
+            targetPage.style.display = isFlex ? 'flex' : 'block';
+            if(targetId !== 'order-mgmt' && isFlex) targetPage.style.flexDirection = 'column';
         }
+        
+        // 3. 탭별 초기화 데이터 로드
         if(targetId === 'supplier-mgmt') loadSuppliers();
+        
         if(targetId === 'history-mgmt') { 
             calDate = new Date(); 
-            setTimeout(() => { renderCalendar(); loadHistoryByDate(`${calDate.getFullYear()}-${String(calDate.getMonth()+1).padStart(2,'0')}-${String(calDate.getDate()).padStart(2,'0')}`); }, 100); 
+            setTimeout(() => { 
+                renderCalendar(); 
+                loadHistoryByDate(`${calDate.getFullYear()}-${String(calDate.getMonth()+1).padStart(2,'0')}-${String(calDate.getDate()).padStart(2,'0')}`); 
+            }, 100); 
         }
-        if(targetId === 'product-mgmt') { loadSupplierDropdown(); if(!editingProductId) window.addOptionRow(); }
+        
+        // [핵심 수정] 상품 관리 탭 클릭 시 초기화
+        if(targetId === 'product-mgmt') { 
+            loadSupplierDropdown(); 
+            // 수정 모드(`editingProductId`가 있음)가 아닐 때만 초기화
+            if(!editingProductId) {
+                document.getElementById('reg-name').value = ""; // 상품명 초기화
+                document.getElementById('reg-options-container').innerHTML = ""; // [중요] 기존 옵션창 싹 비우기
+                window.addOptionRow(); // 깨끗한 새 입력창 하나 추가
+            }
+        }
+        
         window.scrollTo(0, 0); 
     });
 });
-
 // 초기 실행
 loadProducts();
 subscribeToRecentLogs();

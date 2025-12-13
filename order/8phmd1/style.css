@@ -21,9 +21,31 @@ header.top-header { height: 60px; background-color: #fff; border-bottom: 1px sol
 
 /* [4] 메뉴바 */
 .panel.menu-sidebar { width: 220px; flex-shrink: 0; background-color: #2c3e50; color: #fff; }
-.pharmacy-brand-area { display: flex; align-items: center; padding: 20px 15px; background-color: #1a252f; border-bottom: 1px solid #34495e; margin-bottom: 10px; flex-shrink: 0; }
+.pharmacy-brand-area { 
+    display: flex; 
+    align-items: center; 
+    padding: 15px; /* 여백 조정 */
+    background-color: #1a252f; 
+    border-bottom: 1px solid #34495e; 
+    margin-bottom: 10px; 
+    flex-shrink: 0;
+    min-height: 70px; /* 높이 유동적으로 확보 */
+}
 .brand-logo-placeholder { width: 36px; height: 36px; background-color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; flex-shrink: 0; }
-.brand-name-text { font-size: 1.1rem; font-weight: 800; color: #ecf0f1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand-name-text { 
+    font-size: 1.0rem; /* 글자 크기 약간 축소 */
+    font-weight: 800; 
+    color: #ecf0f1; 
+    
+    /* ▼▼▼ 줄바꿈 핵심 코드 ▼▼▼ */
+    white-space: normal; /* 한 줄 강제 해제 */
+    word-break: keep-all; /* 단어 단위로 끊기 (한글 최적화) */
+    line-height: 1.3; /* 줄 간격 조절 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* 최대 2줄까지만 표시 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
 .panel.menu-sidebar .panel-header { display: none; } 
 .menu-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s; line-height: 1.4; display: flex; align-items: center; }
 .menu-item:hover { background-color: #34495e; padding-left: 25px; }
