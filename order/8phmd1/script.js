@@ -1,7 +1,7 @@
 /* ==========================================================================
    [1] Import & Config
    ========================================================================== */
-import { SHOP_ID, SHOP_NAME, firebaseConfig } from './config.js';
+import { SHOP_ID, SHOP_NAME,MANAGER_NAME, firebaseConfig } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, updateDoc, doc, query, where, orderBy, onSnapshot, limit, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
@@ -20,7 +20,7 @@ const titleName = SHOP_NAME.replace(/\\n|\n/g, ' ');      // 브라우저 탭용
 
 // 2. 사이드바 (두 줄 허용) -> innerHTML 사용 중요!
 document.getElementById('sidebar-brand-name').innerHTML = displayName;
-
+document.getElementById('header-manager-name').textContent = MANAGER_NAME;
 // 3. 브라우저 탭 제목 (줄바꿈 불가하므로 공백 처리)
 document.title = `${titleName} - PharmaOrder`;
 
