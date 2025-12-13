@@ -16,7 +16,7 @@ const displayName = SHOP_NAME.replace(/\\n|\n/g, '<br>'); // 화면용 (줄바�
 const titleName = SHOP_NAME.replace(/\\n|\n/g, ' ');      // 브라우저 탭용 (줄바꿈 X, 공백 치환)
 
 // 1. 헤더 (한 줄로 표시하되 공백으로 구분)
-document.getElementById('header-shop-name').textContent = `[${titleName}]`;
+//document.getElementById('header-shop-name').textContent = `[${titleName}]`;
 
 // 2. 사이드바 (두 줄 허용) -> innerHTML 사용 중요!
 document.getElementById('sidebar-brand-name').innerHTML = displayName;
