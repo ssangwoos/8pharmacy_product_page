@@ -494,12 +494,10 @@ async function loadSuppliers() {
     listContainer.innerHTML = "<div style='text-align:center;'>로딩중...</div>";
     
     try {
-        // 1. 거래처 목록 가져오기
         const supSnapshot = await getDocs(collection(db, "suppliers"));
         let suppliers = []; 
         supSnapshot.forEach(doc => suppliers.push({ id: doc.id, ...doc.data() }));
         
-        // 2. 상품 정보 가져와서 매칭 (어떤 상품 취급하는지)
         const prodSnapshot = await getDocs(collection(db, "products"));
         const companyProductMap = {}; 
         
@@ -510,62 +508,101 @@ async function loadSuppliers() {
             companyProductMap[comp].push(p); 
         });
         
-        suppliers.forEach(sup => { 
-            sup.products = companyProductMap[sup.name] || []; 
-        });
+        suppliers.forEach(sup => { sup.products = companyProductMap[sup.name] || []; });
         
-        // [중요] 검색을 위해 전역 변수에 백업
+        // 전역 변수에 저장
         allSuppliersData = suppliers; 
         
-        // 개수 표시
-        const countEl = document.getElementById('sup-total-count');
-        if (countEl) countEl.textContent = suppliers.length;
-        
-        // 리스트 그리기
+        document.getElementById('sup-total-count').textContent = suppliers.length;
         renderSupplierList(suppliers);
         
-        // [추가] 데이터 로드 후 검색 이벤트도 다시 연결 (안전장치)
+        // [핵심] 데이터 로드 후 검색 기능 켜기!
         setupSupplierSearch();
 
-    } catch (e) { 
-        console.error("거래처 로드 실패:", e); 
-        listContainer.innerHTML = "<div style='text-align:center; color:red;'>로드 실패</div>";
-    }
+    } catch (e) { console.error(e); }
+}
+
+/* ==========================================================================
+   [추가] 신규 거래처 등록 버튼 (입력창 초기화)
+   ========================================================================== */
+const btnNewSupplier = document.getElementById('btn-new-supplier');
+
+if (btnNewSupplier) {
+    const newBtn = btnNewSupplier.cloneNode(true);
+    btnNewSupplier.parentNode.replaceChild(newBtn, btnNewSupplier);
+
+    newBtn.addEventListener('click', () => {
+        // 1. 현재 선택된 거래처 ID 초기화 (새로 만들기 모드)
+        currentSupplierId = null;
+
+        // 2. 리스트 선택 효과 제거
+        document.querySelectorAll('.supplier-card').forEach(c => c.classList.remove('active'));
+
+        // 3. 입력 폼 비우기
+        document.getElementById('supplier-form-title').textContent = "새 거래처 등록";
+        document.getElementById('sup-name').value = "";
+        
+        const fields = ['sup-website', 'sup-site-id', 'sup-site-pw', 'sup-cur-manager', 'sup-cur-phone', 'sup-prev-manager', 'sup-prev-phone'];
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = "";
+        });
+
+        // 4. 문자 버튼 숨기기
+        updateSmsButton(null);
+
+        // 5. 이름 입력칸으로 포커스 이동
+        document.getElementById('sup-name').focus();
+    });
 }
 
 /* ==========================================================================
    [수정] 거래처 검색 이벤트 연결 함수
    ========================================================================== */
+/* ==========================================================================
+   [수정] 거래처 검색 및 초기화(X) 버튼 기능
+   ========================================================================== */
 function setupSupplierSearch() {
     const searchInput = document.getElementById('supplier-search');
+    const clearBtn = document.getElementById('btn-clear-sup-search');
     
     if (searchInput) {
-        // 기존 리스너 중복 방지를 위해 복제 후 교체
+        // 기존 리스너 제거용 복제
         const newInput = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(newInput, searchInput);
         
+        // 1. 입력 이벤트 (글자 쓰면 X 보이기)
         newInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
             
-            // 데이터가 없으면 중단
-            if (!allSuppliersData || allSuppliersData.length === 0) return;
+            // X 버튼 토글
+            if(clearBtn) {
+                clearBtn.style.display = keyword.length > 0 ? 'block' : 'none';
+            }
+
+            if (!allSuppliersData) return;
 
             const filtered = allSuppliersData.filter(sup => {
-                // 1. 거래처 이름 검색
                 const name = sup.name ? sup.name.toLowerCase() : '';
-                const nameMatch = name.includes(keyword);
-                
-                // 2. 취급 품목 검색 (선택사항)
-                let productMatch = false;
-                if (sup.products && Array.isArray(sup.products)) {
-                    productMatch = sup.products.some(p => p.name && p.name.toLowerCase().includes(keyword));
-                }
-                
-                return nameMatch || productMatch;
+                return name.includes(keyword) || 
+                       (sup.products && sup.products.some(p => p.name.toLowerCase().includes(keyword)));
             });
             
             renderSupplierList(filtered);
         });
+
+        // 2. X 버튼 클릭 이벤트 (지우기)
+        if (clearBtn) {
+            const newClearBtn = clearBtn.cloneNode(true);
+            clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
+
+            newClearBtn.addEventListener('click', () => {
+                newInput.value = '';        // 내용 지움
+                newInput.focus();           // 포커스 유지
+                newClearBtn.style.display = 'none'; // 버튼 숨김
+                renderSupplierList(allSuppliersData); // 전체 목록 복구
+            });
+        }
     }
 }
 
@@ -707,6 +744,57 @@ if(btnSaveSupplier) {
         };
         await setDoc(doc(db, "supplier_details", `${sharedId}_${SHOP_ID}`), privateData);
         alert("저장되었습니다."); loadSuppliers();
+    });
+}
+
+/* ==========================================================================
+   [추가] 거래처 삭제 버튼 연결
+   ========================================================================== */
+const btnDeleteSupplier = document.getElementById('btn-delete-supplier');
+
+if (btnDeleteSupplier) {
+    // 중복 방지를 위해 버튼 재생성 (기존 리스너 제거)
+    const newBtn = btnDeleteSupplier.cloneNode(true);
+    btnDeleteSupplier.parentNode.replaceChild(newBtn, btnDeleteSupplier);
+
+    newBtn.addEventListener('click', async () => {
+        if (!currentSupplierId) {
+            alert("삭제할 거래처를 먼저 리스트에서 선택해주세요.");
+            return;
+        }
+
+        // 경고 메시지 (공유 데이터 삭제 알림)
+        if (confirm("정말 이 거래처를 삭제하시겠습니까?\n(삭제 시 모든 지점의 목록에서도 사라집니다)")) {
+            try {
+                // 1. 공유 목록(suppliers)에서 삭제
+                await deleteDoc(doc(db, "suppliers", currentSupplierId));
+
+                // 2. 내 약국의 상세 정보(supplier_details)도 삭제
+                const privateDocId = `${currentSupplierId}_${SHOP_ID}`;
+                try {
+                    await deleteDoc(doc(db, "supplier_details", privateDocId));
+                } catch(e) { /* 상세 정보가 없을 수도 있음 */ }
+
+                alert("삭제되었습니다.");
+
+                // 3. 입력창 초기화
+                currentSupplierId = null;
+                document.getElementById('sup-name').value = "";
+                const fields = ['sup-website', 'sup-site-id', 'sup-site-pw', 'sup-cur-manager', 'sup-cur-phone', 'sup-prev-manager', 'sup-prev-phone'];
+                fields.forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.value = "";
+                });
+
+                // 4. 목록 새로고침
+                await loadSuppliers();        // 거래처 관리 리스트 갱신
+                await loadSupplierDropdown(); // 상품 등록창 드롭다운 갱신
+
+            } catch (e) {
+                console.error("삭제 실패:", e);
+                alert("삭제 중 오류가 발생했습니다.");
+            }
+        }
     });
 }
 
@@ -964,14 +1052,31 @@ if(btnRegister) {
         document.getElementById('reg-name').value = ""; document.getElementById('reg-options-container').innerHTML = ""; window.addOptionRow(); loadProducts();
     });
 }
+/* ==========================================================================
+   [수정] 상품 등록용 거래처 드롭다운 (가나다 정렬 복구)
+   ========================================================================== */
 async function loadSupplierDropdown() {
     const select = document.getElementById('reg-company');
+    if(!select) return;
+
     try {
         const snap = await getDocs(collection(db, "suppliers"));
+        let suppliers = [];
+        
+        // 1. 데이터 가져오기
+        snap.forEach(doc => suppliers.push(doc.data().name));
+
+        // 2. [Fix] 가나다 순서 정렬 (여기가 핵심!)
+        suppliers.sort((a, b) => a.localeCompare(b));
+
+        // 3. HTML 생성
         let html = '<option value="">선택</option>';
-        snap.forEach(doc => html += `<option value="${doc.data().name}">${doc.data().name}</option>`);
+        suppliers.forEach(name => html += `<option value="${name}">${name}</option>`);
         select.innerHTML = html;
-    } catch(e) {}
+        
+    } catch(e) {
+        console.error("거래처 목록 로드 실패:", e);
+    }
 }
 // 옵션 행 추가 (Global)
 window.addOptionRow = function(name="", count=1, price="") {
