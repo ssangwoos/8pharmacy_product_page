@@ -397,27 +397,53 @@ if(document.getElementById('btn-upload-confirm')) {
     });
 }
 
+/* ==========================================================================
+   [수정] 사진 요청 구독 (72시간 필터링 복구)
+   ========================================================================== */
 function subscribeToPhotoRequests() {
     const queueContainer = document.getElementById('photo-grid');
     if(!queueContainer) return;
+    
+    // 1. 기준 시간 설정 (현재로부터 72시간 전)
+    const timeLimit = new Date();
+    timeLimit.setHours(timeLimit.getHours() - 72);
+
+    // 2. 쿼리 (일단 최신순으로 가져옴)
     const q = query(collection(db, "photo_requests"), orderBy("timestamp", "desc"));
     
     onSnapshot(q, (snapshot) => {
         queueContainer.innerHTML = "";
         let list = [];
+        
         snapshot.forEach(doc => {
             const d = doc.data();
-            if (d.shopId === SHOP_ID || (SHOP_ID === 'main' && !d.shopId)) list.push({ id: doc.id, ...d });
+            const itemDate = d.timestamp ? d.timestamp.toDate() : new Date(0); // 날짜 변환
+
+            // [조건 1] 내 약국 데이터인가? (또는 본점이고 식별자 없는 옛날 데이터인가?)
+            const isMine = (d.shopId === SHOP_ID) || (SHOP_ID === 'main' && !d.shopId);
+            
+            // [조건 2] ★ 3일(72시간) 이내의 데이터인가?
+            const isRecent = itemDate > timeLimit;
+
+            // 두 조건 모두 만족할 때만 리스트에 추가
+            if (isMine && isRecent) {
+                list.push({ id: doc.id, ...d });
+            }
         });
         
-        if(list.length === 0) { queueContainer.innerHTML = "<div style='grid-column:1/-1; text-align:center; padding:50px;'>요청 없음</div>"; return; }
+        if(list.length === 0) { 
+            queueContainer.innerHTML = "<div style='grid-column:1/-1; text-align:center; padding:50px; color:#aaa;'>최근 3일간 요청 내역이 없습니다.</div>"; 
+            return; 
+        }
         
+        // 정렬 (대기중 우선, 그 다음 시간순)
         list.sort((a, b) => {
             const statusOrder = { 'pending': 1, 'hold': 2, 'processed': 3 };
             if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status];
             return b.timestamp.seconds - a.timestamp.seconds; 
         });
 
+        // 화면 그리기
         list.forEach(data => {
             const div = document.createElement('div');
             let statusClass = 'pending'; 
