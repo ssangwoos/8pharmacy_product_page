@@ -172,15 +172,45 @@ function renderMainTree(productsToRender) {
     });
 }
 
+/* ==========================================================================
+   [수정] 메인 검색창 로직 (X 버튼 기능 추가)
+   ========================================================================== */
 const mainSearchInput = document.getElementById('main-search-input');
-if(mainSearchInput) {
-    mainSearchInput.addEventListener('input', (e) => {
+const mainClearBtn = document.getElementById('btn-clear-main-search');
+
+if(mainSearchInput && mainClearBtn) {
+    // 1. 입력 이벤트 (oninput 덮어쓰기)
+    mainSearchInput.oninput = (e) => {
         const keyword = e.target.value.toLowerCase().trim();
-        if(keyword.length > 0) { const orderTab = document.querySelector('.menu-item[data-target="order-mgmt"]'); if(orderTab) orderTab.click(); } 
-        else { renderMainTree(allProductsData); return; }
-        const filtered = allProductsData.filter(p => (p.name && p.name.toLowerCase().includes(keyword)) || (p.company && p.company.toLowerCase().includes(keyword)) || (p.category && p.category.toLowerCase().includes(keyword)));
-        renderMainTree(filtered);
-    });
+        
+        // 버튼 보이기/숨기기
+        mainClearBtn.style.display = keyword.length > 0 ? 'block' : 'none';
+
+        if(keyword.length > 0) { 
+            // 검색어가 있으면 주문 관리 탭으로 이동
+            const orderTab = document.querySelector('.menu-item[data-target="order-mgmt"]'); 
+            if(orderTab) orderTab.click(); 
+            
+            // 필터링
+            const filtered = allProductsData.filter(p => 
+                (p.name && p.name.toLowerCase().includes(keyword)) || 
+                (p.company && p.company.toLowerCase().includes(keyword)) || 
+                (p.category && p.category.toLowerCase().includes(keyword))
+            );
+            renderMainTree(filtered);
+        } else { 
+            // 검색어 없으면 전체 목록
+            renderMainTree(allProductsData); 
+        }
+    };
+
+    // 2. X 버튼 클릭 이벤트
+    mainClearBtn.onclick = () => {
+        mainSearchInput.value = '';         // 내용 지움
+        mainSearchInput.focus();            // 포커스 유지
+        mainClearBtn.style.display = 'none'; // 버튼 숨김
+        renderMainTree(allProductsData);     // 목록 초기화
+    };
 }
 
 function focusProductInTree(product, optionId = null) {
