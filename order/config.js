@@ -9,6 +9,7 @@ export const SHOP_ID = "main";
 
 // 2. 약국 표시 이름 (화면 왼쪽 상단에 뜸)
 export const SHOP_NAME = "에이트약국"; // 지점은 "비트약국" 등으로 변경
+export const MANAGER_NAME = "배상우"; // <-- 추가
 
 // 3. Firebase 키값 (모든 약국이 공유)
 export const firebaseConfig = {
