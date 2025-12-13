@@ -562,48 +562,41 @@ if (btnNewSupplier) {
 /* ==========================================================================
    [수정] 거래처 검색 및 초기화(X) 버튼 기능
    ========================================================================== */
+/* ==========================================================================
+   [수정] 검색창 입력 감지 (oninput 방식)
+   ========================================================================== */
 function setupSupplierSearch() {
     const searchInput = document.getElementById('supplier-search');
     const clearBtn = document.getElementById('btn-clear-sup-search');
     
-    if (searchInput) {
-        // 기존 리스너 제거용 복제
-        const newInput = searchInput.cloneNode(true);
-        searchInput.parentNode.replaceChild(newInput, searchInput);
+    // 요소가 없으면 중단
+    if (!searchInput || !clearBtn) return;
+
+    // 1. 입력 이벤트 (덮어쓰기 방식)
+    searchInput.oninput = (e) => {
+        const keyword = e.target.value.toLowerCase().trim();
         
-        // 1. 입력 이벤트 (글자 쓰면 X 보이기)
-        newInput.addEventListener('input', (e) => {
-            const keyword = e.target.value.toLowerCase().trim();
-            
-            // X 버튼 토글
-            if(clearBtn) {
-                clearBtn.style.display = keyword.length > 0 ? 'block' : 'none';
-            }
+        // 글자가 있으면 X 버튼 보이기, 없으면 숨기기
+        clearBtn.style.display = keyword.length > 0 ? 'block' : 'none';
 
-            if (!allSuppliersData) return;
+        if (!allSuppliersData) return;
 
-            const filtered = allSuppliersData.filter(sup => {
-                const name = sup.name ? sup.name.toLowerCase() : '';
-                return name.includes(keyword) || 
-                       (sup.products && sup.products.some(p => p.name.toLowerCase().includes(keyword)));
-            });
-            
-            renderSupplierList(filtered);
+        const filtered = allSuppliersData.filter(sup => {
+            const name = sup.name ? sup.name.toLowerCase() : '';
+            return name.includes(keyword) || 
+                   (sup.products && sup.products.some(p => p.name.toLowerCase().includes(keyword)));
         });
+        
+        renderSupplierList(filtered);
+    };
 
-        // 2. X 버튼 클릭 이벤트 (지우기)
-        if (clearBtn) {
-            const newClearBtn = clearBtn.cloneNode(true);
-            clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
-
-            newClearBtn.addEventListener('click', () => {
-                newInput.value = '';        // 내용 지움
-                newInput.focus();           // 포커스 유지
-                newClearBtn.style.display = 'none'; // 버튼 숨김
-                renderSupplierList(allSuppliersData); // 전체 목록 복구
-            });
-        }
-    }
+    // 2. X 버튼 클릭 이벤트 (덮어쓰기 방식)
+    clearBtn.onclick = () => {
+        searchInput.value = '';        // 내용 지움
+        searchInput.focus();           // 포커스 유지
+        clearBtn.style.display = 'none'; // 버튼 숨김
+        renderSupplierList(allSuppliersData); // 전체 목록 복구
+    };
 }
 
 /* ==========================================================================
