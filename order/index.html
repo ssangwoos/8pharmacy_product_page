@@ -205,16 +205,29 @@
 
         <div id="page-settings" class="content-group" style="display: none; padding: 20px; flex-grow: 1;"><h2>⚙️ 설정</h2>
             <div class="settings-section" style="background:white; padding:20px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:20px;">
-    <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">🔐 관리자 비밀번호 설정</h3>
-    <p style="color:#666; font-size:0.9rem; margin-bottom:15px;">
+                <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">🔐 관리자 비밀번호 설정</h3>
+                <p style="color:#666; font-size:0.9rem; margin-bottom:15px;">
         거래처 비밀번호 보기, 중요 설정 변경 등에 사용될 관리자 비밀번호를 설정합니다.<br>
         (저장 시 암호화되어 아무도 알 수 없게 저장됩니다.)
-    </p>
+                </p>
     
     <div style="display:flex; gap:10px; align-items:center;">
         <input type="password" id="new-admin-pw" placeholder="새 비밀번호 입력" style="padding:10px; border:1px solid #ddd; border-radius:4px; width:200px;">
         <button id="btn-save-admin-pw" style="padding:10px 20px; background-color:#34495e; color:white; border:none; border-radius:4px; cursor:pointer;">
             변경 내용 저장
+        </button>
+    </div>
+            </div>
+            <div style="margin-top:20px; border-top:1px dashed #ddd; padding-top:20px;">
+    <h3 style="margin-top:0; color:#e74c3c;">🦸‍♂️ 슈퍼바이저 비밀번호 설정</h3>
+    <p style="color:#666; font-size:0.9rem; margin-bottom:15px;">
+        최고 권한(데이터 삭제, 중요 설정 등)에 사용될 슈퍼바이저 비밀번호입니다.
+    </p>
+    
+    <div style="display:flex; gap:10px; align-items:center;">
+        <input type="password" id="new-supervisor-pw" placeholder="새 슈퍼바이저 비번" style="padding:10px; border:1px solid #e74c3c; border-radius:4px; width:200px;">
+        <button id="btn-save-supervisor-pw" style="padding:10px 20px; background-color:#c0392b; color:white; border:none; border-radius:4px; cursor:pointer;">
+            슈퍼바이저 비번 저장
         </button>
     </div>
 </div>
@@ -318,7 +331,7 @@
     <input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display:none;">
     <input type="file" id="file-input-gallery" accept="image/*" style="display:none;">
     <button id="btn-camera-floating" style="position:fixed; bottom:80px; right:20px; width:60px; height:60px; border-radius:50%; background:#e74c3c; color:white; border:none; box-shadow:0 4px 10px rgba(0,0,0,0.3); font-size:2rem; cursor:pointer; z-index:9999; display:flex; align-items:center; justify-content:center;">📷</button>
-
+    <script src="config.js"></script>
     <script type="module" src="script.js"></script>
 </body>
 </html>

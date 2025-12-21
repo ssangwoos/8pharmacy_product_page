@@ -823,52 +823,52 @@ if (btnDeleteSupplier) {
 /* ==========================================================================
    [수정] 거래처 비밀번호 보기 (자물쇠 버튼 - DB 연동)
    ========================================================================== */
-const btnTogglePw = document.getElementById('btn-toggle-pw');
 
+/* ==========================================================================
+   [수정] 거래처 비밀번호 보기 (관리자 OR 슈퍼바이저 모두 허용)
+   ========================================================================== */
+/* [수정] 자물쇠 열기 (config.js 설정값 사용) */
+const btnTogglePw = document.getElementById('btn-toggle-pw');
 if (btnTogglePw) {
-    // 버튼 중복 방지 (기존 리스너 제거용 복제)
     const newBtn = btnTogglePw.cloneNode(true);
     btnTogglePw.parentNode.replaceChild(newBtn, btnTogglePw);
-
     newBtn.addEventListener('click', async (e) => {
-        e.preventDefault(); // 폼 제출 방지
-
+        e.preventDefault();
         const pwInput = document.getElementById('sup-site-pw');
         if (!pwInput) return;
 
-        // 1. 현재 잠겨있으면 -> 비밀번호 확인 후 열기
         if (pwInput.type === 'password') {
-            
-            // DB에 설정된 비밀번호가 있는지 먼저 확인
             try {
-                const docSnap = await getDoc(doc(db, "settings", "master"));
-                
-                if (!docSnap.exists() || !docSnap.data().admin_pw_hash) {
-                    alert("⚠️ 관리자 비밀번호가 설정되지 않았습니다.\n[설정] 탭에서 비밀번호를 먼저 등록해주세요.");
+                if (typeof SHOP_CONFIG === 'undefined' || !SHOP_CONFIG.shop_id) {
+                    alert("오류: config.js 파일 설정을 확인하세요.");
                     return;
                 }
 
-                const realHash = docSnap.data().admin_pw_hash;
-                const inputPass = prompt("관리자 비밀번호를 입력하세요");
+                // 내 지점(SHOP_CONFIG.shop_id)의 설정값만 가져옴
+                const docSnap = await getDoc(doc(db, "settings", SHOP_CONFIG.shop_id));
+                
+                if (!docSnap.exists()) {
+                    alert("⚠️ 아직 비밀번호가 설정되지 않았습니다. [설정] 탭에서 등록해주세요.");
+                    return;
+                }
 
-                if (!inputPass) return; // 취소 누르면 중단
+                const data = docSnap.data();
+                const inputPass = prompt("비밀번호를 입력하세요");
+                if (!inputPass) return;
 
                 const inputHash = await sha256(inputPass);
+                
+                const isMatchAdmin = data.admin_pw_hash && (inputHash === data.admin_pw_hash);
+                const isMatchSuper = data.supervisor_pw_hash && (inputHash === data.supervisor_pw_hash);
 
-                if (inputHash === realHash) {
-                    pwInput.type = 'text';      // 글자 보이게 변경
-                    newBtn.textContent = '🔓';  // 아이콘 열림으로 변경
+                if (isMatchAdmin || isMatchSuper) {
+                    pwInput.type = 'text';
+                    newBtn.textContent = '🔓';
                 } else {
                     alert("❌ 비밀번호가 틀렸습니다.");
                 }
-
-            } catch (err) {
-                console.error("인증 오류:", err);
-                alert("오류가 발생했습니다. 인터넷 연결을 확인하세요.");
-            }
-
+            } catch (e) { console.error(e); }
         } else {
-            // 2. 이미 열려있으면 -> 다시 잠그기 (비번 불필요)
             pwInput.type = 'password';
             newBtn.textContent = '🔒';
         }
@@ -1327,61 +1327,38 @@ menuItems.forEach(item => {
 /* ==========================================================================
    [수정] 관리자 비밀번호 변경 (기존 비밀번호 확인 절차 추가)
    ========================================================================== */
+/* [수정] 관리자 비밀번호 저장 (config.js 설정값 사용) */
 const btnSaveAdminPw = document.getElementById('btn-save-admin-pw');
-
 if (btnSaveAdminPw) {
     const newBtn = btnSaveAdminPw.cloneNode(true);
     btnSaveAdminPw.parentNode.replaceChild(newBtn, btnSaveAdminPw);
-
     newBtn.addEventListener('click', async () => {
-        const newPwInput = document.getElementById('new-admin-pw');
-        const newPw = newPwInput.value.trim();
-
-        // 1. 유효성 검사
-        if (newPw.length < 4) {
-            alert("새 비밀번호는 최소 4자리 이상이어야 합니다.");
-            return;
+        const newPw = document.getElementById('new-admin-pw').value.trim();
+        if (newPw.length < 4) return alert("최소 4자리 이상 입력하세요.");
+        
+        // ★ config.js가 없거나 ID가 없으면 경고
+        if (typeof SHOP_CONFIG === 'undefined' || !SHOP_CONFIG.shop_id) {
+            return alert("오류: config.js 파일에 shop_id가 설정되지 않았습니다.");
         }
 
         try {
-            // 2. 현재 설정된 비밀번호가 있는지 확인
-            const docRef = doc(db, "settings", "master");
+            // SHOP_CONFIG.shop_id 를 사용해서 저장 위치 결정
+            const docRef = doc(db, "settings", SHOP_CONFIG.shop_id); 
             const docSnap = await getDoc(docRef);
 
-            if (docSnap.exists()) {
-                // 3. [보안 핵심] 기존 비밀번호가 있으면 물어보기!
-                const currentHash = docSnap.data().admin_pw_hash;
-                
-                // 만약 DB에는 있는데 내용이 비어있다면(초기상태) 통과, 아니면 검사
-                if (currentHash) {
-                    const inputOldPw = prompt("🔒 보안 확인: 현재 비밀번호를 입력해주세요.");
-                    
-                    if (!inputOldPw) return; // 취소 누르면 중단
-
-                    const inputOldHash = await sha256(inputOldPw);
-                    
-                    if (inputOldHash !== currentHash) {
-                        alert("❌ 현재 비밀번호가 틀렸습니다. 변경할 수 없습니다.");
-                        return; // 여기서 강제 종료! (덮어쓰기 방지)
-                    }
+            if (docSnap.exists() && docSnap.data().admin_pw_hash) {
+                const inputOldPw = prompt("🔒 보안 확인: 현재 비밀번호를 입력하세요.");
+                if (!inputOldPw) return;
+                if (await sha256(inputOldPw) !== docSnap.data().admin_pw_hash) {
+                    return alert("❌ 현재 비밀번호가 틀렸습니다.");
                 }
             }
 
-            // 4. 검사 통과 시 -> 새 비밀번호 저장
             const newHash = await sha256(newPw);
-
-            await setDoc(docRef, {
-                admin_pw_hash: newHash,
-                updated_at: new Date()
-            }, { merge: true });
-
-            alert("✅ 관리자 비밀번호가 안전하게 변경되었습니다!");
-            newPwInput.value = ""; 
-
-        } catch (e) {
-            console.error("변경 실패:", e);
-            alert("오류가 발생했습니다: " + e.message);
-        }
+            await setDoc(docRef, { admin_pw_hash: newHash, updated_at: new Date() }, { merge: true });
+            alert("✅ 관리자 비밀번호가 변경되었습니다!");
+            document.getElementById('new-admin-pw').value = "";
+        } catch (e) { console.error(e); alert("저장 실패"); }
     });
 }
 /* ==========================================================================
@@ -1393,6 +1370,42 @@ async function sha256(message) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+/* ==========================================================================
+   [추가] 슈퍼바이저 비밀번호 변경 및 저장
+   ========================================================================== */
+/* [수정] 슈퍼바이저 비밀번호 저장 (config.js 설정값 사용) */
+const btnSaveSupervisorPw = document.getElementById('btn-save-supervisor-pw');
+if (btnSaveSupervisorPw) {
+    const newBtn = btnSaveSupervisorPw.cloneNode(true);
+    btnSaveSupervisorPw.parentNode.replaceChild(newBtn, btnSaveSupervisorPw);
+    newBtn.addEventListener('click', async () => {
+        const newPw = document.getElementById('new-supervisor-pw').value.trim();
+        if (newPw.length < 4) return alert("최소 4자리 이상 입력하세요.");
+
+        if (typeof SHOP_CONFIG === 'undefined' || !SHOP_CONFIG.shop_id) {
+            return alert("오류: config.js 파일에 shop_id가 설정되지 않았습니다.");
+        }
+
+        try {
+            // SHOP_CONFIG.shop_id 사용
+            const docRef = doc(db, "settings", SHOP_CONFIG.shop_id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists() && docSnap.data().supervisor_pw_hash) {
+                const inputOldPw = prompt("🦸‍♂️ 보안 확인: 현재 슈퍼바이저 비번 입력");
+                if (!inputOldPw) return;
+                if (await sha256(inputOldPw) !== docSnap.data().supervisor_pw_hash) {
+                    return alert("❌ 현재 비밀번호가 틀렸습니다.");
+                }
+            }
+
+            const newHash = await sha256(newPw);
+            await setDoc(docRef, { supervisor_pw_hash: newHash, updated_at: new Date() }, { merge: true });
+            alert("✅ 슈퍼바이저 비밀번호가 설정되었습니다!");
+            document.getElementById('new-supervisor-pw').value = "";
+        } catch (e) { console.error(e); alert("저장 실패"); }
+    });
 }
 // 초기 실행
 loadProducts();
