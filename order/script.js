@@ -820,7 +820,60 @@ if (btnDeleteSupplier) {
         }
     });
 }
+/* ==========================================================================
+   [수정] 거래처 비밀번호 보기 (자물쇠 버튼 - DB 연동)
+   ========================================================================== */
+const btnTogglePw = document.getElementById('btn-toggle-pw');
 
+if (btnTogglePw) {
+    // 버튼 중복 방지 (기존 리스너 제거용 복제)
+    const newBtn = btnTogglePw.cloneNode(true);
+    btnTogglePw.parentNode.replaceChild(newBtn, btnTogglePw);
+
+    newBtn.addEventListener('click', async (e) => {
+        e.preventDefault(); // 폼 제출 방지
+
+        const pwInput = document.getElementById('sup-site-pw');
+        if (!pwInput) return;
+
+        // 1. 현재 잠겨있으면 -> 비밀번호 확인 후 열기
+        if (pwInput.type === 'password') {
+            
+            // DB에 설정된 비밀번호가 있는지 먼저 확인
+            try {
+                const docSnap = await getDoc(doc(db, "settings", "master"));
+                
+                if (!docSnap.exists() || !docSnap.data().admin_pw_hash) {
+                    alert("⚠️ 관리자 비밀번호가 설정되지 않았습니다.\n[설정] 탭에서 비밀번호를 먼저 등록해주세요.");
+                    return;
+                }
+
+                const realHash = docSnap.data().admin_pw_hash;
+                const inputPass = prompt("관리자 비밀번호를 입력하세요");
+
+                if (!inputPass) return; // 취소 누르면 중단
+
+                const inputHash = await sha256(inputPass);
+
+                if (inputHash === realHash) {
+                    pwInput.type = 'text';      // 글자 보이게 변경
+                    newBtn.textContent = '🔓';  // 아이콘 열림으로 변경
+                } else {
+                    alert("❌ 비밀번호가 틀렸습니다.");
+                }
+
+            } catch (err) {
+                console.error("인증 오류:", err);
+                alert("오류가 발생했습니다. 인터넷 연결을 확인하세요.");
+            }
+
+        } else {
+            // 2. 이미 열려있으면 -> 다시 잠그기 (비번 불필요)
+            pwInput.type = 'password';
+            newBtn.textContent = '🔒';
+        }
+    });
+}
 /* ==========================================================================
    [8] 반품 관리
    ========================================================================== */
@@ -1271,10 +1324,12 @@ menuItems.forEach(item => {
 /* ==========================================================================
    [추가] 설정 탭: 관리자 비밀번호 변경 및 저장 기능
    ========================================================================== */
+/* ==========================================================================
+   [수정] 관리자 비밀번호 변경 (기존 비밀번호 확인 절차 추가)
+   ========================================================================== */
 const btnSaveAdminPw = document.getElementById('btn-save-admin-pw');
 
 if (btnSaveAdminPw) {
-    // 버튼 중복 방지 (기존 리스너 제거용 복제)
     const newBtn = btnSaveAdminPw.cloneNode(true);
     btnSaveAdminPw.parentNode.replaceChild(newBtn, btnSaveAdminPw);
 
@@ -1282,30 +1337,62 @@ if (btnSaveAdminPw) {
         const newPwInput = document.getElementById('new-admin-pw');
         const newPw = newPwInput.value.trim();
 
+        // 1. 유효성 검사
         if (newPw.length < 4) {
-            alert("비밀번호는 최소 4자리 이상으로 설정해주세요.");
+            alert("새 비밀번호는 최소 4자리 이상이어야 합니다.");
             return;
         }
 
         try {
-            // 1. 비밀번호 암호화 (해싱)
-            const hashedPw = await sha256(newPw);
+            // 2. 현재 설정된 비밀번호가 있는지 확인
+            const docRef = doc(db, "settings", "master");
+            const docSnap = await getDoc(docRef);
 
-            // 2. DB에 저장 (settings 컬렉션 -> master 문서)
-            // setDoc은 문서가 없으면 만들고, 있으면 덮어씁니다.
-            await setDoc(doc(db, "settings", "master"), {
-                admin_pw_hash: hashedPw,
+            if (docSnap.exists()) {
+                // 3. [보안 핵심] 기존 비밀번호가 있으면 물어보기!
+                const currentHash = docSnap.data().admin_pw_hash;
+                
+                // 만약 DB에는 있는데 내용이 비어있다면(초기상태) 통과, 아니면 검사
+                if (currentHash) {
+                    const inputOldPw = prompt("🔒 보안 확인: 현재 비밀번호를 입력해주세요.");
+                    
+                    if (!inputOldPw) return; // 취소 누르면 중단
+
+                    const inputOldHash = await sha256(inputOldPw);
+                    
+                    if (inputOldHash !== currentHash) {
+                        alert("❌ 현재 비밀번호가 틀렸습니다. 변경할 수 없습니다.");
+                        return; // 여기서 강제 종료! (덮어쓰기 방지)
+                    }
+                }
+            }
+
+            // 4. 검사 통과 시 -> 새 비밀번호 저장
+            const newHash = await sha256(newPw);
+
+            await setDoc(docRef, {
+                admin_pw_hash: newHash,
                 updated_at: new Date()
-            }, { merge: true }); // merge:true는 기존 다른 설정이 있다면 유지하고 비번만 바꿈
+            }, { merge: true });
 
-            alert("✅ 관리자 비밀번호가 성공적으로 변경되었습니다!");
-            newPwInput.value = ""; // 입력창 비우기
+            alert("✅ 관리자 비밀번호가 안전하게 변경되었습니다!");
+            newPwInput.value = ""; 
 
         } catch (e) {
-            console.error("비밀번호 저장 실패:", e);
-            alert("저장에 실패했습니다. 권한이 없거나 인터넷 연결을 확인하세요.");
+            console.error("변경 실패:", e);
+            alert("오류가 발생했습니다: " + e.message);
         }
     });
+}
+/* ==========================================================================
+   [필수 도구] SHA-256 암호화 함수
+   (이 코드가 없으면 비밀번호 저장이 안 됩니다!)
+   ========================================================================== */
+async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 // 초기 실행
 loadProducts();
