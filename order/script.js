@@ -828,6 +828,7 @@ if (btnDeleteSupplier) {
    [수정] 거래처 비밀번호 보기 (관리자 OR 슈퍼바이저 모두 허용)
    ========================================================================== */
 /* [수정] 자물쇠 열기 (config.js 설정값 사용) */
+/* [수정] 자물쇠 열기 (SHOP_ID 변수 사용) */
 const btnTogglePw = document.getElementById('btn-toggle-pw');
 if (btnTogglePw) {
     const newBtn = btnTogglePw.cloneNode(true);
@@ -839,13 +840,13 @@ if (btnTogglePw) {
 
         if (pwInput.type === 'password') {
             try {
-                if (typeof SHOP_CONFIG === 'undefined' || !SHOP_CONFIG.shop_id) {
-                    alert("오류: config.js 파일 설정을 확인하세요.");
+                if (!SHOP_ID) {
+                    alert("오류: config.js 설정을 확인하세요.");
                     return;
                 }
 
-                // 내 지점(SHOP_CONFIG.shop_id)의 설정값만 가져옴
-                const docSnap = await getDoc(doc(db, "settings", SHOP_CONFIG.shop_id));
+                // SHOP_ID 사용 (내 지점 설정 가져오기)
+                const docSnap = await getDoc(doc(db, "settings", SHOP_ID));
                 
                 if (!docSnap.exists()) {
                     alert("⚠️ 아직 비밀번호가 설정되지 않았습니다. [설정] 탭에서 등록해주세요.");
@@ -1328,6 +1329,7 @@ menuItems.forEach(item => {
    [수정] 관리자 비밀번호 변경 (기존 비밀번호 확인 절차 추가)
    ========================================================================== */
 /* [수정] 관리자 비밀번호 저장 (config.js 설정값 사용) */
+/* [수정] 관리자 비밀번호 저장 (SHOP_ID 변수 사용) */
 const btnSaveAdminPw = document.getElementById('btn-save-admin-pw');
 if (btnSaveAdminPw) {
     const newBtn = btnSaveAdminPw.cloneNode(true);
@@ -1336,14 +1338,12 @@ if (btnSaveAdminPw) {
         const newPw = document.getElementById('new-admin-pw').value.trim();
         if (newPw.length < 4) return alert("최소 4자리 이상 입력하세요.");
         
-        // ★ config.js가 없거나 ID가 없으면 경고
-        if (typeof SHOP_CONFIG === 'undefined' || !SHOP_CONFIG.shop_id) {
-            return alert("오류: config.js 파일에 shop_id가 설정되지 않았습니다.");
-        }
+        // ★ 변수명 체크
+        if (!SHOP_ID) return alert("오류: config.js에서 SHOP_ID를 찾을 수 없습니다.");
 
         try {
-            // SHOP_CONFIG.shop_id 를 사용해서 저장 위치 결정
-            const docRef = doc(db, "settings", SHOP_CONFIG.shop_id); 
+            // SHOP_ID 사용
+            const docRef = doc(db, "settings", SHOP_ID); 
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists() && docSnap.data().admin_pw_hash) {
@@ -1375,6 +1375,7 @@ async function sha256(message) {
    [추가] 슈퍼바이저 비밀번호 변경 및 저장
    ========================================================================== */
 /* [수정] 슈퍼바이저 비밀번호 저장 (config.js 설정값 사용) */
+/* [수정] 슈퍼바이저 비밀번호 저장 (SHOP_ID 변수 사용) */
 const btnSaveSupervisorPw = document.getElementById('btn-save-supervisor-pw');
 if (btnSaveSupervisorPw) {
     const newBtn = btnSaveSupervisorPw.cloneNode(true);
@@ -1383,13 +1384,11 @@ if (btnSaveSupervisorPw) {
         const newPw = document.getElementById('new-supervisor-pw').value.trim();
         if (newPw.length < 4) return alert("최소 4자리 이상 입력하세요.");
 
-        if (typeof SHOP_CONFIG === 'undefined' || !SHOP_CONFIG.shop_id) {
-            return alert("오류: config.js 파일에 shop_id가 설정되지 않았습니다.");
-        }
+        if (!SHOP_ID) return alert("오류: config.js에서 SHOP_ID를 찾을 수 없습니다.");
 
         try {
-            // SHOP_CONFIG.shop_id 사용
-            const docRef = doc(db, "settings", SHOP_CONFIG.shop_id);
+            // SHOP_ID 사용
+            const docRef = doc(db, "settings", SHOP_ID);
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists() && docSnap.data().supervisor_pw_hash) {
