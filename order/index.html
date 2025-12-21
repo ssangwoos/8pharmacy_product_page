@@ -203,7 +203,23 @@
             </div>
         </div>
 
-        <div id="page-settings" class="content-group" style="display: none; padding: 20px; flex-grow: 1;"><h2>⚙️ 설정</h2></div>
+        <div id="page-settings" class="content-group" style="display: none; padding: 20px; flex-grow: 1;"><h2>⚙️ 설정</h2>
+            <div class="settings-section" style="background:white; padding:20px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:20px;">
+    <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">🔐 관리자 비밀번호 설정</h3>
+    <p style="color:#666; font-size:0.9rem; margin-bottom:15px;">
+        거래처 비밀번호 보기, 중요 설정 변경 등에 사용될 관리자 비밀번호를 설정합니다.<br>
+        (저장 시 암호화되어 아무도 알 수 없게 저장됩니다.)
+    </p>
+    
+    <div style="display:flex; gap:10px; align-items:center;">
+        <input type="password" id="new-admin-pw" placeholder="새 비밀번호 입력" style="padding:10px; border:1px solid #ddd; border-radius:4px; width:200px;">
+        <button id="btn-save-admin-pw" style="padding:10px 20px; background-color:#34495e; color:white; border:none; border-radius:4px; cursor:pointer;">
+            변경 내용 저장
+        </button>
+    </div>
+</div>
+        </div>
+    
     </div>
 
     <section class="bottom-panel">

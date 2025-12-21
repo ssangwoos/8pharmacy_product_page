@@ -1267,6 +1267,46 @@ menuItems.forEach(item => {
         window.scrollTo(0, 0); 
     });
 });
+
+/* ==========================================================================
+   [추가] 설정 탭: 관리자 비밀번호 변경 및 저장 기능
+   ========================================================================== */
+const btnSaveAdminPw = document.getElementById('btn-save-admin-pw');
+
+if (btnSaveAdminPw) {
+    // 버튼 중복 방지 (기존 리스너 제거용 복제)
+    const newBtn = btnSaveAdminPw.cloneNode(true);
+    btnSaveAdminPw.parentNode.replaceChild(newBtn, btnSaveAdminPw);
+
+    newBtn.addEventListener('click', async () => {
+        const newPwInput = document.getElementById('new-admin-pw');
+        const newPw = newPwInput.value.trim();
+
+        if (newPw.length < 4) {
+            alert("비밀번호는 최소 4자리 이상으로 설정해주세요.");
+            return;
+        }
+
+        try {
+            // 1. 비밀번호 암호화 (해싱)
+            const hashedPw = await sha256(newPw);
+
+            // 2. DB에 저장 (settings 컬렉션 -> master 문서)
+            // setDoc은 문서가 없으면 만들고, 있으면 덮어씁니다.
+            await setDoc(doc(db, "settings", "master"), {
+                admin_pw_hash: hashedPw,
+                updated_at: new Date()
+            }, { merge: true }); // merge:true는 기존 다른 설정이 있다면 유지하고 비번만 바꿈
+
+            alert("✅ 관리자 비밀번호가 성공적으로 변경되었습니다!");
+            newPwInput.value = ""; // 입력창 비우기
+
+        } catch (e) {
+            console.error("비밀번호 저장 실패:", e);
+            alert("저장에 실패했습니다. 권한이 없거나 인터넷 연결을 확인하세요.");
+        }
+    });
+}
 // 초기 실행
 loadProducts();
 subscribeToRecentLogs();
