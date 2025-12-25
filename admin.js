@@ -485,24 +485,45 @@ function loadImage(src) { return new Promise((r, j) => { const i = new Image(); 
 window.deleteProduct = async function(id) { if(confirm('삭제?')) { await deleteDoc(doc(db, "products", id)); alert('삭제됨'); loadProductList(); } }
 window.editProduct = async function(id) {
     const d = await getDoc(doc(db, "products", id));
+    
     if(d.exists()) {
         const data = d.data();
-        document.getElementById('productId').value = id; document.getElementById('productId').disabled = true; document.getElementById('productId').style.backgroundColor = '#e0e0e0';
-        document.getElementById('name').value = data.name; document.getElementById('price').value = data.price;
+        
+        // 1. 기존 데이터 채우기
+        document.getElementById('productId').value = id; 
+        document.getElementById('productId').disabled = true; 
+        document.getElementById('productId').style.backgroundColor = '#e0e0e0';
+        document.getElementById('name').value = data.name; 
+        document.getElementById('price').value = data.price;
+        
         ['kr','en','cn','jp','th','vn','id','mn'].forEach(l => document.getElementById('desc_'+l).value = data['desc_'+l] || '');
-        if(data.image) { document.getElementById('preview').src = data.image; document.getElementById('preview').style.display = 'block'; }
-        if(data.qrImage) {
-            document.getElementById('qrPreview').src = data.qrImage; document.getElementById('qrPreview').style.display = 'block'; document.getElementById('qrPlaceholder').style.display = 'none';
-            const btn = document.getElementById('qrDownloadBtn'); btn.href = data.qrImage; btn.download = id + '_qr.jpg'; btn.style.display = 'inline-block';
+        
+        if(data.image) { 
+            document.getElementById('preview').src = data.image; 
+            document.getElementById('preview').style.display = 'block'; 
         }
-        document.getElementById('saveBtn').innerText = "수정 저장하기"; window.scrollTo(0,0);
+        
+        if(data.qrImage) {
+            document.getElementById('qrPreview').src = data.qrImage; 
+            document.getElementById('qrPreview').style.display = 'block'; 
+            document.getElementById('qrPlaceholder').style.display = 'none';
+            const btn = document.getElementById('qrDownloadBtn'); 
+            btn.href = data.qrImage; 
+            btn.download = id + '_qr.jpg'; 
+            btn.style.display = 'inline-block';
+        }
+
+        // ✨ [수정된 위치] 여기가 핵심입니다! if문 안으로 들어왔습니다.
+        if(data.related_products) {
+            currentRelatedIds = data.related_products; // DB 데이터 전역변수에 담기
+        } else {
+            currentRelatedIds = [];
+        }
+        renderRelatedTags(); // 화면에 태그 그리기
+
+        document.getElementById('saveBtn').innerText = "수정 저장하기"; 
+        window.scrollTo(0,0);
     }
-    if(data.related_products) {
-    currentRelatedIds = data.related_products; // DB에서 불러오기
-    } else {
-    currentRelatedIds = [];
-    }
-    renderRelatedTags(); // 화면에 그리기
 }
 document.getElementById('imageFile').addEventListener('change', e => { if(e.target.files[0]) { const r = new FileReader(); r.onload = ev => { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display='block'; }; r.readAsDataURL(e.target.files[0]); } });
 
