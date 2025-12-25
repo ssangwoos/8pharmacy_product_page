@@ -1,7 +1,7 @@
 // admin.js (실시간 검색 고침 + ID 검색 기능 추가)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, doc, setDoc, deleteDoc, collection, getDocs, getDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, updateDoc,deleteDoc, collection, getDocs, getDoc, query, where, orderBy,arrayUnion, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 import imageCompression from "https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.0/dist/browser-image-compression.mjs";
 
@@ -219,6 +219,20 @@ window.saveProduct = async function() {
         ['kr','en','cn','jp','th','vn','id','mn'].forEach(l => data['desc_'+l] = document.getElementById('desc_'+l).value);
         if(imageUrl) data.image = imageUrl; if(qrImageUrl) data.qrImage = qrImageUrl;
         await setDoc(doc(db, "products", id), data, { merge: true });
+
+        // ✨ [신규 추가] 반대편 상품에도 '나'를 자동으로 등록하기 (쌍방향 연결)
+        if (currentRelatedIds && currentRelatedIds.length > 0) {
+            const updates = currentRelatedIds.map(targetId => {
+                // targetId(B상품)의 related_products 배열에 id(내 상품 A)를 추가
+                // updateDoc을 써야 기존 B상품의 다른 정보(가격, 이름 등)를 건드리지 않음
+                return updateDoc(doc(db, "products", targetId), {
+                    related_products: arrayUnion(id)
+                }).catch(err => console.log(`연관상품 자동등록 실패 (${targetId}):`, err));
+            });
+            // 병렬로 동시 처리 (속도 저하 거의 없음)
+            await Promise.all(updates);
+        }
+        // ✨ [끝]
         alert(`✅ 저장 완료! ID: [${id}]`); window.resetForm(true); loadProductList();
     } catch (e) { alert("오류: " + e.message); } finally { btn.disabled = false; btn.innerText = "상품 및 QR 자동 저장하기"; }
 }
