@@ -20,6 +20,7 @@ const storage = getStorage(app);
 
 let allProducts = []; 
 let allLogs = [];
+let currentRelatedIds = []; // 현재 선택된 연관상품 ID들을 담을 그릇
 const DEFAULT_LAYOUT = { 
     prod_x: 100, prod_y: 200, prod_w: 1000, prod_h: 850, prod_scale: 1.0,
     qr_x: 1511, qr_y: 220, qr_size: 400, 
@@ -170,6 +171,10 @@ window.resetForm = function(force = false) {
     idInput.value = ''; idInput.placeholder = "저장 시 자동 생성"; 
     idInput.disabled = true; idInput.style.backgroundColor = '#e0e0e0'; idInput.style.color = '#555'; idInput.style.cursor = 'not-allowed';
 
+    currentRelatedIds = []; // 초기화
+    document.getElementById('relatedTagsContainer').innerHTML = ''; // 태그 비우기
+    document.getElementById('relatedSearchInput').value = '';
+
     document.getElementById('name').value = ''; document.getElementById('price').value = '';
     document.querySelectorAll('textarea').forEach(t => t.value = '');
     document.getElementById('imageFile').value = ''; document.getElementById('preview').style.display = 'none';
@@ -210,7 +215,7 @@ window.saveProduct = async function() {
         }
         if (document.getElementById('qrPreview').style.display === 'none') { try { qrImageUrl = await generateAndUploadQR(id); } catch(e){} }
         
-        const data = { name, price: Number(document.getElementById('price').value), updatedAt: new Date() };
+        const data = { name, price: Number(document.getElementById('price').value), updatedAt: new Date(),related_products: currentRelatedIds };
         ['kr','en','cn','jp','th','vn','id','mn'].forEach(l => data['desc_'+l] = document.getElementById('desc_'+l).value);
         if(imageUrl) data.image = imageUrl; if(qrImageUrl) data.qrImage = qrImageUrl;
         await setDoc(doc(db, "products", id), data, { merge: true });
@@ -492,5 +497,97 @@ window.editProduct = async function(id) {
         }
         document.getElementById('saveBtn').innerText = "수정 저장하기"; window.scrollTo(0,0);
     }
+    if(data.related_products) {
+    currentRelatedIds = data.related_products; // DB에서 불러오기
+    } else {
+    currentRelatedIds = [];
+    }
+    renderRelatedTags(); // 화면에 그리기
 }
 document.getElementById('imageFile').addEventListener('change', e => { if(e.target.files[0]) { const r = new FileReader(); r.onload = ev => { document.getElementById('preview').src = ev.target.result; document.getElementById('preview').style.display='block'; }; r.readAsDataURL(e.target.files[0]); } });
+
+// ✨ 연관상품 검색 함수
+window.searchRelatedProducts = function() {
+    const input = document.getElementById('relatedSearchInput');
+    const resultBox = document.getElementById('relatedSearchResults');
+    const keyword = input.value.toLowerCase().trim();
+
+    if (keyword.length < 1) {
+        resultBox.style.display = 'none';
+        return;
+    }
+
+    // 나 자신과 이미 선택된 상품은 검색 결과에서 제외
+    const currentId = document.getElementById('productId').value;
+    const filtered = allProducts.filter(p => 
+        p.id !== currentId && 
+        !currentRelatedIds.includes(p.id) && 
+        (p.name.toLowerCase().includes(keyword))
+    );
+
+    resultBox.innerHTML = '';
+    if (filtered.length === 0) {
+        resultBox.style.display = 'none';
+        return;
+    }
+
+    filtered.forEach(p => {
+        const div = document.createElement('div');
+        div.style.padding = '10px';
+        div.style.cursor = 'pointer';
+        div.style.borderBottom = '1px solid #eee';
+        div.innerHTML = `<span style="font-weight:bold;">${p.name}</span> <span style="font-size:0.8em; color:#888;">(${p.id})</span>`;
+        div.onmouseover = () => div.style.backgroundColor = '#f0f0f0';
+        div.onmouseout = () => div.style.backgroundColor = 'white';
+        
+        // 클릭 시 추가
+        div.onclick = () => {
+            addRelatedTag(p.id, p.name);
+            input.value = '';
+            resultBox.style.display = 'none';
+        };
+        resultBox.appendChild(div);
+    });
+    resultBox.style.display = 'block';
+}
+
+// ✨ 태그 추가 함수
+window.addRelatedTag = function(id, name) {
+    if (currentRelatedIds.includes(id)) return;
+    currentRelatedIds.push(id);
+    renderRelatedTags();
+}
+
+// ✨ 태그 삭제 함수
+window.removeRelatedTag = function(id) {
+    currentRelatedIds = currentRelatedIds.filter(itemId => itemId !== id);
+    renderRelatedTags();
+}
+
+// ✨ 태그 화면 그리기 (렌더링)
+window.renderRelatedTags = function() {
+    const container = document.getElementById('relatedTagsContainer');
+    container.innerHTML = '';
+
+    currentRelatedIds.forEach(id => {
+        // ID로 상품명 찾기 (혹시 목록에 없으면 ID만 표시)
+        const product = allProducts.find(p => p.id === id);
+        const name = product ? product.name : id;
+
+        const tag = document.createElement('span');
+        tag.style.background = '#e8f5e9';
+        tag.style.color = '#1D5C36';
+        tag.style.padding = '5px 10px';
+        tag.style.borderRadius = '20px';
+        tag.style.fontSize = '0.9rem';
+        tag.style.display = 'flex';
+        tag.style.alignItems = 'center';
+        tag.style.gap = '5px';
+        
+        tag.innerHTML = `
+            ${name} 
+            <span onclick="removeRelatedTag('${id}')" style="cursor:pointer; font-weight:bold; color:#d32f2f;">&times;</span>
+        `;
+        container.appendChild(tag);
+    });
+}

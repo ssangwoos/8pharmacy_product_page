@@ -63,6 +63,51 @@
         .cart-icon { font-size: 1.8rem; }
         .cart-badge { position: absolute; top: -5px; right: -5px; background-color: #d32f2f; color: white; font-size: 0.8rem; font-weight: bold; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
         #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px; font-size: 0.9rem; z-index: 1000; display: none; }
+    
+        /* ✨ 연관상품 섹션 스타일 */
+.related-section { margin-top: 30px; padding: 20px 0; background: #fff; border-top: 10px solid #f4f4f4; }
+.related-title { padding: 0 20px 10px 20px; font-size: 1.1rem; font-weight: bold; color: #333; }
+.related-scroll-box {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 0 20px 20px 20px; /* 양옆 여백 */
+    scroll-snap-type: x mandatory; /* 자석 스크롤 */
+    -webkit-overflow-scrolling: touch; /* 부드러운 스크롤 */
+}
+/* 스크롤바 숨기기 */
+.related-scroll-box::-webkit-scrollbar { display: none; }
+
+.related-card {
+    flex: 0 0 40%; /* ✨ 화면 너비의 40% 차지 (2.5개 보임) */
+    scroll-snap-align: start; /* 왼쪽 정렬 자석 */
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.related-card:active { transform: scale(0.98); }
+.related-img { width: 100%; height: 100px; object-fit: contain; background: #f9f9f9; }
+.related-info { padding: 10px; }
+.related-name { 
+    font-size: 0.9rem; 
+    font-weight: bold; 
+    color: #333; 
+    margin-bottom: 4px; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    display: -webkit-box; 
+    -webkit-line-clamp: 2; 
+    line-clamp: 2;  /* ✨ 이 한 줄이 추가되어 경고가 사라집니다 */
+    -webkit-box-orient: vertical; 
+    height: 2.6em; 
+}
+.related-price { font-size: 0.95rem; font-weight: bold; color: #d32f2f; }
+    
     </style>
 </head>
 <body>
@@ -101,6 +146,12 @@
             <div id="desc-id" class="desc-content"><h3>Detail</h3><p class="desc-text"></p></div>
             <div id="desc-mn" class="desc-content"><h3>Дэлгэрэнгүй</h3><p class="desc-text"></p></div>
         </div>
+
+        <div id="relatedSection" class="related-section" style="display:none;">
+        <div class="related-title">💡 함께 구매하면 좋은 상품</div>
+        <div id="relatedList" class="related-scroll-box">
+            </div>
+    </div>
     </div>
     <div class="fab-cart" onclick="location.href='cart.html'"><span class="cart-icon">🛒</span><span class="cart-badge" id="cartCount">0</span></div>
     <div class="bottom-bar"><button class="btn-add-cart" onclick="addToCart()">🛒 장바구니 담기 (Add to Cart)</button></div>
@@ -150,6 +201,9 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     currentProductData = data;
+                    if (data.related_products && data.related_products.length > 0) {
+                        fetchRelatedProducts(data.related_products);
+                     }
                     document.getElementById('pName').innerText = data.name;
                     globalPriceKRW = Number(data.price);
                     document.getElementById('pPrice').innerText = globalPriceKRW.toLocaleString();
@@ -167,6 +221,51 @@
                 } else { loading.innerText = "등록되지 않은 상품입니다."; }
             } catch (error) { loading.innerText = "오류 발생: " + error.message; }
         }
+
+        async function fetchRelatedProducts(ids) {
+    const listContainer = document.getElementById('relatedList');
+    const section = document.getElementById('relatedSection');
+    
+    // 비어있으면 숨김
+    if(!ids || ids.length === 0) return;
+
+    listContainer.innerHTML = '';
+    
+    // 모든 연관상품 정보를 한 번에 병렬로 가져옴 (속도 최적화)
+    try {
+        const promises = ids.map(id => getDoc(doc(db, "products", id)));
+        const snapshots = await Promise.all(promises);
+        
+        let hasItem = false;
+
+        snapshots.forEach(snap => {
+            if (snap.exists()) {
+                hasItem = true;
+                const p = snap.data();
+                const pId = snap.id; // ID 가져오기
+                
+                // HTML 생성 (가로 스크롤 카드)
+                const card = document.createElement('div');
+                card.className = 'related-card';
+                card.onclick = () => location.href = `product.html?id=${pId}`; // 클릭 시 이동
+                
+                card.innerHTML = `
+                    <img src="${p.image || 'https://via.placeholder.com/80'}" class="related-img">
+                    <div class="related-info">
+                        <div class="related-name">${p.name}</div>
+                        <div class="related-price">₩${Number(p.price).toLocaleString()}</div>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            }
+        });
+
+        if (hasItem) section.style.display = 'block';
+
+    } catch (e) {
+        console.error("연관상품 로딩 실패:", e);
+    }
+}
 
         function setDesc(lang, text) { document.querySelector(`#desc-${lang} .desc-text`).innerText = text || (lang==='kr'?"설명이 없습니다.":"No description."); }
         async function fetchRates() { try { const r = await fetch('https://api.exchangerate-api.com/v4/latest/KRW'); const d = await r.json(); globalRates = d.rates; rateDate = d.date; } catch (e) {} }

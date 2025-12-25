@@ -157,6 +157,22 @@
 
         <button class="ai-btn" onclick="translateContent()">✨ AI 번역</button>
 
+        <div style="margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px;">
+            <label style="display:block; font-weight:bold; margin-bottom:5px;">🔗 함께 구매하면 좋은 상품 (연관상품)</label>
+    
+            <div style="position: relative;">
+             <input type="text" id="relatedSearchInput" placeholder="상품명 검색..." 
+                     style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px;"
+                      onkeyup="searchRelatedProducts()">
+        
+                <div id="relatedSearchResults" 
+                    style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ccc; max-height:200px; overflow-y:auto; z-index:100; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+                 </div>
+            </div>
+
+            <div id="relatedTagsContainer" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+        </div>
+
         <div class="section-header">🤖 번역 결과</div>
         <div class="lang-section"><div class="lang-title">🇺🇸 영어</div><textarea id="desc_en"></textarea></div>
         <div class="lang-section"><div class="lang-title">🇯🇵 일본어</div><textarea id="desc_jp"></textarea></div>
