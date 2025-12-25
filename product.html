@@ -148,7 +148,7 @@
         </div>
 
         <div id="relatedSection" class="related-section" style="display:none;">
-        <div class="related-title">💡 함께 구매하면 좋은 상품</div>
+        <div id="relatedTitle" class="related-title">💡 함께 구매하면 좋은 상품</div>
         <div id="relatedList" class="related-scroll-box">
             </div>
     </div>
@@ -271,38 +271,69 @@
         async function fetchRates() { try { const r = await fetch('https://api.exchangerate-api.com/v4/latest/KRW'); const d = await r.json(); globalRates = d.rates; rateDate = d.date; } catch (e) {} }
         
         window.changeLang = function(lang) {
-            document.querySelectorAll('.desc-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('desc-' + lang).classList.add('active');
-            const btns = document.querySelectorAll('.lang-btn');
-            const langMap = {'kr':0, 'en':1, 'jp':2, 'cn':3, 'th':4, 'vn':5, 'id':6, 'mn':7};
-            if(btns[langMap[lang]]) btns[langMap[lang]].classList.add('active');
+    // 1. 기존: 설명글(Description) 바꾸기
+    document.querySelectorAll('.desc-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+    
+    const descEl = document.getElementById('desc-' + lang);
+    if(descEl) descEl.classList.add('active');
+    
+    const btns = document.querySelectorAll('.lang-btn');
+    const langMap = {'kr':0, 'en':1, 'jp':2, 'cn':3, 'th':4, 'vn':5, 'id':6, 'mn':7};
+    if(btns[langMap[lang]]) btns[langMap[lang]].classList.add('active');
 
-            if(productId) { const docRef = doc(db, "products", productId); updateDoc(docRef, { [`views_${lang}`]: increment(1) }).catch(e=>{}); }
-            if(currentProductData) logScanEvent(productId, currentProductData.name, lang);
+    // 2. 기존: 조회수 카운트 및 로그 저장
+    if(productId) { 
+        const docRef = doc(db, "products", productId); 
+        updateDoc(docRef, { [`views_${lang}`]: increment(1) }).catch(e=>{}); 
+    }
+    if(currentProductData) logScanEvent(productId, currentProductData.name, lang);
 
-            const box = document.getElementById('convertBox');
-            if (!globalRates || lang === 'kr') { box.style.display = 'none'; return; }
-            box.style.display = 'block';
-            let targetRate = 0; let currencyCode = ""; let symbol = ""; let baseUnit = 1;
-            if (lang === 'en') { targetRate = globalRates.USD; currencyCode = "USD"; symbol = "$"; }
-            else if (lang === 'cn') { targetRate = globalRates.CNY; currencyCode = "CNY"; symbol = "¥"; }
-            else if (lang === 'jp') { targetRate = globalRates.JPY; currencyCode = "JPY"; symbol = "円"; baseUnit = 100; }
-            else if (lang === 'th') { targetRate = globalRates.THB; currencyCode = "THB"; symbol = "฿"; }
-            else if (lang === 'vn') { targetRate = globalRates.VND; currencyCode = "VND"; symbol = '₫'; baseUnit = 100; }
-            else if (lang === 'id') { targetRate = globalRates.IDR; currencyCode = "IDR"; symbol = 'Rp'; baseUnit = 100; }
-            else if (lang === 'mn') { targetRate = globalRates.MNT; currencyCode = "MNT"; symbol = '₮'; baseUnit = 100; }
-            
-            let convertedPrice = globalPriceKRW * targetRate;
-            let priceText = ['vn','id','mn','jp'].includes(lang) ? convertedPrice.toFixed(0) : convertedPrice.toFixed(2);
-            const priceEl = document.getElementById('convertPrice');
-            if(['jp','vn','mn','th'].includes(lang)) priceEl.innerText = priceText + symbol; else priceEl.innerText = symbol + priceText;
-            
-            let reverseRate = (1 / targetRate);
-            if (baseUnit === 100) reverseRate = reverseRate * 100;
-            document.getElementById('convertRate').innerText = `Applied Rate: ${baseUnit} ${currencyCode} ≈ ${reverseRate.toFixed(2)} KRW`;
-            document.getElementById('convertDate').innerText = `Updated: ${rateDate}`;
-        }
+    // 3. 기존: 환율 계산 로직
+    const box = document.getElementById('convertBox');
+    if (globalRates && lang !== 'kr') { 
+        box.style.display = 'block';
+        let targetRate = 0; let currencyCode = ""; let symbol = ""; let baseUnit = 1;
+        
+        if (lang === 'en') { targetRate = globalRates.USD; currencyCode = "USD"; symbol = "$"; }
+        else if (lang === 'cn') { targetRate = globalRates.CNY; currencyCode = "CNY"; symbol = "¥"; }
+        else if (lang === 'jp') { targetRate = globalRates.JPY; currencyCode = "JPY"; symbol = "円"; baseUnit = 100; }
+        else if (lang === 'th') { targetRate = globalRates.THB; currencyCode = "THB"; symbol = "฿"; }
+        else if (lang === 'vn') { targetRate = globalRates.VND; currencyCode = "VND"; symbol = '₫'; baseUnit = 100; }
+        else if (lang === 'id') { targetRate = globalRates.IDR; currencyCode = "IDR"; symbol = 'Rp'; baseUnit = 100; }
+        else if (lang === 'mn') { targetRate = globalRates.MNT; currencyCode = "MNT"; symbol = '₮'; baseUnit = 100; }
+        
+        let convertedPrice = globalPriceKRW * targetRate;
+        let priceText = ['vn','id','mn','jp'].includes(lang) ? convertedPrice.toFixed(0) : convertedPrice.toFixed(2);
+        const priceEl = document.getElementById('convertPrice');
+        if(['jp','vn','mn','th'].includes(lang)) priceEl.innerText = priceText + symbol; 
+        else priceEl.innerText = symbol + priceText;
+        
+        let reverseRate = (1 / targetRate);
+        if (baseUnit === 100) reverseRate = reverseRate * 100;
+        document.getElementById('convertRate').innerText = `Applied Rate: ${baseUnit} ${currencyCode} ≈ ${reverseRate.toFixed(2)} KRW`;
+        document.getElementById('convertDate').innerText = `Updated: ${rateDate}`;
+    } else {
+        box.style.display = 'none';
+    }
+
+    // ✨ [신규 추가] '연관상품' 제목 번역 기능
+    const relatedText = {
+        'kr': "💡 함께 구매하면 좋은 상품",
+        'en': "💡 Frequently Bought Together",
+        'cn': "💡 推荐搭配购买 (Recommended)",
+        'jp': "💡 よく一緒に購入されている商品",
+        'th': "💡 สินค้าที่มักซื้อด้วยกัน",
+        'vn': "💡 Sản phẩm thường mua cùng",
+        'id': "💡 Produk yang sering dibeli bersama",
+        'mn': "💡 Хамт худалдан авахад тохиромжтой"
+    };
+    
+    const titleEl = document.getElementById('relatedTitle');
+    if(titleEl) {
+        titleEl.innerText = relatedText[lang] || relatedText['kr'];
+    }
+}
 
         window.addToCart = function() {
             if(!currentProductData) return;
