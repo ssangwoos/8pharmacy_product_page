@@ -256,18 +256,35 @@ function filterLedger() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 날짜 자동 세팅 로직 (기존 유지)
+    // 1. 현재 한국 시간 기준으로 날짜 객체 생성
     const now = new Date();
-    const today = new Date(now.getTime() + (9 * 60 * 60 * 1000)).toISOString().split('T')[0];
-    if(document.getElementById('startDate')) document.getElementById('startDate').value = today.substring(0, 7) + "-01";
-    if(document.getElementById('endDate')) document.getElementById('endDate').value = today;
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0 (1월) ~ 11 (12월)
 
-    // [변경] 바로 데이터를 부르지 않고, 거래처 목록만 먼저 가져와서 필터를 채웁니다.
+    // 2. 시작일(1일) 조립: "YYYY-MM-01"
+    const firstDay = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+
+    // 3. 말일 계산: 다음 달의 0번째 날 = 이번 달의 마지막 날
+    const lastDayDate = new Date(year, month + 1, 0);
+    const lastDayYear = lastDayDate.getFullYear();
+    const lastDayMonth = String(lastDayDate.getMonth() + 1).padStart(2, '0');
+    const lastDayDay = String(lastDayDate.getDate()).padStart(2, '0');
+    
+    // 최종 조립: "YYYY-MM-DD" (ISO 문자열 변환 없이 직접 조립하여 오류 차단)
+    const lastDay = `${lastDayYear}-${lastDayMonth}-${lastDayDay}`;
+
+    // 4. HTML 필터에 값 할당
+    if(document.getElementById('startDate')) document.getElementById('startDate').value = firstDay;
+    if(document.getElementById('endDate')) document.getElementById('endDate').value = lastDay;
+
+    // 5. 기존 초기화 로직 유지
     await fillVendorFilterOnly(); 
     await loadPharmacyName();
     
     const tableBody = document.getElementById('ledgerTableBody');
-    tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:50px; color:#666;">🔎 조회하실 <b>거래처를 선택</b>해 주세요.</td></tr>';
+    if (tableBody) {
+        tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:50px; color:#666;">🔎 조회하실 <b>거래처를 선택</b>해 주세요.</td></tr>';
+    }
 });
 
 async function loadPharmacyName() {
