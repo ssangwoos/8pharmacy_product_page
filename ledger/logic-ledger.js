@@ -36,73 +36,132 @@ async function loadLedgerData() {
     }
 }
 
-// [화면 렌더링 함수] 10개씩 페이징하며 하단이 최신이게 정렬
+/* logic-ledger.js - 품목별 나열 및 Hover 기능 추가 버전 */
+
 function renderLedger() {
     const tableBody = document.getElementById('ledgerTableBody');
     const start = document.getElementById('startDate')?.value || '';
     const end = document.getElementById('endDate')?.value || '';
-
-    // 기간 필터링
+    const searchKeyword = document.getElementById('searchInput')?.value.toLowerCase() || ''; // 검색어 가져오기
+    const isSearching = searchKeyword.length > 0;
+    // 1. 기간 필터링
     let filtered = allData.filter(item => (!start || item.date >= start) && (!end || item.date <= end));
-
-    // 페이징 계산 (최신 10개가 1페이지)
-    const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-    const reversed = [...filtered].reverse(); 
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const pageItems = reversed.slice(startIndex, startIndex + itemsPerPage);
-    const finalDisplayItems = pageItems.reverse(); // 하단이 최신이게 재정렬
-
+    
     let html = '';
-    let totalBuy = 0, totalPay = 0, runningBalance = 0;
+    let displayBuy = 0, displayPay = 0, runningBalance = 0;
 
-    // 잔액은 전체 데이터를 기준으로 순차 계산
+    // 2. 전체를 돌며 잔액을 먼저 계산하고, 검색 조건에 맞는 줄만 HTML에 추가
     filtered.forEach(item => {
-        const amount = Number(item.total) || 0;
-        const isBuy = (item.type === 'buy');
-        if (isBuy) { totalBuy += amount; runningBalance += amount; }
-        else { totalPay += amount; runningBalance -= amount; }
+        const rowItems = (item.items && item.items.length > 0) 
+            ? item.items 
+            : [{ memo: item.memo, qty: item.qty || 1, supply: item.supply, vat: item.vat, total: item.total }];
 
-        if (finalDisplayItems.some(p => p.id === item.id)) {
-            html += `
-                <tr class="ledger-row">
-                    <td style="text-align:center;">${item.date}</td>
-                    <td style="text-align:center;">${getBadgeHtml(item.type)}</td>
-                    <td style="text-align:center;">${item.vendor}</td>
-                    <td style="text-align:left; padding-left:10px;">${item.memo || ''}</td>
-                    <td style="text-align:center;">${item.qty || 0}</td>
-                    <td style="text-align:right;">${(Number(item.supply) || 0).toLocaleString()}</td>
-                    <td style="text-align:right;">${(Number(item.vat) || 0).toLocaleString()}</td>
-                    <td style="color:#2563eb; font-weight:bold; text-align:right;">${isBuy ? amount.toLocaleString() : ''}</td>
-                    <td style="color:#dc2626; font-weight:bold; text-align:right;">${!isBuy ? amount.toLocaleString() : ''}</td>
-                    <td style="font-weight:700; text-align:right; background:#f9fafb;">${runningBalance.toLocaleString()}</td>
-                    <td style="text-align:center;">${item.img ? `<a href="${item.img}" target="_blank">📄</a>` : '-'}</td>
+        rowItems.forEach((subItem) => {
+            const amount = Number(subItem.total) || 0;
+            const isBuy = (item.type === 'buy');
 
-                   <td style="text-align:center; white-space:nowrap; width:80px;">
-                        <div style="display: flex; justify-content: center; gap: 12px; align-items: center;">
-                            <button onclick="openEditModal('${item.id}')" 
-                                    title="수정"
-                                    style="color:#2563eb; border:none; background:none; cursor:pointer; font-size:1.1rem; padding:0;">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteEntry('${item.id}')" 
-                                    title="삭제"
-                                    style="color:#ef4444; border:none; background:none; cursor:pointer; font-size:1.1rem; padding:0;">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-        }
+            // [핵심] 잔액은 검색 여부와 상관없이 '전체 흐름'을 따라 누적 계산
+            if (isBuy) runningBalance += amount;
+            else runningBalance -= amount;
+
+            // [검색 필터] 거래처명 또는 품목명에 검색어가 포함되어 있는지 확인
+            const isMatch = item.vendor.toLowerCase().includes(searchKeyword) || 
+                            (subItem.memo && subItem.memo.toLowerCase().includes(searchKeyword));
+
+            if (isMatch) {
+                // 화면에 표시될 금액들만 별도로 합산 (상단 카드용)
+                if (isBuy) displayBuy += amount;
+                else displayPay += amount;
+
+                // 그룹화를 위한 ID (아까 만든 img 기준)
+                const groupId = item.img || item.id;
+
+                html += `
+                    <tr class="ledger-row" 
+                        data-parent-id="${groupId}" 
+                        onmouseover="highlightGroup('${groupId}')" 
+                        onmouseout="removeHighlight()">
+                        <td style="text-align:center;">${item.date}</td>
+                        <td style="text-align:center;">${getBadgeHtml(item.type)}</td>
+                        <td style="text-align:center;">${item.vendor}</td>
+                        <td style="text-align:left; padding-left:10px;">${subItem.memo || ''}</td>
+                        <td style="text-align:center;">${subItem.qty || 0}</td>
+                        <td style="text-align:right;">${(Number(subItem.supply) || 0).toLocaleString()}</td>
+                        <td style="text-align:right;">${(Number(subItem.vat) || 0).toLocaleString()}</td>
+                        <td style="color:#2563eb; font-weight:bold; text-align:right;">${isBuy ? amount.toLocaleString() : ''}</td>
+                        <td style="color:#dc2626; font-weight:bold; text-align:right;">${!isBuy ? amount.toLocaleString() : ''}</td>
+                        <td style="font-weight:700; text-align:right; background:#f9fafb;">${runningBalance.toLocaleString()}</td>
+                        <td style="text-align:center;">${item.img ? `<a href="${item.img}" target="_blank">📄</a>` : '-'}</td>
+                        <td style="text-align:center;">
+                            <div style="display: flex; justify-content: center; gap: 8px;">
+                                <button onclick="openEditModal('${item.id}')" style="color:#2563eb; border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteEntry('${item.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
+            }
+        });
     });
 
-    tableBody.innerHTML = html || '<tr><td colspan="12" style="text-align:center; padding:30px;">내역이 없습니다.</td></tr>';
+    tableBody.innerHTML = html || '<tr><td colspan="12" style="text-align:center; padding:30px;">검색 결과가 없습니다.</td></tr>';
     
-    // 요약 및 페이지 버튼 업데이트
-    if(document.getElementById('sumBuy')) document.getElementById('sumBuy').innerText = totalBuy.toLocaleString();
-    if(document.getElementById('sumPay')) document.getElementById('sumPay').innerText = totalPay.toLocaleString();
-    if(document.getElementById('sumBalance')) document.getElementById('sumBalance').innerText = (totalBuy - totalPay).toLocaleString();
-    renderPaginationUI(totalPages);
+    // 3. 상단 요약 카드 업데이트 (검색된 품목들의 합계로 갱신)
+    if(document.getElementById('sumBuy')) document.getElementById('sumBuy').innerText = displayBuy.toLocaleString();
+    if(document.getElementById('sumPay')) document.getElementById('sumPay').innerText = displayPay.toLocaleString();
+    if(document.getElementById('sumBalance')) document.getElementById('sumBalance').innerText = (displayBuy - displayPay).toLocaleString();
 }
+
+
+// [수정] 그룹 내 모든 항목의 금액을 합산하여 툴팁에 표시
+function highlightGroup(groupId) {
+    if (!groupId) return;
+    
+    // 1. 하이라이트 효과
+    const safeId = CSS.escape(groupId);
+    const elements = document.querySelectorAll(`tr[data-parent-id="${safeId}"]`);
+    elements.forEach(el => el.classList.add('group-active'));
+
+    // 2. 그룹 합계 계산 로직
+    // allData에서 동일한 img(또는 groupId)를 가진 모든 항목을 추출합니다.
+    const groupItems = allData.filter(d => (d.img || d.id) === groupId);
+    
+    if (groupItems.length > 0) {
+        // 그룹 내 모든 항목의 total 값을 합산
+        const groupTotal = groupItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+        const vendorName = groupItems[0].vendor; // 거래처명은 첫 번째 항목에서 참조
+
+        const tooltip = document.getElementById('groupTooltip');
+        tooltip.innerHTML = `
+            <div style="margin-bottom:4px; border-bottom:1px solid #475569; padding-bottom:4px;">
+                <span style="color:#94a3b8;">거래처:</span> ${vendorName}
+            </div>
+            <div>
+                <span style="color:#94a3b8;">명세서 총 합계:</span> 
+                <span style="color:#60a5fa; font-size:1.1em; margin-left:5px;">${groupTotal.toLocaleString()}원</span>
+            </div>
+            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
+                (총 ${groupItems.length}개 품목)
+            </div>
+        `;
+        tooltip.style.display = 'block';
+    }
+}
+
+// [수정] 툴팁 숨기기
+function removeHighlight() {
+    document.querySelectorAll('.ledger-row').forEach(el => el.classList.remove('group-active'));
+    document.getElementById('groupTooltip').style.display = 'none';
+}
+
+// [추가] 마우스 움직임에 따라 툴팁 위치 이동
+document.addEventListener('mousemove', function(e) {
+    const tooltip = document.getElementById('groupTooltip');
+    if (tooltip.style.display === 'block') {
+        tooltip.style.left = (e.clientX + 15) + 'px'; // 커서 오른쪽 15px
+        tooltip.style.top = (e.clientY + 15) + 'px';  // 커서 아래쪽 15px
+    }
+});
+
 
 // [도움 함수들]
 // [보조 3] 구분(Type) 뱃지 생성 함수
@@ -501,3 +560,4 @@ function onEditTotalInput(el) {
     document.getElementById('editSupply').value = formatNum(supply);
     document.getElementById('editVat').value = formatNum(vat);
 }
+

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>명세서 상세 입력 |<span class="pharmacy-name-display"></span></title>
+    <title>명세서 상세 입력</title>
     
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="style-write.css">
@@ -17,21 +17,17 @@
 </head>
 <body>
 
-<header style="display: flex; justify-content: space-between; align-items: center; padding: 10px 30px; background: white; border-bottom: 1px solid #eee; height: 60px; box-sizing: border-box;">
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <a href="index.html" style="color: #333; text-decoration: none; font-size: 1.2rem;">
-            <i class="fas fa-arrow-left"></i>
+    <header>
+        <a href="index.html" class="logo">
+            <i class="fas fa-capsules"></i> <span class="pharmacy-name-display"></span>
         </a>
-        <h1 style="font-size: 1.3rem; margin: 0; color: #1e293b;">명세서 상세 입력</h1>
-    </div>
-    
-    <nav style="display: flex; gap: 10px;">
-        <a href="index.html" style="padding: 7px 20px; border-radius: 20px; background: #2563eb; color: white; text-decoration: none; font-size: 0.85rem; font-weight: bold; box-shadow: 0 2px 6px rgba(37,99,235,0.2);">홈</a>
-        <a href="ledger.html" style="padding: 7px 20px; border-radius: 20px; background: #f1f5f9; color: #475569; text-decoration: none; font-size: 0.85rem; font-weight: 500;">장부</a>
-        <a href="settings.html" style="padding: 7px 20px; border-radius: 20px; background: #f1f5f9; color: #475569; text-decoration: none; font-size: 0.85rem; font-weight: 500;">설정</a>
-    </nav>
-</header>
-
+        <nav class="nav-links">
+            <a href="index.html" class="menu-btn">홈</a>
+            <a href="write.html" class="menu-btn">명세서 입력</a>
+            <a href="ledger.html" class="menu-btn">장부</a>
+            <a href="settings.html" class="menu-btn">설정</a>
+        </nav>
+    </header>
 <div class="container write-mode"> <aside class="sidebar">
         <div class="sidebar-header">
             <h3>대기 목록 <span id="queueCount" style="color:#2563eb">0</span></h3>

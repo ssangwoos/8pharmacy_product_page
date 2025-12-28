@@ -22,7 +22,8 @@
     </a>
     <nav class="nav-links">
         <a href="index.html" class="menu-btn">홈</a>
-        <a href="ledger.html" class="menu-btn active">장부</a>
+        <a href="write.html" class="menu-btn">명세서 입력</a>
+        <a href="ledger.html" class="menu-btn">장부</a>
         <a href="settings.html" class="menu-btn">설정</a>
     </nav>
 </header>
@@ -44,6 +45,11 @@
                         <input type="date" id="startDate" onchange="filterLedger()">
                         <span>~</span>
                         <input type="date" id="endDate" onchange="filterLedger()">
+                    </div>
+                    <div class="search-container" style="margin-left: 10px; display: inline-block;">
+                        <input type="text" id="searchInput" placeholder="거래처 또는 품목명 검색" 
+                            onkeyup="renderLedger()" 
+                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 250px;">
                     </div>
                 </div>
                 </div>
@@ -164,6 +170,20 @@
             <button onclick="closeEditModal()" style="flex:1; background:#f1f5f9; padding:16px; border-radius:10px; border:none; cursor:pointer;">취소</button>
         </div>
     </div>
+</div>
+
+<div id="groupTooltip" style="
+    display: none; 
+    position: fixed; 
+    background: #1e293b; 
+    color: white; 
+    padding: 8px 12px; 
+    border-radius: 6px; 
+    font-size: 13px; 
+    font-weight: bold; 
+    z-index: 9999; 
+    pointer-events: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
 </div>
 <script src="firebase-config.js"></script>
 <script src="logic-ledger.js"></script>

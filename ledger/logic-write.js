@@ -162,11 +162,11 @@ function addNewRow() {
         <td><input type="text" class="in-supply text-right" placeholder="0" oninput="calculateRow(this)"></td>
         <td><input type="text" class="in-vat text-right" placeholder="0" oninput="calculateRow(this)"></td>
         <td><input type="text" class="in-total text-right" placeholder="0" oninput="reverseCalculate(this)" style="font-weight:bold; color:#2563eb;"></td>
-        <td class="text-center" style="width: 60px; min-width: 60px;"> <div style="display: flex; gap: 5px; align-items: center; justify-content: center;">
-                ${isFirstRow ? 
-                    '<div style="width: 18px; height: 18px;"></div>' : 
-                    '<button type="button" class="btn-row-del" onclick="removeRow(this)">×</button>'
-                }
+        <td class="text-center" style="width: 80px; min-width: 80px;"> 
+            <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+                <button type="button" class="btn-row-del" onclick="removeRow(this)" 
+                    style="${isFirstRow ? 'visibility: hidden;' : 'visibility: visible;'}">×</button>
+                
                 <button type="button" class="btn-row-add" onclick="addNewRow()">+</button>
             </div>
         </td>
@@ -208,7 +208,7 @@ function removeRow(btn) {
 }
 
 /* [수정] 공급가, 세액 입력 시 콤마 유지 및 정방향 계산 로직 */
-function calculateRow(input) {
+function calculateRow(input) {  
     const row = input.closest('tr');
     
     // 1. 입력된 값에서 숫자만 추출하여 콤마 실시간 적용
@@ -228,7 +228,7 @@ function calculateRow(input) {
 
     // 4. 합계 계산
     const vat = parseFloat(vatField.value.replace(/,/g, '')) || 0;
-    const total = (supply + vat) * qty;
+    const total = (supply + vat);
     
     row.querySelector('.in-total').value = total > 0 ? total.toLocaleString() : "";
     
@@ -258,6 +258,7 @@ async function saveAllItems() {
     const type = document.getElementById('typeSelect')?.value || 'buy'; 
     
     const activeLi = document.querySelector('.queue-item.active');
+    const currentImgUrl = document.getElementById('docImage')?.src || "";
 
     if (!date || !vendor) return alert("날짜와 거래처를 입력하세요.");
     
@@ -276,6 +277,7 @@ async function saveAllItems() {
                     vendor,
                     type, // 이제 'pay' 또는 'return'이 정확히 담깁니다.
                     memo: memo,
+                    img: currentImgUrl,
                     qty: Number(row.querySelector('.in-qty').value.replace(/,/g, '')) || 0,
                     supply: Number(row.querySelector('.in-supply').value.replace(/,/g, '')) || 0,
                     vat: Number(row.querySelector('.in-vat').value.replace(/,/g, '')) || 0,
@@ -349,8 +351,27 @@ async function loadRecentVendor() {
     }
 }
 /* 모든 초기화 로직을 이 하나로 통합합니다 */
-document.addEventListener('DOMContentLoaded', () => {
+// 1. [함수 분리] DB에서 약국 이름을 가져오는 독립 함수
+async function loadPharmacyName() {
+    try {
+        const doc = await db.collection("settings").doc("pharmacy_info").get();
+        if (doc.exists) {
+            const name = doc.data().pharmacyName || "";
+            document.querySelectorAll('.pharmacy-name-display').forEach(el => {
+                el.innerText = name;
+            });
+        }
+    } catch (e) {
+        console.error("약국 이름 로드 중 오류:", e);
+    }
+}
+
+// 2. [이벤트 리스너] 약사님이 주신 기존 코드에 이름 로드만 추가
+document.addEventListener('DOMContentLoaded', async () => { // async 추가
     
+    // [추가] 약국 이름부터 로드합니다.
+    await loadPharmacyName();
+
     // 1. 기존 대기목록 로드
     if (typeof loadQueueList === 'function') loadQueueList();
     
@@ -365,9 +386,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dInput = document.getElementById('dateInput');
     if (dInput) dInput.value = new Date().toISOString().split('T')[0];
 
-    // 4. 최근 거래처 1건 불러오기 (방금 만든 기능)
+    // 4. 최근 거래처 1건 불러오기
     if (typeof loadRecentVendor === 'function') loadRecentVendor();
-    
 });
 
 /* 금액 합계 업데이트 함수 */
@@ -389,5 +409,20 @@ function updateTotals() {
     document.getElementById('sumSupply').innerText = totalS.toLocaleString();
     document.getElementById('sumVat').innerText = totalV.toLocaleString();
     document.getElementById('sumTotal').innerText = totalG.toLocaleString();
+}
+
+// 1. [함수 분리] DB에서 약국 이름을 가져오는 독립 함수
+async function loadPharmacyName() {
+    try {
+        const doc = await db.collection("settings").doc("pharmacy_info").get();
+        if (doc.exists) {
+            const name = doc.data().pharmacyName || "";
+            document.querySelectorAll('.pharmacy-name-display').forEach(el => {
+                el.innerText = name;
+            });
+        }
+    } catch (e) {
+        console.error("약국 이름 로드 중 오류:", e);
+    }
 }
 
