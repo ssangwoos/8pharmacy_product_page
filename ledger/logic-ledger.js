@@ -76,7 +76,21 @@ function renderLedger() {
                     <td style="color:#dc2626; font-weight:bold; text-align:right;">${!isBuy ? amount.toLocaleString() : ''}</td>
                     <td style="font-weight:700; text-align:right; background:#f9fafb;">${runningBalance.toLocaleString()}</td>
                     <td style="text-align:center;">${item.img ? `<a href="${item.img}" target="_blank">📄</a>` : '-'}</td>
-                    <td style="text-align:center;"><button onclick="deleteDoc('${item.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer;">삭제</button></td>
+
+                   <td style="text-align:center; white-space:nowrap; width:80px;">
+                        <div style="display: flex; justify-content: center; gap: 12px; align-items: center;">
+                            <button onclick="openEditModal('${item.id}')" 
+                                    title="수정"
+                                    style="color:#2563eb; border:none; background:none; cursor:pointer; font-size:1.1rem; padding:0;">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteEntry('${item.id}')" 
+                                    title="삭제"
+                                    style="color:#ef4444; border:none; background:none; cursor:pointer; font-size:1.1rem; padding:0;">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
                 </tr>`;
         }
     });
@@ -311,4 +325,158 @@ async function addQuickItem() {
         console.error("저장 오류:", e);
         alert("저장에 실패했습니다: " + e.message);
     }
+}
+
+// logic-ledger.js
+
+// 삭제 처리 함수
+// logic-ledger.js
+
+// logic-ledger.js
+
+// logic-ledger.js
+
+async function deleteEntry(id) {
+    if (!id) return;
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+
+    // [수정] 이미지 확인 결과, 컬렉션 이름은 'transactions' 입니다!
+    const COLLECTION_NAME = "transactions"; 
+
+    try {
+        await db.collection(COLLECTION_NAME).doc(id).delete();
+        
+        alert("DB에서 영구 삭제되었습니다.");
+        
+        // 다시 목록 불러오기
+        if (typeof loadLedgerData === 'function') {
+            await loadLedgerData(); 
+        } else {
+            location.reload(); 
+        }
+
+    } catch (error) {
+        console.error("삭제 실패:", error);
+        alert("삭제 실패: " + error.message);
+    }
+}
+
+// [1] 수정 모달 열기
+// [1] 수정 모달 열기
+// [1] 수정 팝업 내 실시간 합계 계산
+function calcEditTotal() {
+    const supplyInput = document.getElementById('editSupply');
+    const vatInput = document.getElementById('editVat');
+    const totalDisplay = document.getElementById('editTotalDisplay');
+
+    // 1. 공급가 가져오기
+    let supply = Number(supplyInput.value) || 0;
+
+    // 2. 세액 자동 계산 (공급가의 10%, 소수점 제거)
+    let vat = Math.floor(supply * 0.1);
+    vatInput.value = vat;
+
+    // 3. 합계 계산 및 표시
+    let total = supply + vat;
+    totalDisplay.value = total.toLocaleString();
+}
+function updateEditTotalOnly() {
+    const supply = Number(document.getElementById('editSupply').value) || 0;
+    const vat = Number(document.getElementById('editVat').value) || 0;
+    const total = supply + vat;
+    document.getElementById('editTotalDisplay').value = total.toLocaleString();
+}
+// [2] 수정 모달 열 때 모든 항목 채우기
+function openEditModal(docId) {
+    const item = allData.find(p => p.id === docId);
+    if (!item) return;
+
+    // 기본 정보 채우기
+    document.getElementById('editDocId').value = docId;
+    document.getElementById('editDate').value = item.date;
+    document.getElementById('editType').value = item.type;
+    document.getElementById('editVendor').value = item.vendor;
+    document.getElementById('editMemo').value = item.memo || '';
+    document.getElementById('editQty').value = item.qty || 0;
+    
+    // 금액 항목은 콤마를 찍어서 표시 (그래야 계산기가 작동함)
+    document.getElementById('editSupply').value = (item.supply || 0).toLocaleString();
+    document.getElementById('editVat').value = (item.vat || 0).toLocaleString();
+    document.getElementById('editTotalDisplay').value = (item.total || 0).toLocaleString();
+
+    document.getElementById('editModal').style.display = 'flex';
+}
+// [2] 수정 내용 저장 (DB 경로: transactions)
+// logic-ledger.js
+
+// [3] 수정 내용 저장 (transactions 컬렉션)
+async function saveEdit() {
+    const docId = document.getElementById('editDocId').value;
+    
+    // 저장 전 콤마 제거
+    const supply = unformatNum(document.getElementById('editSupply').value);
+    const vat = unformatNum(document.getElementById('editVat').value);
+    const total = unformatNum(document.getElementById('editTotalDisplay').value);
+
+    const updateData = {
+        date: document.getElementById('editDate').value,
+        type: document.getElementById('editType').value,
+        vendor: document.getElementById('editVendor').value,
+        memo: document.getElementById('editMemo').value,
+        qty: Number(document.getElementById('editQty').value) || 0,
+        supply: supply,
+        vat: vat,
+        total: total
+    };
+
+    try {
+        await db.collection("transactions").doc(docId).update(updateData);
+        alert("수정되었습니다.");
+        closeEditModal();
+        loadLedgerData(); 
+    } catch (e) {
+        alert("수정 실패: " + e.message);
+    }
+}
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
+
+// [1] 숫자에 콤마 넣고 빼는 유틸리티
+function formatNum(n) { return n.toLocaleString(); }
+function unformatNum(s) { return Number(s.replace(/,/g, '')) || 0; }
+
+// [2] 공급가 입력 시 -> 세액(10%) & 합계 계산
+function onEditSupplyInput(el) {
+    let supply = unformatNum(el.value);
+    el.value = formatNum(supply); // 실시간 콤마
+
+    let vat = Math.floor(supply * 0.1);
+    let total = supply + vat;
+
+    document.getElementById('editVat').value = formatNum(vat);
+    document.getElementById('editTotalDisplay').value = formatNum(total);
+}
+
+// [3] 세액 수동 수정 시 -> 합계만 갱신
+function onEditVatInput(el) {
+    let vat = unformatNum(el.value);
+    el.value = formatNum(vat); // 실시간 콤마
+
+    let supply = unformatNum(document.getElementById('editSupply').value);
+    let total = supply + vat;
+
+    document.getElementById('editTotalDisplay').value = formatNum(total);
+}
+
+// [4] 합계(입고액) 입력 시 -> 공급가(1/1.1) & 세액 역산 (리버스)
+function onEditTotalInput(el) {
+    let total = unformatNum(el.value);
+    el.value = formatNum(total); // 실시간 콤마
+
+    let supply = Math.round(total / 1.1);
+    let vat = total - supply;
+
+    document.getElementById('editSupply').value = formatNum(supply);
+    document.getElementById('editVat').value = formatNum(vat);
 }

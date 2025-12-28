@@ -126,78 +126,47 @@
             <div id="paginationControls" class="pagination-container"></div>
         </div> </main>
 </div>
-        </main>
-</div>
+        
 
-<div id="editModal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3>내역 수정</h3>
-            <button class="close-btn" onclick="closeEditModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <input type="hidden" id="editId">
-            <div class="form-group">
-                <label>날짜</label>
-                <input type="date" id="editDate">
-            </div>
-            <div class="form-group">
-                <label>구분</label>
-                <select id="editType" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    <option value="buy">입고</option>
-                    <option value="pay">결제</option>
+<div id="editModal">
+    <div class="modal-new-box"> <h3 style="margin-top:0; border-bottom:2px solid #f1f5f9; padding-bottom:15px; margin-bottom:25px;">📋 내역 상세 수정</h3>
+        
+        <input type="hidden" id="editDocId">
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1.5fr; gap:15px; margin-bottom:20px;">
+            <div><label style="display:block; font-size:0.8rem; margin-bottom:5px;">날짜</label>
+                 <input type="date" id="editDate" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
+            <div><label style="display:block; font-size:0.8rem; margin-bottom:5px;">구분</label>
+                 <select id="editType" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; background:white;">
+                    <option value="buy">입고(매입)</option>
+                    <option value="pay">결제(지불)</option>
                     <option value="return">반품</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>거래처</label>
-                <input type="text" id="editVendor">
-            </div>
-            <div class="form-group">
-                <label>적요</label>
-                <input type="text" id="editMemo">
-            </div>
-            <div class="form-group">
-                <label>수량</label>
-                <input type="number" id="editQty">
-            </div>
-            
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <div style="flex:1;">
-                    <label>공급가</label>
-                    <input type="text" id="editSupply" class="money-input" onkeyup="formatCurrency(this); calcEditSupply();">
-                </div>
-                <div style="flex:1;">
-                    <label>세액</label>
-                    <input type="text" id="editVat" class="money-input" onkeyup="formatCurrency(this); calcEditVat();">
-                </div>
-            </div>
+                 </select></div>
+            <div><label style="display:block; font-size:0.8rem; margin-bottom:5px;">거래처</label>
+                 <input type="text" id="editVendor" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
+        </div>
 
-            <div class="form-group">
-                <label>합계금액</label>
-                <input type="text" id="editTotal" class="money-input" style="font-weight:bold; color:#2563eb;" onkeyup="formatCurrency(this); calcEditTotal();">
-            </div>
+        <div style="margin-bottom:25px;">
+            <label style="display:block; font-size:0.8rem; margin-bottom:5px;">적요(메모)</label>
+            <input type="text" id="editMemo" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+        </div>
 
-            <div class="form-group" style="margin-top:10px; border-top:1px dashed #ddd; padding-top:10px;">
-                <label>증빙 사진</label>
-                <div id="currentImgArea" style="margin-bottom:5px; display:none;">
-                    <a id="currentImgLink" href="#" target="_blank">
-                        <img id="currentImgThumb" src="" style="height:50px; border-radius:4px; border:1px solid #ddd;">
-                    </a>
-                </div>
-                <input type="file" id="editFileInput" accept="image/*">
-            </div>
-            
-            <div class="modal-footer" style="margin-top:20px; text-align:right;">
-                <button onclick="deleteItem()" style="float:left; background:#ff4444; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">삭제</button>
-                <button onclick="updateItem()" style="background:#2563eb; color:white; border:none; padding:8px 20px; border-radius:4px; cursor:pointer;">수정 완료</button>
-            </div>
+        <div class="split-amount-row">
+            <div><label>수량</label><input type="number" id="editQty" style="text-align:center !important;"></div>
+            <div><label>공급가</label><input type="text" id="editSupply" oninput="onEditSupplyInput(this)"></div>
+            <div><label>세액</label><input type="text" id="editVat" oninput="onEditVatInput(this)"></div>
+            <div><label style="color:#2563eb;">합계(입고액)</label>
+                 <input type="text" id="editTotalDisplay" oninput="onEditTotalInput(this)" style="border:2px solid #2563eb !important; color:#2563eb !important; font-weight:bold !important;"></div>
+        </div>
+
+        <div style="margin-top:35px; display:flex; gap:15px;">
+            <button onclick="saveEdit()" style="flex:1.5; background:#2563eb; color:white; padding:16px; border-radius:10px; border:none; font-weight:bold; cursor:pointer;">변경사항 저장</button>
+            <button onclick="closeEditModal()" style="flex:1; background:#f1f5f9; padding:16px; border-radius:10px; border:none; cursor:pointer;">취소</button>
         </div>
     </div>
 </div>
-
-<script src="firebase-config.js"></script>, <script src="logic-ledger.js"></script>
-
+<script src="firebase-config.js"></script>
+<script src="logic-ledger.js"></script>
 
 </body>
 </html>
