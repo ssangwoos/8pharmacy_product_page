@@ -17,13 +17,19 @@
 </head>
 <body>
 
-<header>
+<header style="display: flex; justify-content: space-between; align-items: center; padding: 10px 30px; background: white; border-bottom: 1px solid #eee; height: 60px; box-sizing: border-box;">
     <div style="display: flex; align-items: center; gap: 15px;">
         <a href="index.html" style="color: #333; text-decoration: none; font-size: 1.2rem;">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <h1>명세서 상세 입력</h1>
+        <h1 style="font-size: 1.3rem; margin: 0; color: #1e293b;">명세서 상세 입력</h1>
     </div>
+    
+    <nav style="display: flex; gap: 10px;">
+        <a href="index.html" style="padding: 7px 20px; border-radius: 20px; background: #2563eb; color: white; text-decoration: none; font-size: 0.85rem; font-weight: bold; box-shadow: 0 2px 6px rgba(37,99,235,0.2);">홈</a>
+        <a href="ledger.html" style="padding: 7px 20px; border-radius: 20px; background: #f1f5f9; color: #475569; text-decoration: none; font-size: 0.85rem; font-weight: 500;">장부</a>
+        <a href="settings.html" style="padding: 7px 20px; border-radius: 20px; background: #f1f5f9; color: #475569; text-decoration: none; font-size: 0.85rem; font-weight: 500;">설정</a>
+    </nav>
 </header>
 
 <div class="container write-mode"> <aside class="sidebar">
@@ -53,22 +59,24 @@
 
         <section class="form-section-bottom">
             <div class="center-paper">
-                <div class="common-info-bar">
-                    <div class="c-group">
-                        <label>날짜</label>
-                        <input type="date" id="dateInput" style="width: 140px;">
+                <div class="common-info-bar" style="display: flex; gap: 20px; align-items: flex-end; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                    <div class="c-group" style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 0.85rem; color: #64748b; font-weight: bold;">날짜</label>
+                        <input type="date" id="dateInput" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
                     </div>
-                    <div class="c-group">
-                        <label>구분</label>
-                        <select id="typeSelect" onchange="togglePaymentField()" style="width: 100px;">
-                            <option value="buy" selected>입고</option>
-                            <option value="pay">결제</option>
-                            <option value="return">반품</option>
+
+                    <div class="c-group" style="width: 130px; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 0.85rem; color: #64748b; font-weight: bold;">구분</label>
+                        <select id="typeSelect" onchange="togglePaymentField()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
+                            <option value="buy" selected>입고(매입)</option>
+                            <option value="pay">결제(지출)</option>
+                            <option value="return">반품(지출)</option>
                         </select>
                     </div>
-                    <div class="c-group vendor-group">
-                        <label>거래처</label>
-                        <input type="text" id="vendorInput" list="vendorList" placeholder="거래처 검색/입력" autocomplete="off">
+
+                    <div class="c-group vendor-group" style="flex: 1.5; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 0.85rem; color: #64748b; font-weight: bold;">거래처</label>
+                        <input type="text" id="vendorInput" list="vendorList" placeholder="거래처 검색/입력" autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
                         <datalist id="vendorList"></datalist>
                     </div>
                 </div>
