@@ -166,12 +166,33 @@ function updateVendorFilter(data) {
 }
 
 /* [수정] 거래처/날짜 필터 변경 시 실행되는 함수 */
+/* logic-ledger.js: 거래처 선택 시 퀵등록 readonly 처리 */
+
 function filterLedger() {
-    // 1. 페이지를 1페이지로 초기화합니다.
+    // 1. 페이지를 1페이지로 초기화
     currentPage = 1; 
 
-    // 2. 단순히 화면을 가리는 게 아니라, DB에서 해당 거래처 데이터를 새로 가져옵니다.
-    // 이렇게 해야 선택된 거래처의 '전체 기간' 잔액이 정확히 계산됩니다.
+    // 2. 퀵등록 거래처 칸 연동 및 수정 방지(readonly)
+    const vendorFilter = document.getElementById('vendorFilter');
+    const qVendorInput = document.getElementById('qVendor');
+    
+    if (vendorFilter && qVendorInput) {
+        const selectedVendor = vendorFilter.value;
+        
+        if (selectedVendor !== 'all') {
+            qVendorInput.value = selectedVendor; 
+            qVendorInput.readOnly = true; // 수정 불가 모드
+            qVendorInput.style.backgroundColor = "#f1f5f9"; // 연한 회색 (잠금 표시)
+            qVendorInput.style.color = "#475569"; // 글자색 흐리게
+        } else {
+            qVendorInput.value = ""; 
+            qVendorInput.readOnly = false; // 직접 입력 가능 모드
+            qVendorInput.style.backgroundColor = "white";
+            qVendorInput.style.color = "black";
+        }
+    }
+
+    // 3. DB 데이터 새로 로드
     loadLedgerData(); 
 }
 
