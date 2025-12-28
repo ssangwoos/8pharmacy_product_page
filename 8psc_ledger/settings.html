@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="settings.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>설정 - 스마트 장부</title>
+</head>
+<body>
+    <header>
+    <a href="index.html" class="logo">
+        <i class="fas fa-capsules"></i> <span class="pharmacy-name-display"></span>
+    </a>
+    <nav class="nav-links">
+        <a href="index.html" class="menu-btn">홈</a>
+        <a href="ledger.html" class="menu-btn">장부</a>
+        <a href="settings.html" class="menu-btn active">설정</a>
+    </nav>
+</header>
+
+    <main class="settings-container">
+        <div class="settings-section">
+            <h3><i class="fas fa-id-card"></i> 기본 정보</h3>
+            <div class="input-group" style="display: flex; gap: 10px; align-items: flex-end;">
+                <div style="flex: 1;">
+                    <label>약국 이름</label>
+                    <input type="text" id="setPharmacyName" placeholder="약국 이름을 입력하세요">
+                </div>
+                <button onclick="saveGeneralSettings()" class="btn-save" style="width: 80px; padding: 12px 0;">저장</button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3><i class="fas fa-user-lock"></i> 로그인 비밀번호 변경</h3>
+            <div class="input-group" style="display: flex; gap: 10px; align-items: flex-end;">
+                <div style="flex: 1;">
+                    <label>새 로그인 비밀번호</label>
+                    <input type="password" id="setUserPw" placeholder="새 비번 입력">
+                </div>
+                <button onclick="updatePassword('userPassword', 'setUserPw')" class="btn-save" style="width: 80px; padding: 12px 0; background: #28a745;">변경</button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3><i class="fas fa-user-shield"></i> 슈퍼바이저 비밀번호 변경</h3>
+            <div class="input-group" style="display: flex; gap: 10px; align-items: flex-end;">
+                <div style="flex: 1;">
+                    <label>새 슈퍼바이저 비밀번호</label>
+                    <input type="password" id="setSuperPw" placeholder="새 비번 입력">
+                </div>
+                <button onclick="updatePassword('superPassword', 'setSuperPw')" class="btn-save" style="width: 80px; padding: 12px 0; background: #dc3545;">변경</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="logic-settings.js"></script>
+</body>
+</html>

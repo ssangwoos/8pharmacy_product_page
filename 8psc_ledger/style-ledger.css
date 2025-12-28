@@ -1,0 +1,77 @@
+/* style-ledger.css - 장부 조회 페이지 전용 */
+
+.ledger-wrapper {
+    width: 100%; height: 100%;
+    padding: 20px; overflow-y: auto;
+    display: flex; justify-content: center; align-items: flex-start;
+}
+
+.ledger-paper {
+    width: 100%; max-width: 1280px;
+    background: white; border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    padding: 30px; margin-bottom: 50px;
+}
+
+/* 상단 컨트롤 */
+.ledger-header-control {
+    display: flex; justify-content: space-between; margin-bottom: 20px;
+}
+.filter-group { display: flex; gap: 10px; }
+.filter-group select, .filter-group input {
+    padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;
+}
+
+/* 엑셀 버튼 (아이콘형) */
+.excel-icon-btn {
+    background: white; border: 1px solid #ddd; border-radius: 6px; padding: 4px 10px;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+}
+.excel-icon-btn i { font-size: 1.1rem; color: #107c41; }
+.excel-icon-btn span { font-size: 0.8rem; font-weight: 600; color: #555; }
+
+/* 3단 요약 카드 */
+.ledger-summary-bar { display: flex; gap: 15px; margin-bottom: 20px; }
+.summary-item {
+    flex: 1; background: white; padding: 15px; border-radius: 10px;
+    border: 1px solid #eee; border-top: 4px solid #ccc;
+    text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+.summary-item.blue { border-top-color: #2563eb; }
+.summary-item.red { border-top-color: #dc2626; }
+.summary-item.green { border-top-color: #10b981; }
+.summary-item strong { display: block; font-size: 1.4rem; font-weight: bold; margin-top: 5px; }
+.val-blue { color: #2563eb; } .val-red { color: #dc2626; } .val-green { color: #10b981; }
+
+/* 테이블 */
+.table-container-card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+.data-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.data-grid th { background: #f8f9fa; padding: 10px; border-bottom: 1px solid #ddd; border-right: 1px solid #eee; }
+.data-grid td {
+    padding: 4px 6px; border-bottom: 1px solid #f5f5f5; border-right: 1px solid #f9fafb;
+    height: 34px; font-size: 0.9rem;
+}
+.data-grid td:nth-child(4) { text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 뱃지 */
+.badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
+.badge.buy { background: #dbeafe; color: #1e40af; }
+.badge.pay { background: #fee2e2; color: #991b1b; }
+.badge.return { background: #f3f4f6; color: #374151; text-decoration: line-through; }
+
+/* 퀵등록 & 숫자 정렬 */
+.data-grid td:nth-child(5), .data-grid td:nth-child(6), .data-grid td:nth-child(7),
+.data-grid td:nth-child(8), .data-grid td:nth-child(9), .data-grid td:nth-child(10) { text-align: center; }
+
+.entry-row input, .entry-row select {
+    width: 100%; height: 32px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center;
+}
+.btn-quick-add { width: 100%; height: 32px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;}
+
+/* 모달 */
+#editModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+.modal-box { background: white; width: 450px; padding: 20px; border-radius: 12px; }
+.modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+.form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; }

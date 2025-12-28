@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta id="meta-og-title" property="og:title" content="스마트 장부 시스템">
+    <meta id="meta-desc" name="description" content="실시간 데이터 관리 시스템">
+    <title>약국 거래명세서 관리 (대시보드)</title>
+    <link rel="stylesheet" href="common.css">      <link rel="stylesheet" href="style-index.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+</head>
+<body class="dashboard-body">
+
+<header>
+    <a href="index.html" class="logo">
+        <i class="fas fa-capsules"></i> <span class="pharmacy-name-display"></span>
+    </a>
+    <nav class="nav-links">
+        <a href="index.html" class="menu-btn active">홈</a>
+        <a href="ledger.html" class="menu-btn">장부</a>
+        <a href="settings.html" class="menu-btn">설정</a>
+    </nav>
+</header>
+<div class="dashboard-body">
+<div class="main-content">
+    
+    <div class="alert-card" onclick="location.href='write.html'">
+        <div class="alert-icon"><i class="fas fa-camera"></i></div>
+        <div class="alert-info">
+            <h3>미처리 명세서가 <strong>0건</strong> 있어요!</h3>
+            <p>지금 정리하러 가기 &rarr;</p>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-box blue">
+            <span>이번 달 매입</span>
+            <h2>0</h2>
+        </div>
+        <div class="stat-box red">
+            <span>이번 달 지출</span>
+            <h2>0</h2>
+        </div>
+        <div class="stat-box green">
+            <span>예상 잔액</span>
+            <h2>0</h2>
+        </div>
+    </div>
+
+    <div class="recent-list">
+        <div class="list-header">
+            <h3>최근 거래 내역</h3>
+            <a href="ledger.html" class="btn-view-all">
+                전체 장부 보기 <i class="fas fa-chevron-right" style="font-size:0.8em;"></i>
+            </a>
+        </div>
+
+        <ul id="recentList" class="transaction-list">
+            <li style="padding:20px; text-align:center; color:#999;">로딩 중...</li>
+        </ul>
+    </div>
+</div>
+</div>
+
+<label for="cameraInput" class="fab-btn">
+    <i class="fas fa-camera"></i>
+</label>
+<input type="file" id="cameraInput" accept="image/*" multiple style="display: none;" onchange="handleFileUpload(this)">
+
+<script src="firebase-config.js"></script>
+<script src="logic-index.js"></script>
+
+</body>
+</html>
