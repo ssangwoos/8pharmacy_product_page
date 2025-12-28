@@ -1,0 +1,90 @@
+/* common.css - 헤더 최종 수정 (클래스 명시적 지정) */
+
+/* common.css - 모든 페이지 상단 메뉴 통일 */
+header {
+    height: 70px;
+    background: white;
+    border-bottom: 1px solid #eee;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center;
+    padding: 0 30px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+body {
+    /* ★ 수정: 70px에서 90px로 키워서 숨통을 틔워줍니다 ★ */
+    padding-top: 90px; 
+    margin: 0;
+    background-color: #f0f2f5;
+    
+    /* 추가: 폰트 매끄럽게 처리 (선택사항) */
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+/* 1. [좌측] 로고 (글씨는 검은색, 배경 투명) */
+.logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    
+    /* ★ 수정: 글씨는 잘 보이게 진한 회색(#333)으로 설정 ★ */
+    color: #333 !important; 
+    
+    text-decoration: none;
+    display: flex; align-items: center; gap: 8px;
+    
+    /* 배경/테두리/그림자 제거 (필수) */
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* 2. [추가] 로고 안의 아이콘(캡슐)만 파란색으로! */
+.logo i {
+    color: #2563eb !important; /* 캡슐만 파랑 */
+}
+
+/* 2. [우측] 메뉴 버튼 스타일 (menu-btn 클래스만 적용!) */
+.nav-links {
+    display: flex;
+    gap: 10px;
+}
+
+/* ★★★ 여기가 핵심입니다: .menu-btn 클래스를 가진 놈만 알약으로 만듦 ★★★ */
+.menu-btn {
+    text-decoration: none;
+    color: #555;
+    font-weight: 600;
+    font-size: 0.95rem;
+    
+    /* 알약 버튼 디자인 */
+    padding: 8px 20px;
+    background-color: #f3f4f6; /* 평소엔 회색 */
+    border-radius: 50px;
+    transition: all 0.2s ease;
+}
+
+/* 마우스 올리거나 활성화(active) 됐을 때 */
+.menu-btn:hover, 
+.menu-btn.active {
+    background-color: #2563eb; /* 배경 파랑 */
+    color: white;              /* 글자 흰색 */
+    box-shadow: 0 4px 10px rgba(37,99,235,0.3);
+    transform: translateY(-2px);
+}
+
+/* 처음에는 투명하게 설정 */
+.pharmacy-name-display {
+    opacity: 0;
+    transition: opacity 0.2s ease-in; /* 나타날 때 부드럽게 */
+}
+
+/* 데이터가 로드되어 글자가 채워지면 보이게 함 */
+.pharmacy-name-display:not(:empty) {
+    opacity: 1;
+}

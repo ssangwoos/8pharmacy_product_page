@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장부 상세 조회 |<span class="pharmacy-name-display"></span></title>
+    <link rel="stylesheet" href="common.css">       <link rel="stylesheet" href="style-ledger.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.css"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">
+        <i class="fas fa-capsules"></i> <span class="pharmacy-name-display"></span>
+    </a>
+    <nav class="nav-links">
+        <a href="index.html" class="menu-btn">홈</a>
+        <a href="ledger.html" class="menu-btn active">장부</a>
+        <a href="settings.html" class="menu-btn">설정</a>
+    </nav>
+</header>
+
+<div class="container">
+    
+    <main class="ledger-wrapper">
+        
+        <div class="ledger-paper">
+
+            <div class="ledger-header-control">
+                <div class="filter-group">
+                    <select id="vendorFilter" onchange="filterLedger()" 
+        style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 220px; font-size: 0.9rem;">
+                        <option value="all">전체 거래처</option>
+                    </select>
+                    
+                    <div class="date-range-picker" style="display:inline-flex; align-items:center; gap:5px; margin-left:10px;">
+                        <input type="date" id="startDate" onchange="filterLedger()">
+                        <span>~</span>
+                        <input type="date" id="endDate" onchange="filterLedger()">
+                    </div>
+                </div>
+                </div>
+
+            <div class="ledger-summary-bar">
+                <div class="summary-item blue">
+                    <span>총 매입액 (입고)</span>
+                    <strong id="sumBuy" class="val-blue">0</strong>
+                </div>
+                <div class="summary-item red">
+                    <span>총 결제액 (지출)</span>
+                    <strong id="sumPay" class="val-red">0</strong>
+                </div>
+                <div class="summary-item green">
+                    <span>현재 잔액 (최종)</span>
+                    <strong id="sumBalance" class="val-green">0</strong>
+                </div>
+            </div>
+
+            <div class="table-container-card">
+                <table class="data-grid" id="ledgerTable">
+                    <colgroup>
+                        <col style="width: 170px;"> <col style="width: 80px;">  <col style="width: 110px;"> 
+                        
+                        <col style="width: auto;">  
+                        
+                        <col style="width: 70px;">  <col style="width: 100px;"> <col style="width: 90px;">  <col style="width: 110px;"> <col style="width: 110px;"> <col style="width: 110px;"> <col style="width: 50px;">  <col style="width: 90px;">  
+                        </colgroup>
+                   <thead>
+                        <tr>
+                            <th style="width: 100px; text-align: center;">날짜</th> <th style="width: 60px; text-align: center;">구분</th>
+                            <th style="width: 120px; text-align: center;">거래처</th>
+                            <th style="min-width: 250px; text-align: center;">적요(메모)</th> <th style="width: 50px; text-align: center;">수량</th>
+                            <th style="width: 90px; text-align: center;">공급가</th>
+                            <th style="width: 80px; text-align: center;">세액</th>
+                            <th style="width: 100px; text-align: center;">입고액</th>
+                            <th style="width: 100px; text-align: center;">지출/반품</th>
+                            <th style="width: 110px; text-align: center;">잔액</th>
+                            <th style="width: 45px; text-align: center;">증빙</th>
+                            <th style="width: 60px; text-align: center;">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgerTableBody">
+                        <tr><td colspan="12" class="text-center" style="padding:50px; color:#999;">데이터를 불러오는 중...</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="entry-row">
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-bolt" style="color:#f59f00; font-size:1.1rem; animation: pulse 2s infinite;"></i>
+                                    <input type="date" id="qDate" style="flex:1; text-align: center;">
+                                </div>
+                            </td>
+                            <td style="width: 70px;">
+                                <select id="qType" onchange="toggleQuickPayment()">
+                                    <option value="buy">입고</option>
+                                    <option value="pay">결제</option>
+                                    <option value="return">반품</option>
+                                </select>
+                            </td>
+                            <td style="width: 120px;"><input type="text" id="qVendor" placeholder="거래처" list="vendorList"></td>
+                            
+                            <td style="min-width: 250px;"><input type="text" id="qMemo" placeholder="내용(적요)" style="width: 100%;"></td>
+                            
+                            <td style="width: 60px;"><input type="number" id="qQty" placeholder="0"></td>
+                            <td style="width: 90px;"><input type="text" id="qSupply" class="money-input" placeholder="공급가" onkeyup="formatCurrency(this); calcQuickSupply();"></td>
+                            <td style="width: 80px;"><input type="text" id="qVat" class="money-input" placeholder="세액" onkeyup="formatCurrency(this); calcQuickVat();"></td>
+                            <td style="width: 100px;"><input type="text" id="qTotal" class="money-input" placeholder="합계" onkeyup="formatCurrency(this); calcQuickTotalReverse();" style="font-weight:bold; color:#2563eb;"></td>
+                            
+                            <td colspan="3" style="background:transparent;"></td>
+                            <td>
+                                <button class="btn-quick-add" onclick="addQuickItem()">
+                                    <i class="fas fa-plus"></i> 추가
+                                </button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div id="paginationControls" class="pagination-container"></div>
+        </div> </main>
+</div>
+        </main>
+</div>
+
+<div id="editModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>내역 수정</h3>
+            <button class="close-btn" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label>날짜</label>
+                <input type="date" id="editDate">
+            </div>
+            <div class="form-group">
+                <label>구분</label>
+                <select id="editType" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                    <option value="buy">입고</option>
+                    <option value="pay">결제</option>
+                    <option value="return">반품</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>거래처</label>
+                <input type="text" id="editVendor">
+            </div>
+            <div class="form-group">
+                <label>적요</label>
+                <input type="text" id="editMemo">
+            </div>
+            <div class="form-group">
+                <label>수량</label>
+                <input type="number" id="editQty">
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <div style="flex:1;">
+                    <label>공급가</label>
+                    <input type="text" id="editSupply" class="money-input" onkeyup="formatCurrency(this); calcEditSupply();">
+                </div>
+                <div style="flex:1;">
+                    <label>세액</label>
+                    <input type="text" id="editVat" class="money-input" onkeyup="formatCurrency(this); calcEditVat();">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>합계금액</label>
+                <input type="text" id="editTotal" class="money-input" style="font-weight:bold; color:#2563eb;" onkeyup="formatCurrency(this); calcEditTotal();">
+            </div>
+
+            <div class="form-group" style="margin-top:10px; border-top:1px dashed #ddd; padding-top:10px;">
+                <label>증빙 사진</label>
+                <div id="currentImgArea" style="margin-bottom:5px; display:none;">
+                    <a id="currentImgLink" href="#" target="_blank">
+                        <img id="currentImgThumb" src="" style="height:50px; border-radius:4px; border:1px solid #ddd;">
+                    </a>
+                </div>
+                <input type="file" id="editFileInput" accept="image/*">
+            </div>
+            
+            <div class="modal-footer" style="margin-top:20px; text-align:right;">
+                <button onclick="deleteItem()" style="float:left; background:#ff4444; color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">삭제</button>
+                <button onclick="updateItem()" style="background:#2563eb; color:white; border:none; padding:8px 20px; border-radius:4px; cursor:pointer;">수정 완료</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="firebase-config.js"></script>, <script src="logic-ledger.js"></script>
+
+
+</body>
+</html>
