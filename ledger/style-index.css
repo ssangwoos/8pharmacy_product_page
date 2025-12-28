@@ -93,3 +93,61 @@
 
 /* style-index.css */
 
+
+/* 모바일 반응형 대응 (화면 폭 768px 이하) */
+@media (max-width: 768px) {
+    /* 1. 헤더 정돈: 로고와 메뉴 버튼 크기 조정 */
+    header {
+        padding: 10px 15px !important;
+    }
+    header h1, header .logo {
+        font-size: 1.1rem !important;
+    }
+    nav style, .nav-links {
+        gap: 5px !important;
+    }
+    nav a, .menu-btn {
+        padding: 6px 12px !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* 2. 메인 요약 카드: 가로 나열에서 세로 나열로 변경 */
+    .summary-container, .ledger-summary-bar {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    .summary-item {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    /* 3. 미처리 명세서 알림창 너비 조정 */
+    .banner, .alert-box {
+        width: 100% !important;
+        padding: 15px !important;
+        border-radius: 10px !important;
+    }
+
+    /* 4. 최근 거래 내역 테이블: 모바일에서 가로 스크롤 방지 */
+    .recent-transactions {
+        padding: 10px !important;
+    }
+    .transaction-item {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important; /* 날짜/거래처 한 줄, 금액 한 줄 구성 */
+        gap: 5px !important;
+        padding: 12px 0 !important;
+    }
+    .transaction-item .amount {
+        text-align: right !important;
+        grid-column: span 1 !important;
+    }
+
+    /* 5. 우측 하단 카메라 버튼 크기 조정 */
+    .floating-btn {
+        width: 50px !important;
+        height: 50px !important;
+        bottom: 20px !important;
+        right: 20px !important;
+    }
+}
