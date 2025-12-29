@@ -8,6 +8,12 @@ async function loadLedgerData() {
     const vendorFilter = document.getElementById('vendorFilter').value;
 
     if (!tableBody) return;
+
+    // [추가] 상단 필터에서 거래처를 선택하면 퀵등록 거래처 칸(qVendor)도 자동으로 채워줍니다 ㅡㅡ^
+    const qVendor = document.getElementById('qVendor');
+    if (qVendor && vendorFilter !== 'all' && vendorFilter !== 'none') {
+        qVendor.value = vendorFilter;
+    }
     
     // [변경] 거래처를 선택하지 않았을 때의 처리
     if (vendorFilter === 'none') {
@@ -456,7 +462,7 @@ async function addQuickItem() {
         });
 
         // 4. 입력창 비우기
-        document.getElementById('qVendor').value = "";
+        //document.getElementById('qVendor').value = "";
         document.getElementById('qMemo').value = "";
         document.getElementById('qQty').value = "";
         document.getElementById('qSupply').value = "";
