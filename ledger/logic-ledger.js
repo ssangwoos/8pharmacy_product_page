@@ -106,9 +106,57 @@ function renderLedger() {
     tableBody.innerHTML = html || '<tr><td colspan="12" style="text-align:center; padding:30px;">검색 결과가 없습니다.</td></tr>';
     
     // 3. 상단 요약 카드 업데이트 (검색된 품목들의 합계로 갱신)
-    if(document.getElementById('sumBuy')) document.getElementById('sumBuy').innerText = displayBuy.toLocaleString();
-    if(document.getElementById('sumPay')) document.getElementById('sumPay').innerText = displayPay.toLocaleString();
-    if(document.getElementById('sumBalance')) document.getElementById('sumBalance').innerText = (displayBuy - displayPay).toLocaleString();
+    // 3. 상단 요약 카드 업데이트 (수정본) ㅡㅡ^
+    // 3. 상단 요약 카드 업데이트 (약사님 요청 커스텀 버전) ㅡㅡ^
+    const vendorFilter = document.getElementById('vendorFilter')?.value || '전체';
+    
+    let absoluteTotalBuy = 0;
+    let absoluteTotalPay = 0;
+
+    allData.forEach(item => {
+        if (vendorFilter === '전체' || item.vendor === vendorFilter) {
+            let itemAmount = 0;
+            if (item.items && item.items.length > 0) {
+                itemAmount = item.items.reduce((sum, sub) => sum + (Number(sub.total) || 0), 0);
+            } else {
+                itemAmount = Number(item.total) || Number(item.amount) || 0;
+            }
+
+            const type = item.type;
+            if (type === 'buy' || type === '입고') {
+                absoluteTotalBuy += itemAmount;
+            } else if (type === 'pay' || type === '결제' || type === '반품') {
+                absoluteTotalPay += itemAmount;
+            }
+        }
+    });
+
+    const finalCumulativeBalance = absoluteTotalBuy - absoluteTotalPay;
+
+    // [설정 1] 매입액(파랑) / 결제액(빨강) 표시
+    if(document.getElementById('sumBuy')) {
+        document.getElementById('sumBuy').innerText = displayBuy.toLocaleString();
+        document.getElementById('sumBuy').style.color = "#2563eb"; // 파란색
+    }
+    if(document.getElementById('sumPay')) {
+        document.getElementById('sumPay').innerText = displayPay.toLocaleString();
+        document.getElementById('sumPay').style.color = "#dc2626"; // 빨간색 (원래대로)
+    }
+
+    // [설정 2] 잔액 표시 및 조건부 색상/부호 처리
+    const balanceEl = document.getElementById('sumBalance');
+    if(balanceEl) {
+        balanceEl.innerText = finalCumulativeBalance.toLocaleString();
+        
+        if (finalCumulativeBalance < 0) {
+            // 잔액이 마이너스면 빨간색 표시 ㅡㅡ^
+            balanceEl.style.color = "#dc2626"; 
+        } else {
+            // 그 외 일반 잔액(미수금)은 초록색 유지
+            balanceEl.style.color = "#059669"; 
+        }
+    }
+
 }
 
 
@@ -578,3 +626,33 @@ function onEditTotalInput(el) {
     document.getElementById('editVat').value = formatNum(vat);
 }
 
+// 특정 거래처의 전체 기간 누적 잔액을 가져오는 함수 ㅡㅡ^
+async function getFullCumulativeBalance(vendorName) {
+    try {
+        let query = db.collection("transactions");
+        
+        // 전체 내역 중 해당 거래처 것만 필터링 (날짜 조건 없음)
+        if (vendorName && vendorName !== "전체") {
+            query = query.where("vendor", "==", vendorName);
+        }
+
+        const snapshot = await query.get();
+        let totalBuy = 0;
+        let totalPay = 0;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const amount = Number(data.amount) || 0;
+            if (data.type === "입고") {
+                totalBuy += amount;
+            } else if (data.type === "결제" || data.type === "반품") {
+                totalPay += amount;
+            }
+        });
+
+        return totalBuy - totalPay; // 진짜 최종 잔액
+    } catch (e) {
+        console.error("전체 잔액 로드 오류:", e);
+        return 0;
+    }
+}
