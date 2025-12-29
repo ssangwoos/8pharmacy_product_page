@@ -382,10 +382,16 @@ document.addEventListener('DOMContentLoaded', async () => { // async 추가
         if (typeof addNewRow === 'function') addNewRow(); 
     }
 
-    // 3. 오늘 날짜 입력
+    // 3. 오늘 날짜 입력 (시차 버그 수정 버전) ㅡㅡ^
     const dInput = document.getElementById('dateInput');
-    if (dInput) dInput.value = new Date().toISOString().split('T')[0];
-
+    if (dInput) {
+        const now = new Date();
+        // 한국 시차(9시간)를 더해서 계산하거나, 로컬 날짜를 직접 조립합니다.
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        dInput.value = `${yyyy}-${mm}-${dd}`; // 이제 무조건 한국 기준 오늘 날짜!
+    }
     // 4. 최근 거래처 1건 불러오기
     if (typeof loadRecentVendor === 'function') loadRecentVendor();
 });
