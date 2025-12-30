@@ -15,7 +15,7 @@ function loadQueueList() {
     if (!queueList) return;
 
     // Firestore에서 대기 데이터 가져오기
-    db.collection(COL_PENDING).orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+    db.collection(COL_PENDING).orderBy("createdAt", "asc").onSnapshot((snapshot) => {
         queueList.innerHTML = ''; // 목록 초기화
         
         if (countBadge) countBadge.innerText = snapshot.size;
@@ -280,11 +280,18 @@ async function saveAllItems() {
     const date = document.getElementById('dateInput').value;
     const vendor = document.getElementById('vendorInput').value;
     
-    // [수정] ID를 'typeInput'에서 'typeSelect'로 변경합니다.
+    // [확인] 구분이 'pay'나 'return'일 때도 정확히 가져옵니다.
     const type = document.getElementById('typeSelect')?.value || 'buy'; 
     
     const activeLi = document.querySelector('.queue-item.active');
-    const currentImgUrl = document.getElementById('docImage')?.src || "";
+    
+    // [버그 수정 핵심] ㅡㅡ^
+    // 이미지 태그의 src를 가져오되, 진짜 외부 주소(http)인 경우만 허용합니다.
+    // 사진이 없으면 브라우저 주소나 쓰레기 값이 들어오는 것을 방지하기 위해 필터링합니다.
+    let currentImgUrl = document.getElementById('docImage')?.src || "";
+    if (!currentImgUrl.startsWith('http') || currentImgUrl.includes('write.html')) {
+        currentImgUrl = null; 
+    }
 
     if (!date || !vendor) return alert("날짜와 거래처를 입력하세요.");
     
@@ -296,15 +303,16 @@ async function saveAllItems() {
 
         rows.forEach(row => {
             const memo = row.querySelector('.in-memo').value.trim();
+            // 메모(품목명)가 있는 줄만 저장합니다.
             if (memo) {
                 const docRef = db.collection("transactions").doc(); 
                 batch.set(docRef, {
                     date,
                     vendor,
-                    type, // 이제 'pay' 또는 'return'이 정확히 담깁니다.
+                    type, 
                     memo: memo,
-                    img: currentImgUrl,
-                    // [추가] 현재 회전 상태를 저장합니다 ㅡㅡ^
+                    img: currentImgUrl, // 정제된 이미지 주소 (없으면 null)
+                    // 현재 이미지 회전 상태 저장
                     rotation: typeof currentRotation !== 'undefined' ? currentRotation : 0,
                     qty: Number(row.querySelector('.in-qty').value.replace(/,/g, '')) || 0,
                     supply: Number(row.querySelector('.in-supply').value.replace(/,/g, '')) || 0,
@@ -317,9 +325,10 @@ async function saveAllItems() {
 
         await batch.commit();
 
+        // 큐(대기목록)에서 작업 중이었다면 해당 항목 삭제
         if (activeLi) {
             const docId = activeLi.getAttribute('data-id');
-            // [참고] 변수로 선언해두신 COL_PENDING이 있다면 그걸 쓰셔도 됩니다.
+            // 'pending_uploads'는 약사님 설정에 맞게 확인 필요 (보통 이 이름이죠?)
             await db.collection("pending_uploads").doc(docId).delete();
         }
 

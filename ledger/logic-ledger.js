@@ -46,123 +46,115 @@ async function loadLedgerData() {
 
 function renderLedger() {
     const tableBody = document.getElementById('ledgerTableBody');
+    if (!tableBody) return;
+
     const start = document.getElementById('startDate')?.value || '';
     const end = document.getElementById('endDate')?.value || '';
-    const searchKeyword = document.getElementById('searchInput')?.value.toLowerCase() || ''; // 검색어 가져오기
-    const isSearching = searchKeyword.length > 0;
-    // 1. 기간 필터링
-    let filtered = allData.filter(item => (!start || item.date >= start) && (!end || item.date <= end));
-    
-    let html = '';
-    let displayBuy = 0, displayPay = 0, runningBalance = 0;
+    const searchKeyword = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    const vendorFilter = document.getElementById('vendorFilter')?.value || 'all';
 
-    // 2. 전체를 돌며 잔액을 먼저 계산하고, 검색 조건에 맞는 줄만 HTML에 추가
-    filtered.forEach(item => {
+    let fullList = allData
+        .filter(item => {
+            const dateMatch = (!start || item.date >= start) && (!end || item.date <= end);
+            const vendorMatch = (vendorFilter === 'all' || item.vendor === vendorFilter);
+            return dateMatch && vendorMatch;
+        })
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+    let runningBalance = 0;
+    let totalBuy = 0;
+    let totalPay = 0;
+    let displayList = [];
+
+    fullList.forEach(item => {
         const rowItems = (item.items && item.items.length > 0) 
             ? item.items 
             : [{ memo: item.memo, qty: item.qty || 1, supply: item.supply, vat: item.vat, total: item.total }];
 
         rowItems.forEach((subItem) => {
             const amount = Number(subItem.total) || 0;
-            const isBuy = (item.type === 'buy');
+            const isBuy = (item.type === 'buy' || item.type === '입고');
 
-            // [핵심] 잔액은 검색 여부와 상관없이 '전체 흐름'을 따라 누적 계산
-            if (isBuy) runningBalance += amount;
-            else runningBalance -= amount;
+            if (isBuy) {
+                runningBalance += amount;
+                totalBuy += amount;
+            } else {
+                runningBalance -= amount;
+                totalPay += amount;
+            }
 
-            // [검색 필터] 거래처명 또는 품목명에 검색어가 포함되어 있는지 확인
             const isMatch = item.vendor.toLowerCase().includes(searchKeyword) || 
                             (subItem.memo && subItem.memo.toLowerCase().includes(searchKeyword));
 
             if (isMatch) {
-                // 화면에 표시될 금액들만 별도로 합산 (상단 카드용)
-                if (isBuy) displayBuy += amount;
-                else displayPay += amount;
-
-                // 그룹화를 위한 ID (아까 만든 img 기준)
-                const groupId = item.img || item.id;
-
-                html += `
-                    <tr class="ledger-row" 
-                        data-parent-id="${groupId}" 
-                        onmouseover="highlightGroup('${groupId}')" 
-                        onmouseout="removeHighlight()">
-                        <td style="text-align:center;">${item.date}</td>
-                        <td style="text-align:center;">${getBadgeHtml(item.type)}</td>
-                        <td style="text-align:center;">${item.vendor}</td>
-                        <td style="text-align:left; padding-left:10px;">${subItem.memo || ''}</td>
-                        <td style="text-align:center;">${subItem.qty || 0}</td>
-                        <td style="text-align:right;">${(Number(subItem.supply) || 0).toLocaleString()}</td>
-                        <td style="text-align:right;">${(Number(subItem.vat) || 0).toLocaleString()}</td>
-                        <td style="color:#2563eb; font-weight:bold; text-align:right;">${isBuy ? amount.toLocaleString() : ''}</td>
-                        <td style="color:#dc2626; font-weight:bold; text-align:right;">${!isBuy ? amount.toLocaleString() : ''}</td>
-                        <td style="font-weight:700; text-align:right; background:#f9fafb;">${runningBalance.toLocaleString()}</td>
-                        <td style="text-align:center;">${item.img ? `<a href="${item.img}" target="_blank">📄</a>` : '-'}</td>
-                        <td style="text-align:center;">
-                            <div style="display: flex; justify-content: center; gap: 8px;">
-                                <button onclick="openEditModal('${item.id}')" style="color:#2563eb; border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteEntry('${item.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        </td>
-                    </tr>`;
+                displayList.push({
+                    ...item,
+                    subItem,
+                    currentBalance: runningBalance,
+                    isBuy: isBuy,
+                    amount: amount
+                });
             }
         });
     });
 
-    tableBody.innerHTML = html || '<tr><td colspan="12" style="text-align:center; padding:30px;">검색 결과가 없습니다.</td></tr>';
-    
-    // 3. 상단 요약 카드 업데이트 (검색된 품목들의 합계로 갱신)
-    // 3. 상단 요약 카드 업데이트 (수정본) ㅡㅡ^
-    // 3. 상단 요약 카드 업데이트 (약사님 요청 커스텀 버전) ㅡㅡ^
-    const vendorFilter = document.getElementById('vendorFilter')?.value || '전체';
-    
-    let absoluteTotalBuy = 0;
-    let absoluteTotalPay = 0;
+    const totalItems = displayList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const endIdx = totalItems - (currentPage - 1) * itemsPerPage;
+    const startIdx = Math.max(0, endIdx - itemsPerPage);
+    const currentPageData = displayList.slice(startIdx, endIdx);
 
-    allData.forEach(item => {
-        if (vendorFilter === '전체' || item.vendor === vendorFilter) {
-            let itemAmount = 0;
-            if (item.items && item.items.length > 0) {
-                itemAmount = item.items.reduce((sum, sub) => sum + (Number(sub.total) || 0), 0);
-            } else {
-                itemAmount = Number(item.total) || Number(item.amount) || 0;
-            }
+    let html = '';
+    currentPageData.forEach((row) => {
+        // [과거 데이터 세탁 로직] ㅡㅡ^
+        // 1. 진짜 이미지 주소인지 검사 (http로 시작해야 하고, write.html이 포함되면 안 됨)
+        const isRealImg = row.img && 
+                          row.img.startsWith('http') && 
+                          !row.img.includes('write.html');
 
-            const type = item.type;
-            if (type === 'buy' || type === '입고') {
-                absoluteTotalBuy += itemAmount;
-            } else if (type === 'pay' || type === '결제' || type === '반품') {
-                absoluteTotalPay += itemAmount;
-            }
-        }
+        // 2. 가짜 이미지면 그룹 ID를 고유 ID로 설정 (개별 하이라이트 되도록)
+        const groupId = isRealImg ? row.img : row.id;
+
+        // 3. 가짜 이미지면 증빙 아이콘을 '-'로 표시
+        const proofIcon = isRealImg 
+                          ? `<a href="#" onclick="window.open('${row.img}')">📄</a>` 
+                          : '-';
+
+        const typeBadge = row.isBuy 
+                          ? '<span class="badge buy">입고</span>' 
+                          : '<span class="badge pay">결제</span>';
+
+        html += `
+            <tr class="ledger-row" data-parent-id="${groupId}" onmouseover="highlightGroup('${groupId}')" onmouseout="removeHighlight()">
+                <td style="text-align:center;">${row.date}</td>
+                <td style="text-align:center;">${typeBadge}</td>
+                <td style="text-align:center;">${row.vendor}</td>
+                <td style="text-align:left; padding-left:10px;">${row.subItem.memo || ''}</td>
+                <td style="text-align:center;">${row.subItem.qty || 0}</td>
+                <td style="text-align:right;">${(Number(row.subItem.supply) || 0).toLocaleString()}</td>
+                <td style="text-align:right;">${(Number(row.subItem.vat) || 0).toLocaleString()}</td>
+                <td style="color:#2563eb; font-weight:bold; text-align:right;">${row.isBuy ? row.amount.toLocaleString() : ''}</td>
+                <td style="color:#dc2626; font-weight:bold; text-align:right;">${!row.isBuy ? row.amount.toLocaleString() : ''}</td>
+                <td style="font-weight:700; text-align:right; background:#f9fafb;">${row.currentBalance.toLocaleString()}</td>
+                <td style="text-align:center;">${proofIcon}</td>
+                <td style="text-align:center;">
+                    <div style="display: flex; justify-content: center; gap: 8px;">
+                        <button onclick="openEditModal('${row.id}')" style="color:#2563eb; border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteEntry('${row.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </td>
+            </tr>`;
     });
 
-    const finalCumulativeBalance = absoluteTotalBuy - absoluteTotalPay;
-
-    // [설정 1] 매입액(파랑) / 결제액(빨강) 표시
-    if(document.getElementById('sumBuy')) {
-        document.getElementById('sumBuy').innerText = displayBuy.toLocaleString();
-        document.getElementById('sumBuy').style.color = "#2563eb"; // 파란색
-    }
-    if(document.getElementById('sumPay')) {
-        document.getElementById('sumPay').innerText = displayPay.toLocaleString();
-        document.getElementById('sumPay').style.color = "#dc2626"; // 빨간색 (원래대로)
+    tableBody.innerHTML = html || '<tr><td colspan="12" style="text-align:center; padding:30px;">결과가 없습니다.</td></tr>';
+    
+    if(typeof renderPaginationUI === 'function') {
+        renderPaginationUI(totalPages);
     }
 
-    // [설정 2] 잔액 표시 및 조건부 색상/부호 처리
-    const balanceEl = document.getElementById('sumBalance');
-    if(balanceEl) {
-        balanceEl.innerText = finalCumulativeBalance.toLocaleString();
-        
-        if (finalCumulativeBalance < 0) {
-            // 잔액이 마이너스면 빨간색 표시 ㅡㅡ^
-            balanceEl.style.color = "#dc2626"; 
-        } else {
-            // 그 외 일반 잔액(미수금)은 초록색 유지
-            balanceEl.style.color = "#059669"; 
-        }
-    }
-
+    if(document.getElementById('sumBuy')) document.getElementById('sumBuy').innerText = totalBuy.toLocaleString();
+    if(document.getElementById('sumPay')) document.getElementById('sumPay').innerText = totalPay.toLocaleString();
+    if(document.getElementById('sumBalance')) document.getElementById('sumBalance').innerText = (totalBuy - totalPay).toLocaleString();
 }
 
 
