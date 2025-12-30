@@ -4,6 +4,8 @@
 const COL_PENDING = "pending_uploads"; // 대기열 컬렉션 이름
 let currentWidth = 0;  // 현재 이미지 너비
 let initialWidth = 0;  // 초기 맞춤 너비
+let currentRotation = 0; 
+let currentSelectedDocId = null;
 
 // 2. 대기 목록 로드 (실시간 리스너)
 function loadQueueList() {
@@ -52,27 +54,38 @@ function loadQueueList() {
 }
 
 // 3. 줌(Zoom) 기능 - 약사님 성공 버전 (상단 고정/튐 방지)
+// 2. 통합 적용 함수 (확대 + 회전)
 function applyZoom() {
     const img = document.getElementById('docImage');
-    if (!img) return;
-    
-    // 스타일을 직접 변경하여 튐 방지 및 즉각적인 확대/축소 적용
+    const viewer = document.querySelector('.image-viewer-wide');
+    if (!img || !viewer) return;
+
+    // 물리적 너비 설정 (스크롤 생성용)
     img.style.width = currentWidth + "px";
     img.style.height = "auto";
+
+    // 회전 적용 (빙그르르 도는 현상 방지: modulo 없이 누적 각도 사용 가능)
+    img.style.transform = `rotate(${currentRotation}deg)`;
+    img.style.transformOrigin = "center center";
+
+    // 90도/270도 회전 시 세로 스크롤 공간 강제 확보 ㅡㅡ^
+    const r = currentRotation % 360;
+    const absR = Math.abs(r);
+    if (absR === 90 || absR === 270) {
+        const ratio = img.naturalHeight / img.naturalWidth;
+        const requiredHeight = currentWidth / ratio; 
+        const offset = Math.abs((requiredHeight - currentWidth) / 2);
+        img.style.margin = `${offset + 50}px auto`; 
+    } else {
+        img.style.margin = "20px auto";
+    }
 }
-
-function fitToFrame() {
-    const img = document.getElementById('docImage');
-    const viewer = document.getElementById('viewerBox');
-    if (!img || !viewer || !img.naturalWidth) return;
-
-    // 뷰어 너비의 95% 수준으로 초기 크기 설정
-    currentWidth = viewer.clientWidth * 0.95;
-    initialWidth = currentWidth;
-    applyZoom();
-}
-
+// 4. 줌 함수 (동작 보장 버전) ㅡㅡ^
 function zoomIn() { 
+    if (currentWidth === 0) { // 혹시 초기화 안됐을 경우 대비
+        const img = document.getElementById('docImage');
+        currentWidth = img.clientWidth;
+    }
     currentWidth *= 1.2; 
     applyZoom(); 
 }
@@ -83,6 +96,22 @@ function zoomOut() {
         applyZoom(); 
     } 
 }
+function fitToFrame() {
+    const img = document.getElementById('docImage');
+    const viewer = document.getElementById('viewerBox');
+    if (!img || !viewer || !img.naturalWidth) return;
+
+    // 뷰어 대비 이미지의 적정 배율 계산 ㅡㅡ^
+    const ratioW = (viewer.clientWidth * 0.95) / img.naturalWidth;
+    const ratioH = (viewer.clientHeight * 0.95) / img.naturalHeight;
+    
+    // 화면에 꽉 차게 들어오는 배율 선택
+    currentZoom = Math.min(ratioW, ratioH);
+    
+    applyZoom();
+}
+
+
 
 function resetZoom() { 
     fitToFrame(); 
@@ -91,32 +120,29 @@ function resetZoom() {
 // 4. 항목 선택 시 처리
 // 4. 항목 선택 시 처리 (자동 축소 로직 포함)
 function selectItem(item, targetLi, id) {
-    // 모든 항목에서 active 클래스 제거 후 현재 항목에 추가
     document.querySelectorAll('.queue-item').forEach(el => el.classList.remove('active'));
     targetLi.classList.add('active');
+    currentSelectedDocId = id; 
     targetLi.setAttribute('data-id', id); 
 
     const imgTag = document.getElementById('docImage');
     const msg = document.getElementById('noSelectionMsg');
 
     if (imgTag && item.img) {
-        // 1. 새로운 이미지를 불러오기 전에 화면에서 숨김 (깜빡임 방지)
+        // DB에서 회전값만 미리 변수에 담아둡니다.
+        currentRotation = item.rotation || 0; 
+        
         imgTag.style.display = 'none'; 
         imgTag.src = item.img;
 
         imgTag.onload = function() {
             if (msg) msg.style.display = 'none';
-            
-            // 2. 이미지가 로드되자마자 프레임에 맞춰 축소(fitToFrame) 실행
-            // 여기서 currentWidth가 계산되어 applyZoom이 호출됩니다.
+            // 여기서 직접 돌리지 말고, 아래 함수가 applyZoom을 부르게 둡니다. ㅡㅡ^
             fitToFrame(); 
-            
-            // 3. 계산이 끝난 후 깔끔하게 보여줌
             imgTag.style.display = 'inline-block';
         };
     }
 }
-
 /* logic-write.js - 명세서 전체 노출 버전 */
 
 function fitToFrame() {
@@ -278,6 +304,8 @@ async function saveAllItems() {
                     type, // 이제 'pay' 또는 'return'이 정확히 담깁니다.
                     memo: memo,
                     img: currentImgUrl,
+                    // [추가] 현재 회전 상태를 저장합니다 ㅡㅡ^
+                    rotation: typeof currentRotation !== 'undefined' ? currentRotation : 0,
                     qty: Number(row.querySelector('.in-qty').value.replace(/,/g, '')) || 0,
                     supply: Number(row.querySelector('.in-supply').value.replace(/,/g, '')) || 0,
                     vat: Number(row.querySelector('.in-vat').value.replace(/,/g, '')) || 0,
@@ -432,3 +460,25 @@ async function loadPharmacyName() {
     }
 }
 
+// 1. 전역 변수 선언 (함수 밖 맨 위에 두셔도 됩니다)
+// 1. 전역 변수 (파일 최상단 확인) ㅡㅡ^
+
+// 2. 이미지 회전 함수 ㅡㅡ^
+// 이미지 회전 및 DB 즉시 저장 ㅡㅡ^
+// 3. 회전 함수 (빙그르 방지 버전) ㅡㅡ^
+async function rotateImage(degree) {
+    if (!currentSelectedDocId) return alert("먼저 명세서를 선택하세요.");
+
+    // 각도를 누적시킵니다 (360에서 다시 90으로 갈 때 역회전 방지)
+    currentRotation += degree; 
+    
+    applyZoom();
+
+    try {
+        await db.collection("pending_uploads").doc(currentSelectedDocId).update({
+            rotation: currentRotation
+        });
+    } catch (e) {
+        console.error("회전 저장 실패:", e);
+    }
+}

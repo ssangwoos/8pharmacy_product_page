@@ -86,12 +86,12 @@
 
 #docImage {
     max-width: none !important;
-    display: inline-block;
-    margin-top: 20px;
-    margin-bottom: 400px;
+    max-height: none !important; /* 추가: 세로 제한 해제 ㅡㅡ^ */
+    display: block;              /* 변경: inline-block에서 block으로 (여백 계산 정확도 향상) */
+    margin: 20px auto;           /* 변경: 중앙 정렬 */
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    vertical-align: top;
-    transition: none !important; /* 줌 튐 방지 */
+    transition: transform 0.2s ease; /* 회전할 때만 살짝 부드럽게 (줌은 JS가 처리) */
+    transform-origin: center center; /* 회전 중심 고정 */
 }
 
 /* 줌 컨트롤 버튼 스타일 (사라졌던 버튼들 복구) */

@@ -40,13 +40,19 @@
     <main class="workspace column-mode">
         
         <section class="image-section-top">
-            <div class="image-viewer-wide" id="viewerBox">
-                <img id="docImage" src="" alt="명세서 이미지" style="display:none;">
+            <div class="image-viewer-wide" id="viewerBox" style="display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img id="docImage" src="" alt="명세서 이미지" style="display:none; transition: transform 0.3s ease; max-width: 100%; max-height: 100%;">
                 <div class="no-selection-msg" id="noSelectionMsg">
                     좌측 목록에서 명세서를 선택하세요.
                 </div>
             </div>
+            
             <div class="img-controls-floating">
+                <button class="btn-icon" onclick="rotateImage(-90)" title="왼쪽 회전"><i class="fas fa-undo"></i></button>
+                <button class="btn-icon" onclick="rotateImage(90)" title="오른쪽 회전"><i class="fas fa-redo"></i></button>
+                
+                <div style="width:1px; height:20px; background:rgba(255,255,255,0.3); margin:0 5px;"></div>
+                
                 <button class="btn-icon" onclick="zoomOut()"><i class="fas fa-minus"></i></button>
                 <button class="btn-icon" onclick="resetZoom()"><i class="fas fa-sync-alt"></i></button>
                 <button class="btn-icon" onclick="zoomIn()"><i class="fas fa-plus"></i></button>
