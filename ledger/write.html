@@ -76,11 +76,19 @@
                         </select>
                     </div>
 
-                    <div class="c-group vendor-group" style="flex: 1.5; display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-size: 0.85rem; color: #64748b; font-weight: bold;">거래처</label>
-                        <input type="text" id="vendorInput" list="vendorList" placeholder="거래처 검색/입력" autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
-                        <datalist id="vendorList"></datalist>
-                    </div>
+                    <div class="c-group vendor-group" style="flex: 1.5; display: flex; flex-direction: column; gap: 8px; position: relative;">
+                    <label style="font-size: 0.85rem; color: #64748b; font-weight: bold;">거래처</label>
+                    
+                    <input type="text" id="vendorInput" 
+                        placeholder="거래처 검색/더블클릭 시 전체노출" 
+                        oninput="searchVendor()" 
+                        ondblclick="showAllVendors()" 
+                        onclick="if(this.value==='') showAllVendors()"
+                        autocomplete="off" 
+                        style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
+                    
+                    <div id="vendorListCustom" style="position: absolute; top: 75px; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 8px; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                </div>
                 </div>
 
                 <div class="item-list-area">

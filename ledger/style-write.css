@@ -184,7 +184,7 @@
 
 /* [수정] 거래처 칸 너비 보정 */
 .common-info-bar input[type="text"] {
-    min-width: 200px !important;
+    min-width: 400px !important;
 }
 
 /* [추가] 거래처 입력칸 너비 특별 확대 */

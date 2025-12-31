@@ -2,10 +2,29 @@
 
 // 1. 변수 및 초기화 (Firestore 설정)
 const COL_PENDING = "pending_uploads"; // 대기열 컬렉션 이름
+
 let currentWidth = 0;  // 현재 이미지 너비
 let initialWidth = 0;  // 초기 맞춤 너비
 let currentRotation = 0; 
 let currentSelectedDocId = null;
+let allVendors = []; // 🔥 전역 변수로 업체 목록 보관
+
+async function loadRecentVendor() {
+    try {
+        // 모든 거래 내역에서 중복 없이 거래처 가져오기
+        const snapshot = await db.collection("transactions").get();
+        const vendorSet = new Set();
+        snapshot.docs.forEach(doc => {
+            const name = doc.data().vendor;
+            if (name) vendorSet.add(name.trim());
+        });
+        
+        allVendors = Array.from(vendorSet).sort(); // 전역 변수에 저장 ㅡㅡ^
+        console.log("검색용 거래처 로드 완료:", allVendors.length, "건");
+    } catch (e) {
+        console.error("거래처 로드 실패:", e);
+    }
+}
 
 // 2. 대기 목록 로드 (실시간 리스너)
 function loadQueueList() {
@@ -279,31 +298,40 @@ function updateAllTotals() {
 async function saveAllItems() {
     const date = document.getElementById('dateInput').value;
     const vendor = document.getElementById('vendorInput').value;
-    
-    // [확인] 구분이 'pay'나 'return'일 때도 정확히 가져옵니다.
     const type = document.getElementById('typeSelect')?.value || 'buy'; 
     
-    const activeLi = document.querySelector('.queue-item.active');
-    
-    // [버그 수정 핵심] ㅡㅡ^
-    // 이미지 태그의 src를 가져오되, 진짜 외부 주소(http)인 경우만 허용합니다.
-    // 사진이 없으면 브라우저 주소나 쓰레기 값이 들어오는 것을 방지하기 위해 필터링합니다.
+    // 1. 이미지 주소 정제 ㅡㅡ^
     let currentImgUrl = document.getElementById('docImage')?.src || "";
     if (!currentImgUrl.startsWith('http') || currentImgUrl.includes('write.html')) {
         currentImgUrl = null; 
     }
 
+    // 2. 기초 정보 필수 입력 체크
     if (!date || !vendor) return alert("날짜와 거래처를 입력하세요.");
     
     const rows = document.querySelectorAll('#itemTableBody tr');
     if (rows.length === 0) return alert("항목을 하나 이상 추가하세요.");
 
+    // 🔥 [입구컷 핵심] 적요가 하나라도 있는지 먼저 전수 조사 ㅡㅡ^
+    let hasValidMemo = false;
+    rows.forEach(row => {
+        const memo = row.querySelector('.in-memo').value.trim();
+        if (memo) hasValidMemo = true; // 한 줄이라도 글자가 있으면 통과!
+    });
+
+    if (!hasValidMemo) {
+        return alert("장부에 기록될 '내용(적요)'을 최소 한 줄 이상 입력해주세요! ㅡㅡ^");
+    }
+
+    // 3. 저장 프로세스 시작
     try {
         const batch = db.batch();
+        let saveCount = 0; // 실제로 저장되는 줄 수 카운트
 
         rows.forEach(row => {
             const memo = row.querySelector('.in-memo').value.trim();
-            // 메모(품목명)가 있는 줄만 저장합니다.
+            
+            // 내용이 있는 줄만 트랜잭션 데이터로 생성 ㅡㅡ^
             if (memo) {
                 const docRef = db.collection("transactions").doc(); 
                 batch.set(docRef, {
@@ -311,8 +339,7 @@ async function saveAllItems() {
                     vendor,
                     type, 
                     memo: memo,
-                    img: currentImgUrl, // 정제된 이미지 주소 (없으면 null)
-                    // 현재 이미지 회전 상태 저장
+                    img: currentImgUrl,
                     rotation: typeof currentRotation !== 'undefined' ? currentRotation : 0,
                     qty: Number(row.querySelector('.in-qty').value.replace(/,/g, '')) || 0,
                     supply: Number(row.querySelector('.in-supply').value.replace(/,/g, '')) || 0,
@@ -320,26 +347,27 @@ async function saveAllItems() {
                     total: Number(row.querySelector('.in-total').value.replace(/,/g, '')) || 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                saveCount++;
             }
         });
 
+        // 4. DB에 쓰기 작업 수행
         await batch.commit();
 
-        // 큐(대기목록)에서 작업 중이었다면 해당 항목 삭제
-        if (activeLi) {
-            const docId = activeLi.getAttribute('data-id');
-            // 'pending_uploads'는 약사님 설정에 맞게 확인 필요 (보통 이 이름이죠?)
-            await db.collection("pending_uploads").doc(docId).delete();
+        // 🔥 [삭제 로직] 저장이 성공(commit)한 직후에만 대기열에서 지웁니다. ㅡㅡ^
+        if (currentSelectedDocId) {
+            console.log("저장 성공, 대기열 삭제 ID:", currentSelectedDocId);
+            await db.collection("pending_uploads").doc(currentSelectedDocId).delete();
         }
 
-        alert("저장이 완료되었습니다.");
+        alert(`${saveCount}건의 내역이 저장되었습니다.`);
         location.reload(); 
+        
     } catch (e) {
-        console.error("저장 중 오류:", e);
-        alert("저장에 실패했습니다.");
+        console.error("저장 중 오류 발생:", e);
+        alert("저장에 실패했습니다. 네트워크 상태를 확인해주세요.");
     }
 }
-
 
 // 7. 대기열 개별 삭제
 async function deleteQueueItem(event, id) {
@@ -353,38 +381,36 @@ async function deleteQueueItem(event, id) {
 }
 
 // 8. 페이지 로드 시 초기화
-//* [수정] 입력창은 빈칸으로 두되, 검색 목록만 배경에서 로드 */
+// [수정] 거래처 목록 로드 - 더 확실하게 가져오기 ㅡㅡ^
 async function loadRecentVendor() {
-    const vInput = document.getElementById('vendorInput');
-    const vList = document.getElementById('vendorList');
-    if (!vInput || !vList) return;
-
     try {
-        // transactions 컬렉션에서 데이터 추출
-        const snapshot = await db.collection("transactions").limit(30).get();
+        console.log("거래처 목록 로드 시작...");
+        // 1. 전체 거래내역을 가져오되, 성능을 위해 vendor 필드만 가져오면 좋지만 
+        // 일단 약사님 DB 구조에 맞춰 전체를 긁습니다.
+        const snapshot = await db.collection("transactions").get();
+        
+        const vendorSet = new Set();
+        snapshot.docs.forEach(doc => {
+            const vName = doc.data().vendor;
+            if (vName) vendorSet.add(vName.trim());
+        });
 
-        if (!snapshot.empty) {
-            const vendorSet = new Set();
-            snapshot.docs.forEach(doc => {
-                const name = doc.data().vendor;
-                if (name) vendorSet.add(name.trim());
-            });
+        // 2. 검색용 배열에 저장
+        allVendors = Array.from(vendorSet).sort();
+        console.log("로드된 거래처 목록:", allVendors); // 콘솔에서 확인용 ㅡㅡ^
 
-            // 1. datalist에 목록만 추가 (모양 변화 없음)
-            vList.innerHTML = ""; 
-            Array.from(vendorSet).sort().forEach(v => {
+        // 3. (선택사항) 브라우저 기본 datalist도 보험용으로 채워둡니다.
+        const vList = document.getElementById('vendorList');
+        if (vList) {
+            vList.innerHTML = "";
+            allVendors.forEach(v => {
                 const opt = document.createElement('option');
                 opt.value = v;
                 vList.appendChild(opt);
             });
-
-            // 2. [수정] 최근 거래처를 불러오지 않고 입력창은 비워둡니다.
-            vInput.value = ""; 
-            
-            console.log("거래처 검색 목록 로드 완료");
         }
     } catch (e) {
-        console.error("데이터 로드 실패:", e);
+        console.error("거래처 로드 에러:", e);
     }
 }
 /* 모든 초기화 로직을 이 하나로 통합합니다 */
@@ -491,3 +517,94 @@ async function rotateImage(degree) {
         console.error("회전 저장 실패:", e);
     }
 }
+
+// [막강 검색 + 전체 보기 통합 함수] ㅡㅡ^
+function searchVendor(isFullShow = false) {
+    const input = document.getElementById('vendorInput');
+    let listCustom = document.getElementById('vendorListCustom');
+    
+    // 1. 리스트 박스 없으면 생성 (스타일 유지)
+    if (!listCustom) {
+        listCustom = document.createElement('div');
+        listCustom.id = 'vendorListCustom';
+        Object.assign(listCustom.style, {
+            position: 'absolute',
+            top: (input.offsetTop + input.offsetHeight) + 'px',
+            left: input.offsetLeft + 'px',
+            width: input.offsetWidth + 'px',
+            maxHeight: '250px',
+            overflowY: 'auto',
+            background: 'white',
+            border: '1px solid #cbd5e1',
+            borderRadius: '8px',
+            zIndex: '9999',
+            display: 'none',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        });
+        input.parentNode.appendChild(listCustom);
+    }
+
+    const val = input.value.trim().toLowerCase();
+    listCustom.innerHTML = ""; 
+
+    // 2. 검색어가 없고 '전체보기' 모드도 아니면 닫기
+    if (!val && !isFullShow) {
+        listCustom.style.display = 'none';
+        return;
+    }
+
+    // 3. 필터링 로직 (전체보기면 allVendors 그대로, 아니면 필터링) ㅡㅡ^
+    const filtered = isFullShow ? allVendors : allVendors.filter(v => v.toLowerCase().includes(val));
+
+    if (filtered.length > 0) {
+        filtered.forEach(name => {
+            const div = document.createElement('div');
+            div.style.padding = '12px 15px';
+            div.style.cursor = 'pointer';
+            div.style.borderBottom = '1px solid #f1f5f9';
+            div.style.fontSize = '0.95rem';
+
+            // 🔥 [파란색 강조 로직] 검색어가 있을 때만 강조 ㅡㅡ^
+            if (val) {
+                const regex = new RegExp(val, 'gi');
+                div.innerHTML = name.replace(regex, (m) => `<b style="color:#2563eb;">${m}</b>`);
+            } else {
+                div.innerText = name;
+            }
+            
+            // 클릭 시 입력창에 반영
+            div.onclick = () => {
+                input.value = name;
+                listCustom.style.display = 'none';
+            };
+
+            // 마우스 호버 효과
+            div.onmouseover = () => div.style.background = '#f8fafc';
+            div.onmouseout = () => div.style.background = 'white';
+
+            listCustom.appendChild(div);
+        });
+        listCustom.style.display = 'block';
+    } else {
+        listCustom.style.display = 'none';
+    }
+}
+
+// [더블클릭 전용 함수] 그냥 searchVendor를 '전체보기' 모드로 호출만 하면 끝! ㅡㅡ^
+function showAllVendors() {
+    searchVendor(true); 
+}
+
+// 화면 어디든 클릭했을 때 리스트를 닫는 기능 ㅡㅡ^
+document.addEventListener('mousedown', function(e) {
+    const listCustom = document.getElementById('vendorListCustom');
+    const input = document.getElementById('vendorInput');
+
+    // 리스트가 열려 있을 때만 작동
+    if (listCustom && listCustom.style.display === 'block') {
+        // 클릭한 곳이 '입력창'도 아니고 '리스트 내부'도 아니라면 닫아라!
+        if (e.target !== input && !listCustom.contains(e.target)) {
+            listCustom.style.display = 'none';
+        }
+    }
+});
