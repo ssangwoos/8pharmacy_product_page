@@ -746,6 +746,8 @@ function openProofViewer(imgUrl, savedRotation, docId) {
                     updateStyle();
                 }
 
+                
+
                 window.onload = updateStyle;
             </script>
         </body>
