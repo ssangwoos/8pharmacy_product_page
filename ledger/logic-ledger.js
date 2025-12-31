@@ -1,6 +1,7 @@
 let currentPage = 1;
 const itemsPerPage = 10;
 let allData = []; // 필터링된 전체 데이터를 담을 변수
+// logic-ledger.js 맨 위쪽에 이렇게 되어 있는지 확인하세요!
 
 // [데이터 호출 함수] 거래처 선택 시 해당 데이터만 DB에서 쿼리하여 최적화
 async function loadLedgerData() {
@@ -114,7 +115,13 @@ function renderLedger() {
     currentPageData.forEach((row) => {
         const isRealImg = row.img && row.img.startsWith('http') && !row.img.includes('write.html');
         const groupId = isRealImg ? row.img : row.id;
-        const proofIcon = isRealImg ? `<a href="#" onclick="window.open('${row.img}')">📄</a>` : '-';
+        // renderLedger 함수 내부
+        // renderLedger 함수 내 아이콘 생성 줄 수정
+       // logic-ledger.js 내 renderLedger 함수 내부
+       const proofIcon = isRealImg 
+        ? `<button type="button" onclick="openProofViewer('${row.img}', ${row.rotation || 0}, '${row.id}')" 
+            style="border:none; background:none; cursor:pointer; font-size:1.2rem;">📄</button>` 
+        : '-';
         const typeBadge = row.isBuy ? '<span class="badge buy">입고</span>' : '<span class="badge pay">결제</span>';
 
         html += `
@@ -655,5 +662,111 @@ async function getFullCumulativeBalance(vendorName) {
     } catch (e) {
         console.error("전체 잔액 로드 오류:", e);
         return 0;
+    }
+}
+
+
+// logic-ledger.js 파일 맨 하단에 추가 ㅡㅡ^
+// [수정된 뷰어 함수] 회전 시 DB 저장 기능 추가 ㅡㅡ^
+function openProofViewer(imgUrl, savedRotation, docId) {
+    if (!imgUrl || imgUrl === 'null') return alert("이미지가 없습니다.");
+
+    const width = 1000; // 확대 기능을 위해 창을 조금 더 크게 잡습니다.
+    const height = 900;
+    const left = (window.screen.width / 2) - (width / 2);
+    const top = (window.screen.height / 2) - (height / 2);
+
+    const viewer = window.open('', '_blank', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+
+    viewer.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>증빙 뷰어 (회전/확대)</title>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+            <style>
+                body { margin: 0; background: #0f172a; color: white; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; overflow: hidden; }
+                .nav { background: #1e293b; padding: 12px; display: flex; justify-content: center; gap: 15px; border-bottom: 1px solid #334155; align-items: center; }
+                .btn { background: #3b82f6; color: white; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+                .btn:hover { background: #2563eb; }
+                .btn-gray { background: #64748b; }
+                .img-box { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 50px; cursor: grab; }
+                .img-box:active { cursor: grabbing; }
+                img { transition: transform 0.2s ease; max-width: 90%; transform-origin: center center; box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+                #status { font-size: 11px; color: #94a3b8; width: 80px; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="nav">
+                <button class="btn" onclick="rotate(-90)"><i class="fas fa-undo"></i> 좌회전</button>
+                <button class="btn" onclick="rotate(90)"><i class="fas fa-redo"></i> 우회전</button>
+                <div style="width: 1px; height: 20px; background: #475569;"></div>
+                <button class="btn btn-gray" onclick="zoom(0.1)"><i class="fas fa-search-plus"></i></button>
+                <button class="btn btn-gray" onclick="zoom(-0.1)"><i class="fas fa-search-minus"></i></button>
+                <button class="btn btn-gray" onclick="resetAll()">원본</button>
+                <div id="status">대기 중</div>
+                <button class="btn" style="background:#ef4444;" onclick="window.close()">닫기</button>
+            </div>
+            <div class="img-box" id="container">
+                <img id="pImg" src="${imgUrl}">
+            </div>
+            <script>
+                let currentRot = ${savedRotation || 0};
+                let currentScale = 1.0;
+                const docId = "${docId}";
+                const img = document.getElementById('pImg');
+                const status = document.getElementById('status');
+
+                function updateStyle() {
+                    img.style.transform = "rotate(" + currentRot + "deg) scale(" + currentScale + ")";
+                }
+
+                // 회전 및 DB 저장 ㅡㅡ^
+                async function rotate(deg) {
+                    currentRot += deg;
+                    updateStyle();
+                    if (docId && window.opener) {
+                        status.innerText = "저장 중...";
+                        try {
+                            await window.opener.updateRotationFromPopup(docId, currentRot);
+                            status.innerText = "저장 완료";
+                        } catch(e) { status.innerText = "저장 실패"; }
+                    }
+                }
+
+                // 확대 축소 ㅡㅡ^
+                function zoom(val) {
+                    currentScale = Math.max(0.1, currentScale + val);
+                    updateStyle();
+                }
+
+                function resetAll() {
+                    currentScale = 1.0;
+                    updateStyle();
+                }
+
+                window.onload = updateStyle;
+            </script>
+        </body>
+        </html>
+    `);
+    viewer.document.close();
+}
+
+// [수정] 저장 후 부모창 화면까지 갱신하는 대행 함수 ㅡㅡ^
+// 팝업창에서 시키는 대로 DB를 업데이트하는 대행 함수 ㅡㅡ^
+// [부모창] 팝업창에서 시키는 대로 저장해주는 '확실한' 함수 ㅡㅡ^
+// [부모창] 팝업창에서 회전 버튼을 누르면 DB를 업데이트해주는 함수 ㅡㅡ^
+async function updateRotationFromPopup(docId, newRot) {
+    try {
+        if (!docId) return;
+        // Firestore의 해당 문서를 직접 업데이트합니다.
+        await db.collection("transactions").doc(docId).update({
+            rotation: Number(newRot)
+        });
+        console.log("✅ DB 회전값 업데이트 완료:", docId, newRot);
+    } catch (e) {
+        console.error("❌ DB 업데이트 실패:", e);
     }
 }
