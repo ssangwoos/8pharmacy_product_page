@@ -1,0 +1,17 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyD6gYbjdXjdwLNP4baJTxKZpqbaSFkG670",
+  authDomain: "ledger-cmr8p.firebaseapp.com",
+  projectId: "ledger-cmr8p",
+  storageBucket: "ledger-cmr8p.firebasestorage.app",
+  messagingSenderId: "556126872516",
+  appId: "1:556126872516:web:2c5e1044619d5201837a91"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
