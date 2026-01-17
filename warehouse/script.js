@@ -61,38 +61,59 @@ setScreenSize();
  */
 function customPagination(swiper) {
     const paginationEl = document.querySelector('.swiper-pagination');
-    if (!paginationEl) return;
+    const containerEl = document.querySelector('.pagination-container');
+    if (!paginationEl || !containerEl) return;
     
     paginationEl.innerHTML = '';
     const total = swiper.slides.length;
     const current = swiper.activeIndex;
     
+    // 10개씩 끊어보는 그룹 범위 계산
     const startPage = Math.floor(current / 10) * 10;
     const endPage = Math.min(startPage + 10, total);
 
+    // [이전 그룹]
     if (startPage > 0) {
-        const prev = document.createElement('span');
-        prev.className = 'swiper-pagination-bullet';
-        prev.innerHTML = '«';
-        prev.onclick = (e) => { e.stopPropagation(); swiper.slideTo(startPage - 1); };
-        paginationEl.appendChild(prev);
+        createBullet('«', () => swiper.slideTo(startPage - 1), true);
     }
 
+    // [숫자 버튼]
     for (let i = startPage; i < endPage; i++) {
+        createBullet(i + 1, () => swiper.slideTo(i), false, i === current);
+    }
+
+    // [다음 그룹]
+    if (endPage < total) {
+        createBullet('»', () => swiper.slideTo(endPage), true);
+    }
+
+    // 버튼 생성 도우미 함수
+    function createBullet(text, onClick, isArrow, isActive = false) {
         const bullet = document.createElement('span');
-        bullet.className = `swiper-pagination-bullet ${i === current ? 'swiper-pagination-bullet-active' : ''}`;
-        bullet.innerHTML = i + 1;
-        bullet.onclick = (e) => { e.stopPropagation(); swiper.slideTo(i); };
+        bullet.className = `swiper-pagination-bullet ${isActive ? 'swiper-pagination-bullet-active' : ''} ${isArrow ? 'bullet-arrow' : ''}`;
+        bullet.innerHTML = text;
+        bullet.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick();
+        };
         paginationEl.appendChild(bullet);
     }
 
-    if (endPage < total) {
-        const next = document.createElement('span');
-        next.className = 'swiper-pagination-bullet';
-        next.innerHTML = '»';
-        next.onclick = (e) => { e.stopPropagation(); swiper.slideTo(endPage); };
-        paginationEl.appendChild(next);
-    }
+    // [핵심] 활성화된 버튼을 중앙으로 부드럽게 이동
+    setTimeout(() => {
+        const activeBullet = paginationEl.querySelector('.swiper-pagination-bullet-active');
+        if (activeBullet) {
+            const containerWidth = containerEl.offsetWidth;
+            const bulletOffset = activeBullet.offsetLeft;
+            const bulletWidth = activeBullet.offsetWidth;
+            
+            containerEl.scrollTo({
+                left: bulletOffset - (containerWidth / 2) + (bulletWidth / 2),
+                behavior: 'smooth'
+            });
+        }
+    }, 50);
 }
 
 /**
