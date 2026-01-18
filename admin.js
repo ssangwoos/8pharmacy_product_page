@@ -465,35 +465,113 @@ window.downloadExcel = function() {
     const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Logs"); XLSX.writeFile(wb, `Log_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 window.createPriceTag = async function(id, btn) {
-    const product = allProducts.find(p => p.id === id); if(!product) return alert("정보 없음");
+    const product = allProducts.find(p => p.id === id); 
+    if(!product) return alert("정보 없음");
+    
     let bgUrl = "", layout = { ...DEFAULT_LAYOUT };
-    try { const s = await getDoc(doc(db, "settings", "config")); if(s.exists()) { const d = s.data(); bgUrl = d.bgImage; if(d.layout) Object.keys(d.layout).forEach(key => { if(d.layout[key]) layout[key] = d.layout[key]; }); } } catch(e) {}
-    if(!bgUrl) return alert("❌ 배경 없음"); if(!product.qrImage) return alert("❌ QR 없음");
-    const originalText = btn.innerText; btn.innerText = "⏳..."; btn.disabled = true;
+    try { 
+        const s = await getDoc(doc(db, "settings", "config")); 
+        if(s.exists()) { 
+            const d = s.data(); 
+            bgUrl = d.bgImage; 
+            if(d.layout) Object.keys(d.layout).forEach(key => { if(d.layout[key]) layout[key] = d.layout[key]; }); 
+        } 
+    } catch(e) {}
+
+    if(!bgUrl) return alert("❌ 배경 없음"); 
+    if(!product.qrImage) return alert("❌ QR 없음");
+
+    const originalText = btn.innerText; 
+    btn.innerText = "⏳..."; 
+    btn.disabled = true;
+
     try {
-        const canvas = document.getElementById('priceTagCanvas'); const ctx = canvas.getContext('2d');
-        const bgImg = await loadImage(bgUrl); ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        const canvas = document.getElementById('priceTagCanvas'); 
+        const ctx = canvas.getContext('2d');
+        
+        // 1. 배경 이미지 그리기
+        const bgImg = await loadImage(bgUrl); 
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+
+        // ✨ [수정됨] 텍스트 위치조정 (아래로 내리기) ✨
+        // -------------------------------------------------------
+        const topBarHeight = 160; 
+        const leftMargin = 50;    // 왼쪽 여백
+
+        const pName = product.name;
+        let titleSize = 100; 
+        const maxTitleW = canvas.width - (leftMargin * 2); 
+
+        ctx.fillStyle = '#FFFFFF'; 
+        ctx.textAlign = 'left';      
+        ctx.textBaseline = 'middle'; 
+
+        // 폰트 줄이기 루프
+        do {
+            ctx.font = `bold ${titleSize}px 'Noto Sans KR', sans-serif`;
+            titleSize -= 2;
+        } while (ctx.measureText(pName).width > maxTitleW && titleSize > 40);
+
+        // 글자 그리기 
+        // ★수정 포인트: + 20 (이 숫자를 키우면 더 아래로 내려갑니다)
+        const textY = (topBarHeight / 2) + 40; 
+        
+        ctx.fillText(pName, leftMargin, textY);
+        // -------------------------------------------------------
+
+
+        // 2. 상품 이미지 그리기
         if(product.image) {
             const pImg = await loadImage(product.image);
             ctx.save();
-            ctx.beginPath(); ctx.rect(layout.prod_x, layout.prod_y, layout.prod_w, layout.prod_h); ctx.clip();
+            ctx.beginPath(); 
+            ctx.rect(layout.prod_x, layout.prod_y, layout.prod_w, layout.prod_h); 
+            ctx.clip();
+            
             const scale = layout.prod_scale || 1.0;
             const ratio = Math.min(layout.prod_w / pImg.width, layout.prod_h / pImg.height) * scale;
-            const w = pImg.width * ratio; const h = pImg.height * ratio;
-            const cx = (layout.prod_w - w) / 2; const cy = (layout.prod_h - h) / 2;
+            const w = pImg.width * ratio; 
+            const h = pImg.height * ratio;
+            const cx = (layout.prod_w - w) / 2; 
+            const cy = (layout.prod_h - h) / 2;
+            
             ctx.drawImage(pImg, layout.prod_x + cx, layout.prod_y + cy, w, h);
             ctx.restore();
         }
-        const qrImg = await loadImage(product.qrImage); ctx.drawImage(qrImg, layout.qr_x, layout.qr_y, layout.qr_size, layout.qr_size);
+
+        // 3. QR 코드 그리기
+        const qrImg = await loadImage(product.qrImage); 
+        ctx.drawImage(qrImg, layout.qr_x, layout.qr_y, layout.qr_size, layout.qr_size);
+
+        // 4. 가격 텍스트 그리기
         const priceText = "₩" + Number(product.price).toLocaleString();
-        ctx.font = `bold ${layout.price_size}px 'Noto Sans KR', sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
-        ctx.strokeStyle = "white"; ctx.lineWidth = 20; ctx.strokeText(priceText, layout.price_x, layout.price_y);
-        ctx.fillStyle = "black"; ctx.fillText(priceText, layout.price_x, layout.price_y);
+        ctx.font = `bold ${layout.price_size}px 'Noto Sans KR', sans-serif`; 
+        ctx.textAlign = "center"; 
+        ctx.textBaseline = "top";
+        
+        ctx.strokeStyle = "white"; 
+        ctx.lineWidth = 20; 
+        ctx.strokeText(priceText, layout.price_x, layout.price_y);
+        
+        ctx.fillStyle = "black"; 
+        ctx.fillText(priceText, layout.price_x, layout.price_y);
+
+        // 5. 다운로드 실행
         canvas.toBlob(function(blob) {
-            const link = document.createElement('a'); link.download = `${product.name}_pricetag.jpg`; link.href = URL.createObjectURL(blob); link.click();
-            btn.innerText = originalText; btn.disabled = false;
+            const link = document.createElement('a'); 
+            link.download = `${product.name}_pricetag.jpg`; 
+            link.href = URL.createObjectURL(blob); 
+            link.click();
+            btn.innerText = originalText; 
+            btn.disabled = false;
         }, 'image/jpeg', 0.95);
-    } catch(e) { console.error(e); alert("생성 실패: " + e.message); btn.innerText = originalText; btn.disabled = false; }
+
+    } catch(e) { 
+        console.error(e); 
+        alert("생성 실패: " + e.message); 
+        btn.innerText = originalText; 
+        btn.disabled = false; 
+    }
 }
 function loadImage(src) { return new Promise((r, j) => { const i = new Image(); i.crossOrigin = "Anonymous"; i.src = src + (src.includes('?')?'&':'?') + 't=' + new Date().getTime(); i.onload = () => r(i); i.onerror = () => j(new Error("이미지 로드 실패")); }); }
 window.deleteProduct = async function(id) { if(confirm('삭제?')) { await deleteDoc(doc(db, "products", id)); alert('삭제됨'); loadProductList(); } }
