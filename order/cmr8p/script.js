@@ -436,7 +436,7 @@ function subscribeToPhotoRequests() {
     
     // 1. 기준 시간 설정 (현재로부터 72시간 전)
     const timeLimit = new Date();
-    timeLimit.setHours(timeLimit.getHours() - 72);
+    timeLimit.setHours(timeLimit.getHours() - 168);
 
     // 2. 쿼리 (일단 최신순으로 가져옴)
     const q = query(collection(db, "photo_requests"), orderBy("timestamp", "desc"));
@@ -1410,4 +1410,5 @@ if (btnSaveSupervisorPw) {
 loadProducts();
 subscribeToRecentLogs();
 subscribeToPhotoRequests();
+
 subscribeToReturns();
