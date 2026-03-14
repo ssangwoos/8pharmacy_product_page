@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인플루언서 관리</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        .ghost { opacity: 0.3; background: #f0f7ff; border: 2px dashed #3b82f6; }
+        
+        /* [개선] 완료된 행 스타일: 배경 음영 + 투명도 + 회색조 */
+        .completed-row { 
+            background-color: #f1f5f9 !important; /* 연한 회색 배경 */
+            opacity: 0.5; /* 비활성화 느낌 */
+            filter: grayscale(0.5); /* 색감을 살짝 뺌 */
+            transition: all 0.2s ease;
+        }
+        .completed-row .font-bold { text-decoration: line-through; color: #94a3b8; }
+        .completed-row .sns-link { color: #94a3b8 !important; pointer-events: none; } /* 링크 클릭 방지 */
+
+        .collapsed-content { display: none; }
+        .toggle-icon { transition: transform 0.2s; display: inline-block; }
+        .is-collapsed .toggle-icon { transform: rotate(-90deg); }
+        
+        .sns-link-container { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
+        .sns-link { color: #3b82f6 !important; font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 11px; }
+        
+        .active-card { border-color: #3b82f6 !important; background-color: #f0f7ff !important; }
+        
+        .grid-master { 
+            display: grid; 
+            grid-template-columns: 40px 120px 1.5fr 80px 100px 1fr 40px; 
+            align-items: center; 
+            gap: 12px; 
+            width: 100%;
+        }
+
+        .img-preview { max-width: 120px; max-height: 80px; border-radius: 4px; border: 1px solid #e2e8f0; cursor: zoom-in; margin-top: 6px; }
+        body.dragging-mode .collapsed-content { display: block !important; min-height: 50px; border: 2px dashed #3b82f6; }
+        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-[#f8fafc] p-4 md:p-8">
+
+    <header class="max-w-[1200px] mx-auto mb-8 text-center">
+        <h1 class="text-2xl font-black text-slate-800 mb-6">🏥 인플루언서 방문 관리</h1>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-4 text-left">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <input id="new-id-name" type="text" placeholder="ID / 이름" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm focus:ring-1 focus:ring-blue-300">
+                <input id="new-sns" type="text" placeholder="SNS 링크" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm md:col-span-2 focus:ring-1 focus:ring-blue-300">
+                <input id="new-date" type="date" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
+                <input id="new-time" type="time" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
+            </div>
+            <div class="flex flex-col md:flex-row gap-3">
+                <input id="new-gift" type="text" placeholder="기프트 (예: 디에스 3종)" class="flex-[1] p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm focus:ring-1 focus:ring-blue-300" value="디에스 3종">
+                <input id="new-others" type="text" placeholder="비고 / 기타 내역" class="flex-[2] p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm focus:ring-1 focus:ring-blue-300">
+                <div class="flex gap-2">
+                    <button id="add-btn" class="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 text-sm shadow-md transition-all">등록</button>
+                    <button id="undo-btn" class="bg-white text-slate-400 px-4 py-2.5 rounded-xl font-bold border border-slate-200 text-sm disabled:opacity-30" disabled>되돌리기</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="board" class="max-w-[1200px] mx-auto flex flex-col gap-4 pb-24"></main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, updateDoc, doc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYjnMVCoV7siAWPBlXCAmxxniFrSNlGg",
+            authDomain: "todolist-db16c.firebaseapp.com",
+            projectId: "todolist-db16c",
+            storageBucket: "todolist-db16c.firebasestorage.app",
+            messagingSenderId: "882821223652",
+            appId: "1:882821223652:web:a17f286a91ebf4751488f1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const visitorsCol = collection(db, "visitors");
+
+        const collapsedDates = new Set();
+        let historyAction = null; 
+        let activeId = null;
+
+        document.getElementById("new-date").value = new Date().toISOString().substring(0, 10);
+
+        function updateHistory(action) {
+            historyAction = action;
+            document.getElementById("undo-btn").disabled = !action;
+        }
+
+        window.safeGo = function(url) {
+            var t = url.trim();
+            if (t.indexOf("http") !== 0) t = "https://" + t;
+            window.open(t, "_blank");
+        };
+
+        window.zoomImg = function(src) {
+            const win = window.open("");
+            const img = win.document.createElement("img");
+            img.src = src; img.style.maxWidth = "100%"; img.style.maxHeight = "100vh";
+            win.document.body.style.margin = "0"; win.document.body.style.background = "#000";
+            win.document.body.style.display = "flex"; win.document.body.style.justifyContent = "center";
+            win.document.body.style.alignItems = "center"; win.document.body.appendChild(img);
+        };
+
+        function makeLink(text, parent) {
+            if (!text || text.indexOf("data:image") === 0) return;
+            var pattern = new RegExp("((https?:\\/\\/)|(www\\.)|([a-zA-Z0-9.-]+\\.(com|net|org|kr|io|me|co.kr)[^\\s]*))", "gi");
+            var match; var lastIdx = 0;
+            while ((match = pattern.exec(text)) !== null) {
+                parent.appendChild(document.createTextNode(text.substring(lastIdx, match.index)));
+                var span = document.createElement("span");
+                span.className = "sns-link";
+                span.innerText = match[0];
+                const url = match[0];
+                span.onclick = function(e) { e.stopPropagation(); window.safeGo(url); };
+                parent.appendChild(span);
+                lastIdx = pattern.lastIndex;
+            }
+            parent.appendChild(document.createTextNode(text.substring(lastIdx)));
+        }
+
+        onSnapshot(visitorsCol, function(snapshot) {
+            const board = document.getElementById("board");
+            const dataMap = {};
+            snapshot.forEach(d => {
+                const data = d.data();
+                if (!dataMap[data.date]) dataMap[data.date] = [];
+                dataMap[data.date].push({ id: d.id, ...data });
+            });
+
+            const sortedDates = Object.keys(dataMap).sort((a, b) => new Date(b) - new Date(a));
+            board.innerHTML = "";
+
+            sortedDates.forEach(date => {
+                dataMap[date].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+                const block = document.createElement("div");
+                block.className = "w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4";
+                if (collapsedDates.has(date)) block.classList.add("is-collapsed");
+
+                const header = document.createElement("div");
+                header.className = "p-4 bg-slate-50 flex items-center justify-between border-b cursor-pointer";
+                header.innerHTML = '<div class="flex items-center gap-3"><span class="toggle-icon text-slate-400">▼</span><span class="font-black text-slate-700">' + date + '</span><span class="text-xs bg-white border px-2 py-0.5 rounded-full text-slate-400">' + dataMap[date].length + '명</span></div>';
+                
+                const delAll = document.createElement("button");
+                delAll.className = "text-[11px] text-red-400 font-bold px-3 py-1 hover:bg-red-50 rounded-lg";
+                delAll.innerText = "전체 삭제";
+                delAll.onclick = async (e) => {
+                    e.stopPropagation();
+                    if(confirm("모두 삭제?")) {
+                        const items = [...dataMap[date]]; updateHistory({ type: 'delete', data: items });
+                        for(let t of items) await deleteDoc(doc(db, "visitors", t.id));
+                    }
+                };
+                header.append(delAll);
+
+                const content = document.createElement("div");
+                content.className = "content-body " + (collapsedDates.has(date) ? "collapsed-content" : "");
+                header.onclick = () => {
+                    if (collapsedDates.has(date)) collapsedDates.delete(date); else collapsedDates.add(date);
+                    block.classList.toggle("is-collapsed"); content.classList.toggle("collapsed-content");
+                };
+
+                const sHead = document.createElement("div");
+                sHead.className = "grid-master px-6 py-2 bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase";
+                sHead.innerHTML = '<span>체크</span><span>ID / 이름</span><span>SNS 계정</span><span>시간</span><span>기프트</span><span>비고(Others)</span><span></span>';
+                content.appendChild(sHead);
+
+                const list = document.createElement("div");
+                list.id = date; list.className = "p-2 space-y-1";
+
+                dataMap[date].forEach(v => {
+                    const card = document.createElement("div");
+                    card.className = "visitor-card grid-master px-4 py-2 border border-transparent rounded-xl hover:border-blue-200 transition-all bg-white";
+                    card.setAttribute("data-id", v.id);
+                    
+                    // [변경] 체크 여부에 따른 완료 스타일 적용
+                    if (v.gift_ds) card.classList.add("completed-row");
+                    if (activeId === v.id) card.classList.add("active-card");
+
+                    const chk = document.createElement("input");
+                    chk.type = "checkbox"; chk.className = "w-5 h-5 accent-blue-600 cursor-pointer justify-self-center";
+                    chk.checked = v.gift_ds;
+                    chk.onchange = () => updateDoc(doc(db, "visitors", v.id), { gift_ds: chk.checked });
+
+                    const name = document.createElement("div");
+                    name.className = "font-bold text-slate-800 text-sm outline-none";
+                    name.contentEditable = "true"; name.innerText = v.id_name || "이름";
+                    name.onfocus = () => { activeId = v.id; card.classList.add("active-card"); };
+                    name.onblur = () => updateDoc(doc(db, "visitors", v.id), { id_name: name.innerText });
+
+                    const sns = document.createElement("div");
+                    sns.className = "outline-none sns-link-container";
+                    sns.contentEditable = "true";
+                    makeLink(v.sns, sns);
+                    sns.onblur = () => updateDoc(doc(db, "visitors", v.id), { sns: sns.innerText });
+
+                    const time = document.createElement("div");
+                    time.className = "text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-lg text-center outline-none";
+                    time.contentEditable = "true"; time.innerText = v.time || "00:00";
+                    time.onblur = () => updateDoc(doc(db, "visitors", v.id), { time: time.innerText });
+
+                    const gift = document.createElement("div");
+                    gift.className = "text-[11px] text-slate-500 font-bold text-center outline-none";
+                    gift.contentEditable = "true"; gift.innerText = v.gift || "-";
+                    gift.onblur = () => updateDoc(doc(db, "visitors", v.id), { gift: gift.innerText });
+
+                    const other = document.createElement("div");
+                    other.className = "text-xs text-slate-500 outline-none truncate border-l pl-2";
+                    other.contentEditable = "true"; other.innerText = v.gift_others || "-";
+                    other.onblur = () => updateDoc(doc(db, "visitors", v.id), { gift_others: other.innerText });
+                    
+                    if (v.image) {
+                        const img = document.createElement("img"); img.src = v.image; img.className = "img-preview";
+                        img.onclick = (e) => { e.stopPropagation(); window.zoomImg(img.src); };
+                        other.appendChild(img);
+                    }
+
+                    const del = document.createElement("button");
+                    del.innerText = "✕"; del.className = "text-slate-300 hover:text-red-500 font-bold justify-self-center";
+                    del.onclick = () => { updateHistory({ type: 'delete', data: [{...v}] }); deleteDoc(doc(db, "visitors", v.id)); };
+
+                    card.append(chk, name, sns, time, gift, other, del);
+                    list.appendChild(card);
+                });
+
+                content.append(list); block.append(header, content); board.appendChild(block);
+
+                new Sortable(list, {
+                    group: "visitors", animation: 150, filter: "[contenteditable='true'], input, button", preventOnFilter: false,
+                    onEnd: async (e) => {
+                        if (e.to.id) {
+                            await updateDoc(doc(db, "visitors", e.item.getAttribute("data-id")), { date: e.to.id });
+                            Array.from(e.to.children).forEach((c, i) => updateDoc(doc(db, "visitors", c.getAttribute("data-id")), { order: i }));
+                        }
+                    }
+                });
+            });
+        });
+
+        document.getElementById("undo-btn").onclick = async function() {
+            if(!historyAction) return;
+            if (historyAction.type === 'delete') for(let i of historyAction.data) { const {id, ...cl} = i; await addDoc(visitorsCol, cl); }
+            else if (historyAction.type === 'add') await deleteDoc(doc(db, "visitors", historyAction.id));
+            updateHistory(null);
+        };
+
+        window.addEventListener("paste", function(e) {
+            const item = Array.from(e.clipboardData.items).find(i => i.type.indexOf("image") !== -1);
+            if (item) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image(); img.src = ev.target.result;
+                    img.onload = async () => {
+                        const cvs = document.createElement("canvas");
+                        const maxW = 800; let w = img.width, h = img.height;
+                        if (w > maxW) { h *= maxW / w; w = maxW; }
+                        cvs.width = w; cvs.height = h;
+                        cvs.getContext("2d").drawImage(img, 0, 0, w, h);
+                        const b64 = cvs.toDataURL('image/jpeg', 0.7);
+                        if (activeId) await updateDoc(doc(db, "visitors", activeId), { image: b64 });
+                        else {
+                            const n = await addDoc(visitorsCol, { id_name: "이미지 기록", sns: "", date: new Date().toISOString().substring(0, 10), time: "", gift: "디에스 3종", gift_ds: false, gift_others: "", order: 999, image: b64 });
+                            updateHistory({ type: 'add', id: n.id });
+                        }
+                    };
+                };
+                reader.readAsDataURL(item.getAsFile());
+            }
+        });
+
+        document.getElementById("add-btn").onclick = async () => {
+            const n = document.getElementById("new-id-name"), s = document.getElementById("new-sns"), d = document.getElementById("new-date"), t = document.getElementById("new-time"), g = document.getElementById("new-gift"), o = document.getElementById("new-others");
+            if (n.value) {
+                const res = await addDoc(visitorsCol, { id_name: n.value, sns: s.value, date: d.value, time: t.value, gift: g.value, gift_ds: false, gift_others: o.value, order: 0, image: "" });
+                updateHistory({ type: 'add', id: res.id });
+                n.value = ""; s.value = ""; o.value = "";
+            }
+        };
+    </script>
+</body>
+</html>

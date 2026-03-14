@@ -1,0 +1,9 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyCaUc4AWnRLebW6FR4ASnEtwra5fR2P2xk",
+  authDomain: "influencer-sch.firebaseapp.com",
+  projectId: "influencer-sch",
+  storageBucket: "influencer-sch.firebasestorage.app",
+  messagingSenderId: "133974591166",
+  appId: "1:133974591166:web:80f12b43fbaad5af8800ef"
+};
+
