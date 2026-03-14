@@ -3,41 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>인플루언서 관리</title>
+    <title>inf-list | 인플루언서 방문 관리</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         .ghost { opacity: 0.3; background: #f0f7ff; border: 2px dashed #3b82f6; }
         
-        /* [개선] 완료된 행 스타일: 배경 음영 + 투명도 + 회색조 */
+        /* [개선] 완료된 행 스타일: 배경 음영 + 투명도 + 이름 취소선 */
         .completed-row { 
-            background-color: #f1f5f9 !important; /* 연한 회색 배경 */
-            opacity: 0.5; /* 비활성화 느낌 */
-            filter: grayscale(0.5); /* 색감을 살짝 뺌 */
+            background-color: #f8fafc !important; 
+            opacity: 0.5; 
+            filter: grayscale(0.5); 
             transition: all 0.2s ease;
         }
-        .completed-row .font-bold { text-decoration: line-through; color: #94a3b8; }
-        .completed-row .sns-link { color: #94a3b8 !important; pointer-events: none; } /* 링크 클릭 방지 */
+        /* 체크된 줄의 '이름' 칸에 강제로 취소선 적용 */
+        .completed-row .name-field { 
+            text-decoration: line-through !important; 
+            color: #94a3b8 !important; 
+        }
 
         .collapsed-content { display: none; }
         .toggle-icon { transition: transform 0.2s; display: inline-block; }
         .is-collapsed .toggle-icon { transform: rotate(-90deg); }
         
+        .today-block { border: 3px solid #3b82f6 !important; box-shadow: 0 0 20px rgba(59, 130, 246, 0.15) !important; }
+        .today-badge { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; margin-left: 8px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
         .sns-link-container { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
         .sns-link { color: #3b82f6 !important; font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 11px; }
-        
         .active-card { border-color: #3b82f6 !important; background-color: #f0f7ff !important; }
         
         .grid-master { 
             display: grid; 
-            grid-template-columns: 40px 120px 1.5fr 80px 100px 1fr 40px; 
+            grid-template-columns: 40px 150px 1.5fr 80px 120px 1fr 40px; 
             align-items: center; 
             gap: 12px; 
             width: 100%;
         }
 
         .img-preview { max-width: 120px; max-height: 80px; border-radius: 4px; border: 1px solid #e2e8f0; cursor: zoom-in; margin-top: 6px; }
-        body.dragging-mode .collapsed-content { display: block !important; min-height: 50px; border: 2px dashed #3b82f6; }
         ::-webkit-scrollbar { height: 8px; width: 8px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
@@ -48,14 +53,14 @@
         <h1 class="text-2xl font-black text-slate-800 mb-6">🏥 인플루언서 방문 관리</h1>
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-4 text-left">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                <input id="new-id-name" type="text" placeholder="ID / 이름" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm focus:ring-1 focus:ring-blue-300">
-                <input id="new-sns" type="text" placeholder="SNS 링크" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm md:col-span-2 focus:ring-1 focus:ring-blue-300">
+                <input id="new-id-name" type="text" placeholder="ID / 이름" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
+                <input id="new-sns" type="text" placeholder="SNS 링크" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm md:col-span-2">
                 <input id="new-date" type="date" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
                 <input id="new-time" type="time" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
             </div>
             <div class="flex flex-col md:flex-row gap-3">
-                <input id="new-gift" type="text" placeholder="기프트 (예: 디에스 3종)" class="flex-[1] p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm focus:ring-1 focus:ring-blue-300" value="디에스 3종">
-                <input id="new-others" type="text" placeholder="비고 / 기타 내역" class="flex-[2] p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm focus:ring-1 focus:ring-blue-300">
+                <input id="new-gift" type="text" placeholder="기프트 (예: 디에스 3종)" class="flex-[1] p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm" value="디에스 3종">
+                <input id="new-others" type="text" placeholder="비고 / 기타 내역" class="flex-[2] p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
                 <div class="flex gap-2">
                     <button id="add-btn" class="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 text-sm shadow-md transition-all">등록</button>
                     <button id="undo-btn" class="bg-white text-slate-400 px-4 py-2.5 rounded-xl font-bold border border-slate-200 text-sm disabled:opacity-30" disabled>되돌리기</button>
@@ -86,8 +91,14 @@
         const collapsedDates = new Set();
         let historyAction = null; 
         let activeId = null;
+        let isFirstLoad = true;
 
-        document.getElementById("new-date").value = new Date().toISOString().substring(0, 10);
+        const getTodayKST = () => {
+            return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+        };
+
+        const todayKST = getTodayKST();
+        document.getElementById("new-date").value = todayKST;
 
         function updateHistory(action) {
             historyAction = action;
@@ -136,21 +147,38 @@
             });
 
             const sortedDates = Object.keys(dataMap).sort((a, b) => new Date(b) - new Date(a));
+            
+            if (isFirstLoad) {
+                sortedDates.forEach(date => {
+                    if (date !== todayKST) collapsedDates.add(date);
+                });
+            }
+
             board.innerHTML = "";
 
             sortedDates.forEach(date => {
                 dataMap[date].sort((a, b) => (a.order || 0) - (b.order || 0));
 
                 const block = document.createElement("div");
-                block.className = "w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4";
+                block.className = "w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4 transition-all";
+                
+                const isToday = (date === todayKST);
+                if (isToday) block.classList.add("today-block");
                 if (collapsedDates.has(date)) block.classList.add("is-collapsed");
 
                 const header = document.createElement("div");
                 header.className = "p-4 bg-slate-50 flex items-center justify-between border-b cursor-pointer";
-                header.innerHTML = '<div class="flex items-center gap-3"><span class="toggle-icon text-slate-400">▼</span><span class="font-black text-slate-700">' + date + '</span><span class="text-xs bg-white border px-2 py-0.5 rounded-full text-slate-400">' + dataMap[date].length + '명</span></div>';
+                
+                const headLeft = document.createElement("div");
+                headLeft.className = "flex items-center gap-3";
+                
+                let headHTML = '<span class="toggle-icon text-slate-400">▼</span><span class="font-black text-slate-700">' + date + '</span>';
+                if (isToday) headHTML += '<span class="today-badge">TODAY</span>';
+                headHTML += '<span class="text-xs bg-white border px-2 py-0.5 rounded-full text-slate-400">' + dataMap[date].length + '명</span>';
+                headLeft.innerHTML = headHTML;
                 
                 const delAll = document.createElement("button");
-                delAll.className = "text-[11px] text-red-400 font-bold px-3 py-1 hover:bg-red-50 rounded-lg";
+                delAll.className = "text-[11px] text-red-400 font-bold px-3 py-1";
                 delAll.innerText = "전체 삭제";
                 delAll.onclick = async (e) => {
                     e.stopPropagation();
@@ -159,10 +187,11 @@
                         for(let t of items) await deleteDoc(doc(db, "visitors", t.id));
                     }
                 };
-                header.append(delAll);
+                header.append(headLeft, delAll);
 
                 const content = document.createElement("div");
                 content.className = "content-body " + (collapsedDates.has(date) ? "collapsed-content" : "");
+
                 header.onclick = () => {
                     if (collapsedDates.has(date)) collapsedDates.delete(date); else collapsedDates.add(date);
                     block.classList.toggle("is-collapsed"); content.classList.toggle("collapsed-content");
@@ -180,8 +209,6 @@
                     const card = document.createElement("div");
                     card.className = "visitor-card grid-master px-4 py-2 border border-transparent rounded-xl hover:border-blue-200 transition-all bg-white";
                     card.setAttribute("data-id", v.id);
-                    
-                    // [변경] 체크 여부에 따른 완료 스타일 적용
                     if (v.gift_ds) card.classList.add("completed-row");
                     if (activeId === v.id) card.classList.add("active-card");
 
@@ -190,8 +217,9 @@
                     chk.checked = v.gift_ds;
                     chk.onchange = () => updateDoc(doc(db, "visitors", v.id), { gift_ds: chk.checked });
 
+                    // [수정] name-field 클래스 부여하여 취소선 적용
                     const name = document.createElement("div");
-                    name.className = "font-bold text-slate-800 text-sm outline-none";
+                    name.className = "name-field font-bold text-slate-800 text-sm outline-none";
                     name.contentEditable = "true"; name.innerText = v.id_name || "이름";
                     name.onfocus = () => { activeId = v.id; card.classList.add("active-card"); };
                     name.onblur = () => updateDoc(doc(db, "visitors", v.id), { id_name: name.innerText });
@@ -217,12 +245,6 @@
                     other.contentEditable = "true"; other.innerText = v.gift_others || "-";
                     other.onblur = () => updateDoc(doc(db, "visitors", v.id), { gift_others: other.innerText });
                     
-                    if (v.image) {
-                        const img = document.createElement("img"); img.src = v.image; img.className = "img-preview";
-                        img.onclick = (e) => { e.stopPropagation(); window.zoomImg(img.src); };
-                        other.appendChild(img);
-                    }
-
                     const del = document.createElement("button");
                     del.innerText = "✕"; del.className = "text-slate-300 hover:text-red-500 font-bold justify-self-center";
                     del.onclick = () => { updateHistory({ type: 'delete', data: [{...v}] }); deleteDoc(doc(db, "visitors", v.id)); };
@@ -243,6 +265,14 @@
                     }
                 });
             });
+
+            if (isFirstLoad) {
+                setTimeout(() => {
+                    const todayEl = document.querySelector('.today-block');
+                    if (todayEl) todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    isFirstLoad = false;
+                }, 500);
+            }
         });
 
         document.getElementById("undo-btn").onclick = async function() {
@@ -267,7 +297,7 @@
                         const b64 = cvs.toDataURL('image/jpeg', 0.7);
                         if (activeId) await updateDoc(doc(db, "visitors", activeId), { image: b64 });
                         else {
-                            const n = await addDoc(visitorsCol, { id_name: "이미지 기록", sns: "", date: new Date().toISOString().substring(0, 10), time: "", gift: "디에스 3종", gift_ds: false, gift_others: "", order: 999, image: b64 });
+                            const n = await addDoc(visitorsCol, { id_name: "이미지 기록", sns: "", date: getTodayKST(), time: "", gift: "디에스 3종", gift_ds: false, gift_others: "", order: 999, image: b64 });
                             updateHistory({ type: 'add', id: n.id });
                         }
                     };
