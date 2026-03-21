@@ -1,0 +1,8 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyDYjnMVCoV7siAWPBIlXcAmxxniFrSNlGg",
+  authDomain: "todolist-db16c.firebaseapp.com",
+  projectId: "todolist-db16c",
+  storageBucket: "todolist-db16c.firebasestorage.app",
+  messagingSenderId: "882821223652",
+  appId: "1:882821223652:web:a17f286a91ebf4751488f1"
+};

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>inf-list | 디자인 업무현황</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        .ghost { opacity: 0.3; background: #f0f7ff; border: 2px dashed #3b82f6; }
+        .line-through { text-decoration: line-through; color: #94a3b8; opacity: 0.5; }
+        .collapsed-content { display: none; }
+        .toggle-icon { transition: transform 0.2s; display: inline-block; }
+        .is-collapsed .toggle-icon { transform: rotate(-90deg); }
+        .task-link { color: #2563eb; text-decoration: underline; font-weight: 600; cursor: pointer; }
+        .img-container img { max-width: 100%; max-height: 600px; border-radius: 8px; margin-top: 10px; border: 1px solid #e2e8f0; cursor: zoom-in; display: block; background: #f8fafc; image-rendering: -webkit-optimize-contrast; }
+        .active-card { border-color: #3b82f6 !important; box-shadow: 0 0 0 2px #bfdbfe !important; }
+        .today-block { border: 3px solid #3b82f6 !important; box-shadow: 0 0 20px rgba(59, 130, 246, 0.15) !important; }
+        .today-badge { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; margin-left: 8px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        ::-webkit-scrollbar { height: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* 고정 링크 버튼 스타일 */
+        .drive-link { 
+            display: inline-flex; align-items: center; gap: 8px; 
+            background: #ffffff; color: #1e293b; padding: 8px 16px; 
+            border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; 
+            font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .drive-link:hover { background: #f8fafc; border-color: #3b82f6; color: #3b82f6; transform: translateY(-1px); }
+    </style>
+</head>
+<body class="bg-[#f0f2f5] p-4 md:p-8">
+
+    <header class="max-w-4xl mx-auto mb-8 text-center flex flex-col items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-slate-800">디자인-김지원 업무현황</h1>
+            <a href="https://drive.google.com/drive/folders/1oMUQNLeDIZpad2Obx0L8yZLOK6lxuH5k" target="_blank" class="drive-link mt-3">
+                <span class="text-lg">📁</span> 디자인 공유 드라이브 바로가기
+            </a>
+        </div>
+
+        <div class="w-full flex flex-wrap gap-2 p-4 bg-white rounded-xl shadow-sm border border-slate-200 text-left items-center">
+            <input id="new-task-title" type="text" placeholder="내용 입력 (이미지는 Ctrl+V)" class="flex-1 min-w-[200px] p-2 bg-slate-50 rounded-lg border-none outline-none text-sm">
+            <input id="new-task-date" type="date" class="p-2 bg-slate-50 rounded-lg border-none outline-none text-sm">
+            <div class="flex gap-2">
+                <button id="add-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 text-sm shadow-sm transition-all">추가</button>
+                <button id="undo-btn" class="bg-slate-100 text-slate-400 px-4 py-2 rounded-lg font-bold hover:bg-slate-200 text-sm border border-slate-200 transition-all cursor-not-allowed" disabled>되돌리기</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="board" class="max-w-4xl mx-auto flex flex-col gap-4 pb-24"></main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, updateDoc, doc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYjnMVCoV7siAWPBlXCAmxxniFrSNlGg",
+            authDomain: "todolist-db16c.firebaseapp.com",
+            projectId: "todolist-db16c",
+            storageBucket: "todolist-db16c.firebasestorage.app",
+            messagingSenderId: "882821223652",
+            appId: "1:882821223652:web:a17f286a91ebf4751488f1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tasksCol = collection(db, "tasks");
+
+        const collapsedDates = new Set();
+        let historyAction = null; 
+        let activeTaskId = null;
+        let isFirstLoad = true;
+
+        const getTodayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+        const todayKST = getTodayKST();
+        document.getElementById("new-task-date").value = todayKST;
+
+        function updateHistory(action) {
+            historyAction = action;
+            const btn = document.getElementById("undo-btn");
+            btn.disabled = !action;
+            if (action) { btn.classList.remove("text-slate-400"); btn.classList.add("text-slate-800"); }
+            else { btn.classList.add("text-slate-400"); btn.classList.remove("text-slate-800"); }
+        }
+
+        window.safeGo = (url) => {
+            var t = url.trim();
+            if (t.indexOf("http") !== 0) t = "https://" + t;
+            window.open(t, "_blank");
+        };
+
+        window.zoomImg = (src) => {
+            const win = window.open("");
+            win.document.body.style.margin = "0"; win.document.body.style.background = "#000";
+            win.document.body.style.display = "flex"; win.document.body.style.justifyContent = "center";
+            win.document.body.style.alignItems = "center";
+            const img = win.document.createElement("img");
+            img.src = src; img.style.maxWidth = "100%"; img.style.maxHeight = "100vh"; img.style.cursor = "zoom-out";
+            img.onclick = () => win.close();
+            win.document.body.appendChild(img);
+        };
+
+        function renderTextWithLinks(text, container) {
+            container.innerHTML = "";
+            if (!text) return;
+            const pattern = new RegExp("((https?:\\/\\/)|(www\\.)|([a-zA-Z0-9.-]+\\.(com|net|org|kr|io|me|co.kr)[^\\s]*))", "gi");
+            let lastIdx = 0; let match;
+            while ((match = pattern.exec(text)) !== null) {
+                container.appendChild(document.createTextNode(text.substring(lastIdx, match.index)));
+                const span = document.createElement("span");
+                span.className = "task-link"; span.textContent = match[0];
+                const url = match[0];
+                span.onclick = (e) => { e.stopPropagation(); window.safeGo(url); };
+                container.appendChild(span);
+                lastIdx = pattern.lastIndex;
+            }
+            container.appendChild(document.createTextNode(text.substring(lastIdx)));
+        }
+
+        onSnapshot(tasksCol, (snapshot) => {
+            const board = document.getElementById("board");
+            const dataMap = {};
+            snapshot.forEach(d => {
+                const data = d.data();
+                if (!dataMap[data.date]) dataMap[data.date] = [];
+                dataMap[data.date].push({ id: d.id, ...data });
+            });
+
+            const sortedDates = Object.keys(dataMap).sort((a, b) => new Date(b) - new Date(a));
+            if (isFirstLoad) {
+                sortedDates.forEach(date => { if (date !== todayKST) collapsedDates.add(date); });
+            }
+
+            board.innerHTML = "";
+
+            sortedDates.forEach(date => {
+                dataMap[date].sort((a, b) => (a.order || 0) - (b.order || 0));
+                const isToday = (date === todayKST);
+                const block = document.createElement("div");
+                block.className = "w-full bg-white rounded-xl border border-slate-300 shadow-sm overflow-hidden mb-2 transition-all";
+                if (isToday) block.classList.add("today-block");
+                if (collapsedDates.has(date)) block.classList.add("is-collapsed");
+
+                const header = document.createElement("div");
+                header.className = "p-4 bg-slate-50 flex items-center justify-between border-b cursor-pointer hover:bg-slate-100";
+                
+                const headLeft = document.createElement("div");
+                headLeft.className = "flex items-center gap-3";
+                const arrow = document.createElement("span"); arrow.className = "toggle-icon text-slate-400"; arrow.textContent = "▼";
+                const dateTxt = document.createElement("span"); dateTxt.className = "font-bold text-slate-700"; dateTxt.textContent = "📅 " + date;
+                headLeft.appendChild(arrow); headLeft.appendChild(dateTxt);
+                if (isToday) {
+                    const badge = document.createElement("span"); badge.className = "today-badge"; badge.textContent = "오늘"; headLeft.appendChild(badge);
+                }
+                const count = document.createElement("span"); count.className = "text-[10px] bg-slate-200 px-2 py-0.5 rounded-full"; count.textContent = dataMap[date].length + "개";
+                headLeft.appendChild(count);
+
+                const delAllBtn = document.createElement("button");
+                delAllBtn.className = "text-[10px] text-red-400 hover:text-red-600 font-bold border border-red-100 px-2 py-1 rounded bg-white";
+                delAllBtn.textContent = "전체 삭제";
+                delAllBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    if(confirm("모든 업무를 삭제할까요?")) {
+                        const items = [...dataMap[date]]; updateHistory({ type: 'delete', data: items });
+                        for(let t of items) await deleteDoc(doc(db, "tasks", t.id));
+                    }
+                };
+                header.append(headLeft, delAllBtn);
+
+                const contentBody = document.createElement("div");
+                contentBody.className = "content-body" + (collapsedDates.has(date) ? " collapsed-content" : "");
+                header.onclick = (e) => {
+                    e.stopPropagation();
+                    if (collapsedDates.has(date)) collapsedDates.delete(date); else collapsedDates.add(date);
+                    block.classList.toggle("is-collapsed"); contentBody.classList.toggle("collapsed-content");
+                };
+
+                const list = document.createElement("div");
+                list.id = date; list.className = "task-list p-4 space-y-3";
+                
+                dataMap[date].forEach(task => {
+                    const card = document.createElement("div");
+                    card.className = "task-card p-4 border border-slate-100 rounded-lg flex items-start gap-3 bg-white hover:border-blue-200 transition-all";
+                    card.setAttribute("data-id", task.id);
+                    card.setAttribute("data-order", task.order || 0);
+                    if (activeTaskId === task.id) card.classList.add("active-card");
+                    
+                    const chk = document.createElement("input");
+                    chk.type = "checkbox"; chk.className = "mt-1 w-5 h-5 rounded cursor-pointer";
+                    chk.checked = task.done;
+                    chk.onchange = () => updateDoc(doc(db, "tasks", task.id), { done: chk.checked });
+                    card.appendChild(chk);
+
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "flex-1 img-container";
+                    if (!task.title?.startsWith("data:image")) {
+                        const txt = document.createElement("div");
+                        txt.className = "text-sm text-slate-700" + (task.done ? " line-through" : "");
+                        renderTextWithLinks(task.title || "", txt);
+                        txt.contentEditable = "true"; txt.style.outline = "none";
+                        txt.onfocus = () => { activeTaskId = task.id; document.getElementById("new-task-date").value = date; document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active-card')); card.classList.add('active-card'); };
+                        txt.onblur = () => { if (txt.textContent !== task.title) updateDoc(doc(db, "tasks", task.id), { title: txt.textContent }); };
+                        wrapper.appendChild(txt);
+                    } else {
+                        const img = document.createElement("img"); img.src = task.title; img.onclick = () => window.zoomImg(img.src); wrapper.appendChild(img);
+                    }
+                    if (task.image) {
+                        const img = document.createElement("img"); img.src = task.image; img.onclick = () => window.zoomImg(img.src); wrapper.appendChild(img);
+                    }
+                    card.appendChild(wrapper);
+
+                    const del = document.createElement("button");
+                    del.textContent = "✕"; del.className = "text-slate-300 hover:text-red-500 font-bold px-1 ml-2";
+                    del.onclick = (e) => { e.stopPropagation(); updateHistory({ type: 'delete', data: [{...task}] }); deleteDoc(doc(db, "tasks", task.id)); };
+                    card.appendChild(del);
+                    list.appendChild(card);
+                });
+                
+                contentBody.appendChild(list);
+                const quickArea = document.createElement("div");
+                quickArea.className = "quick-area p-4 bg-slate-50 border-t";
+                const qIn = document.createElement("input");
+                qIn.className = "w-full p-2 text-xs border border-slate-200 rounded-lg outline-none bg-white";
+                qIn.placeholder = "+ 새 업무 입력 (Enter)";
+                qIn.onfocus = () => { activeTaskId = null; document.getElementById("new-task-date").value = date; document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active-card')); };
+                qIn.onkeypress = async (e) => { if (e.key === "Enter" && qIn.value) { const res = await addDoc(tasksCol, { title: qIn.value, date: date, done: false, createdAt: Date.now(), order: dataMap[date].length, image: "" }); updateHistory({ type: 'add', id: res.id }); qIn.value = ""; } };
+                quickArea.appendChild(qIn);
+                contentBody.appendChild(quickArea);
+                block.append(header, contentBody);
+                board.appendChild(block);
+
+                new Sortable(list, {
+                    group: "tasks", animation: 150, filter: "[contenteditable='true'], img, input, button", preventOnFilter: false,
+                    onEnd: async (evt) => { 
+                        const tid = evt.item.getAttribute("data-id"); const oldD = evt.from.id; const newD = evt.to.id;
+                        if (oldD !== newD || evt.oldIndex !== evt.newIndex) {
+                            updateHistory({ type: 'move', id: tid, fromDate: oldD, fromOrder: parseInt(evt.item.getAttribute("data-order")), toDate: newD });
+                            await updateDoc(doc(db, "tasks", tid), { date: newD });
+                            Array.from(evt.to.children).forEach(async (item, i) => { const id = item.getAttribute("data-id"); if(id) await updateDoc(doc(db, "tasks", id), { order: i }); });
+                        }
+                    }
+                });
+            });
+
+            if (isFirstLoad) {
+                setTimeout(() => {
+                    const todayEl = document.querySelector('.today-block');
+                    if (todayEl) todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    isFirstLoad = false;
+                }, 500);
+            }
+        });
+
+        document.getElementById("undo-btn").onclick = async () => {
+            if(!historyAction) return;
+            if (historyAction.type === 'delete') for(let i of historyAction.data) { const {id, ...cl} = i; await addDoc(tasksCol, cl); }
+            else if (historyAction.type === 'add') await deleteDoc(doc(db, "tasks", historyAction.id));
+            else if (historyAction.type === 'move') await updateDoc(doc(db, "tasks", historyAction.id), { date: historyAction.fromDate, order: historyAction.fromOrder });
+            updateHistory(null);
+        };
+
+        window.addEventListener("paste", (e) => {
+            const item = Array.from(e.clipboardData.items).find(i => i.type.indexOf("image") !== -1);
+            if (item) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image(); img.src = ev.target.result;
+                    img.onload = () => {
+                        const cvs = document.createElement("canvas");
+                        const maxW = 1600; let w = img.width, h = img.height;
+                        if (w > maxW) { h *= maxW / w; w = maxW; }
+                        cvs.width = w; cvs.height = h;
+                        const ctx = cvs.getContext("2d");
+                        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const base64 = cvs.toDataURL('image/jpeg', 0.9);
+                        const targetDate = document.getElementById("new-task-date").value;
+                        if (activeTaskId) updateDoc(doc(db, "tasks", activeTaskId), { image: base64 });
+                        else addDoc(tasksCol, { title: "이미지 업무", date: targetDate, done: false, createdAt: Date.now(), order: 999, image: base64 }).then(res => updateHistory({ type: 'add', id: res.id }));
+                    };
+                };
+                reader.readAsDataURL(item.getAsFile());
+            }
+        });
+
+        document.getElementById("add-btn").onclick = async () => {
+            const t = document.getElementById("new-task-title"), d = document.getElementById("new-task-date");
+            if (t.value) { const res = await addDoc(tasksCol, { title: t.value, date: d.value, done: false, createdAt: Date.now(), order: 0, image: "" }); updateHistory({ type: 'add', id: res.id }); t.value = ""; }
+        };
+    </script>
+</body>
+</html>
