@@ -4,13 +4,15 @@ let allData = []; // 필터링된 전체 데이터를 담을 변수
 // logic-ledger.js 맨 위쪽에 이렇게 되어 있는지 확인하세요!
 
 // [데이터 호출 함수] 거래처 선택 시 해당 데이터만 DB에서 쿼리하여 최적화
-async function loadLedgerData() {
+// page 매개변수에 기본값 false를 줍니다. 
+// 아무것도 안 넣고 호출하면(기존 방식) 1페이지로 가고, 
+// currentPage를 넣고 호출하면 그 페이지를 유지합니다.
+async function loadLedgerData(page = false) {
     const tableBody = document.getElementById('ledgerTableBody');
     const vendorFilter = document.getElementById('vendorFilter').value;
 
     if (!tableBody) return;
 
-    // 거래처 미선택 시 안내
     if (vendorFilter === 'none') {
         tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:50px; color:#666;">🔎 조회하실 <b>거래처를 선택</b>해 주세요.</td></tr>';
         return;
@@ -21,19 +23,24 @@ async function loadLedgerData() {
     try {
         let query = db.collection("transactions");
         
-        // [핵심] 날짜 조건을 걸지 않고 해당 거래처의 "전체" 데이터를 가져옵니다 ㅡㅡ^
         if (vendorFilter !== 'all') {
             query = query.where("vendor", "==", vendorFilter);
         }
 
-        // 잔액 계산을 위해 과거순(asc)으로 정렬하여 가져오기
         const snapshot = await query.orderBy("date", "asc").orderBy("createdAt", "asc").get();
         
-        // 획득한 데이터를 전역 변수 allData에 저장
         allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        currentPage = 1;
-        renderLedger(); // 계산 및 화면 표시 함수 호출
+        // [핵심 수정 부분] 
+        // page 인자가 전달되었다면(수정 시) 그 페이지를 유지하고, 
+        // 인자가 없다면(처음 조회 시) 1페이지로 초기화합니다.
+        if (page) {
+            currentPage = page; 
+        } else {
+            currentPage = 1;
+        }
+
+        renderLedger(); 
 
     } catch (e) {
         console.error("데이터 로드 오류:", e);
@@ -586,7 +593,8 @@ async function saveEdit() {
         await db.collection("transactions").doc(docId).update(updateData);
         alert("수정되었습니다.");
         closeEditModal();
-        loadLedgerData(); 
+        // ★ 중요: 현재 보고 있던 페이지 번호(currentPage)를 넘겨줍니다!
+        loadLedgerData(currentPage);
     } catch (e) {
         alert("수정 실패: " + e.message);
     }
