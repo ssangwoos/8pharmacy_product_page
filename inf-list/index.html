@@ -3,78 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>inf-list | 인플루언서 방문 관리</title>
+    <title>인플루언서 관리</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         .ghost { opacity: 0.3; background: #f0f7ff; border: 2px dashed #3b82f6; }
-        
-        /* [개선] 완료된 행 스타일: 배경 음영 + 투명도 + 이름 취소선 */
         .completed-row { 
-            background-color: #f8fafc !important; 
-            opacity: 0.5; 
-            filter: grayscale(0.5); 
+            background-color: #f1f5f9 !important; 
+            opacity: 0.6; 
+            filter: grayscale(0.4); 
             transition: all 0.2s ease;
         }
-        /* 체크된 줄의 '이름' 칸에 강제로 취소선 적용 */
-        .completed-row .name-field { 
-            text-decoration: line-through !important; 
-            color: #94a3b8 !important; 
-        }
+        .completed-row .font-bold { text-decoration: line-through; color: #94a3b8; }
+        .completed-row .sns-link { color: #94a3b8 !important; pointer-events: none; }
 
         .collapsed-content { display: none; }
         .toggle-icon { transition: transform 0.2s; display: inline-block; }
         .is-collapsed .toggle-icon { transform: rotate(-90deg); }
         
-        .today-block { border: 3px solid #3b82f6 !important; box-shadow: 0 0 20px rgba(59, 130, 246, 0.15) !important; }
-        .today-badge { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; margin-left: 8px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-
         .sns-link-container { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
-        .sns-link { color: #3b82f6 !important; font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 11px; }
+        .sns-link { color: #3b82f6 !important; font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 13px; }
+        
         .active-card { border-color: #3b82f6 !important; background-color: #f0f7ff !important; }
         
+        /* Grid 비율: 기프트(180px) 확대, 비고(0.7fr) 축소 */
         .grid-master { 
             display: grid; 
-            grid-template-columns: 40px 150px 1.5fr 80px 120px 1fr 40px; 
+            grid-template-columns: 40px 130px 1.2fr 90px 180px 0.7fr 40px; 
             align-items: center; 
-            gap: 12px; 
+            gap: 15px; 
             width: 100%;
         }
 
         .img-preview { max-width: 120px; max-height: 80px; border-radius: 4px; border: 1px solid #e2e8f0; cursor: zoom-in; margin-top: 6px; }
         ::-webkit-scrollbar { height: 8px; width: 8px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* [수정] 복잡한 애니메이션 제거, 단순 파란색 테두리만 */
+        .highlight-today {
+            border: 2px solid #3b82f6 !important; /* 명확한 파란색 테두리 */
+        }
     </style>
 </head>
 <body class="bg-[#f8fafc] p-4 md:p-8">
 
-    <header class="max-w-[1200px] mx-auto mb-8 text-center">
-        <h1 class="text-2xl font-black text-slate-800 mb-6">🏥 인플루언서 방문 관리</h1>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-4 text-left">
+    <header class="max-w-[1300px] mx-auto mb-8 text-center">
+        <h1 class="text-3xl font-black text-slate-800 mb-6">🏥 인플루언서 방문 관리</h1>
+        <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col gap-4 text-left">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                <input id="new-id-name" type="text" placeholder="ID / 이름" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
-                <input id="new-sns" type="text" placeholder="SNS 링크" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm md:col-span-2">
-                <input id="new-date" type="date" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
-                <input id="new-time" type="time" class="p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
+                <input id="new-id-name" type="text" placeholder="ID / 이름" class="p-3 bg-slate-50 rounded-xl border-none outline-none text-base focus:ring-2 focus:ring-blue-300">
+                <input id="new-sns" type="text" placeholder="SNS 링크" class="p-3 bg-slate-50 rounded-xl border-none outline-none text-base md:col-span-2 focus:ring-2 focus:ring-blue-300">
+                <input id="new-date" type="date" class="p-3 bg-slate-50 rounded-xl border-none outline-none text-base">
+                <input id="new-time" type="time" class="p-3 bg-slate-50 rounded-xl border-none outline-none text-base">
             </div>
             <div class="flex flex-col md:flex-row gap-3">
-                <input id="new-gift" type="text" placeholder="기프트 (예: 디에스 3종)" class="flex-[1] p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm" value="디에스 3종">
-                <input id="new-others" type="text" placeholder="비고 / 기타 내역" class="flex-[2] p-2.5 bg-slate-50 rounded-xl border-none outline-none text-sm">
+                <input id="new-gift" type="text" placeholder="기프트 (예: 디에스 3종)" class="flex-[1.5] p-3 bg-slate-50 rounded-xl border-none outline-none text-base focus:ring-2 focus:ring-blue-300" value="디에스 3종">
+                <input id="new-others" type="text" placeholder="비고 / 기타 내역" class="flex-[1] p-3 bg-slate-50 rounded-xl border-none outline-none text-base focus:ring-2 focus:ring-blue-300">
                 <div class="flex gap-2">
-                    <button id="add-btn" class="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 text-sm shadow-md transition-all">등록</button>
-                    <button id="undo-btn" class="bg-white text-slate-400 px-4 py-2.5 rounded-xl font-bold border border-slate-200 text-sm disabled:opacity-30" disabled>되돌리기</button>
+                    <button id="add-btn" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 text-base shadow-lg transition-all">등록</button>
+                    <button id="undo-btn" class="bg-white text-slate-400 px-4 py-3 rounded-xl font-bold border border-slate-200 text-base disabled:opacity-30" disabled>되돌리기</button>
                 </div>
             </div>
         </div>
     </header>
 
-    <main id="board" class="max-w-[1200px] mx-auto flex flex-col gap-4 pb-24"></main>
+    <main id="board" class="max-w-[1300px] mx-auto flex flex-col gap-5 pb-24"></main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // Firebase 설정 (기존과 동일)
         const firebaseConfig = {
             apiKey: "AIzaSyDYjnMVCoV7siAWPBlXCAmxxniFrSNlGg",
             authDomain: "todolist-db16c.firebaseapp.com",
@@ -91,15 +90,12 @@
         const collapsedDates = new Set();
         let historyAction = null; 
         let activeId = null;
-        let isFirstLoad = true;
+        let isFirstLoad = true; // 첫 로딩 확인용
 
-        const getTodayKST = () => {
-            return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
-        };
+        const todayStr = new Date().toISOString().substring(0, 10);
+        document.getElementById("new-date").value = todayStr;
 
-        const todayKST = getTodayKST();
-        document.getElementById("new-date").value = todayKST;
-
+        // --- 유틸리티 함수들 ---
         function updateHistory(action) {
             historyAction = action;
             document.getElementById("undo-btn").disabled = !action;
@@ -136,118 +132,133 @@
             }
             parent.appendChild(document.createTextNode(text.substring(lastIdx)));
         }
+        // --------------------
 
+        // 실시간 데이터 감시 및 렌더링
         onSnapshot(visitorsCol, function(snapshot) {
             const board = document.getElementById("board");
             const dataMap = {};
+            
+            // 데이터 그룹화 및 오늘 제외 자동 접기 설정
             snapshot.forEach(d => {
                 const data = d.data();
-                if (!dataMap[data.date]) dataMap[data.date] = [];
+                if (!dataMap[data.date]) {
+                    dataMap[data.date] = [];
+                    // 처음 로딩 시 오늘이 아닌 날짜는 접힘 목록에 추가
+                    if (isFirstLoad && data.date !== todayStr) {
+                        collapsedDates.add(data.date);
+                    }
+                }
                 dataMap[data.date].push({ id: d.id, ...data });
             });
 
+            // 날짜 내림차순 정렬 (최신 날짜가 위로)
             const sortedDates = Object.keys(dataMap).sort((a, b) => new Date(b) - new Date(a));
-            
-            if (isFirstLoad) {
-                sortedDates.forEach(date => {
-                    if (date !== todayKST) collapsedDates.add(date);
-                });
-            }
-
             board.innerHTML = "";
 
             sortedDates.forEach(date => {
+                // 해당 날짜 내에서 'order' 순으로 정렬
                 dataMap[date].sort((a, b) => (a.order || 0) - (b.order || 0));
 
                 const block = document.createElement("div");
+                block.id = `section-${date}`; // 포커싱용 ID
                 block.className = "w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4 transition-all";
-                
-                const isToday = (date === todayKST);
-                if (isToday) block.classList.add("today-block");
                 if (collapsedDates.has(date)) block.classList.add("is-collapsed");
 
+                // 날짜 헤더 (클릭 시 접기/펴기)
                 const header = document.createElement("div");
                 header.className = "p-4 bg-slate-50 flex items-center justify-between border-b cursor-pointer";
-                
-                const headLeft = document.createElement("div");
-                headLeft.className = "flex items-center gap-3";
-                
-                let headHTML = '<span class="toggle-icon text-slate-400">▼</span><span class="font-black text-slate-700">' + date + '</span>';
-                if (isToday) headHTML += '<span class="today-badge">TODAY</span>';
-                headHTML += '<span class="text-xs bg-white border px-2 py-0.5 rounded-full text-slate-400">' + dataMap[date].length + '명</span>';
-                headLeft.innerHTML = headHTML;
+                header.innerHTML = `<div class="flex items-center gap-3">
+                    <span class="toggle-icon text-slate-400">▼</span>
+                    <span class="font-black text-slate-700 text-lg">${date}</span>
+                    <span class="text-sm bg-white border px-3 py-1 rounded-full text-blue-500 font-bold">${dataMap[date].length}명</span>
+                </div>`;
                 
                 const delAll = document.createElement("button");
-                delAll.className = "text-[11px] text-red-400 font-bold px-3 py-1";
+                delAll.className = "text-sm text-red-400 font-bold px-3 py-1 hover:bg-red-50 rounded-lg";
                 delAll.innerText = "전체 삭제";
                 delAll.onclick = async (e) => {
                     e.stopPropagation();
-                    if(confirm("모두 삭제?")) {
+                    if(confirm("이 날짜의 모든 기록을 삭제할까요?")) {
                         const items = [...dataMap[date]]; updateHistory({ type: 'delete', data: items });
                         for(let t of items) await deleteDoc(doc(db, "visitors", t.id));
                     }
                 };
-                header.append(headLeft, delAll);
+                header.append(delAll);
 
                 const content = document.createElement("div");
                 content.className = "content-body " + (collapsedDates.has(date) ? "collapsed-content" : "");
-
                 header.onclick = () => {
                     if (collapsedDates.has(date)) collapsedDates.delete(date); else collapsedDates.add(date);
                     block.classList.toggle("is-collapsed"); content.classList.toggle("collapsed-content");
                 };
 
+                // 표 헤더
                 const sHead = document.createElement("div");
-                sHead.className = "grid-master px-6 py-2 bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase";
-                sHead.innerHTML = '<span>체크</span><span>ID / 이름</span><span>SNS 계정</span><span>시간</span><span>기프트</span><span>비고(Others)</span><span></span>';
+                sHead.className = "grid-master px-6 py-3 bg-slate-50/50 border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase";
+                sHead.innerHTML = '<span>체크</span><span>ID / 이름</span><span>SNS 계정</span><span>시간</span><span>기프트 (Gift)</span><span>비고 (Others)</span><span></span>';
                 content.appendChild(sHead);
 
+                // 방문자 목록 (드래그 앤 드롭 영역)
                 const list = document.createElement("div");
                 list.id = date; list.className = "p-2 space-y-1";
 
                 dataMap[date].forEach(v => {
                     const card = document.createElement("div");
-                    card.className = "visitor-card grid-master px-4 py-2 border border-transparent rounded-xl hover:border-blue-200 transition-all bg-white";
+                    card.className = "visitor-card grid-master px-4 py-3 border border-transparent rounded-xl hover:border-blue-200 transition-all bg-white";
                     card.setAttribute("data-id", v.id);
                     if (v.gift_ds) card.classList.add("completed-row");
                     if (activeId === v.id) card.classList.add("active-card");
 
+                    // 체크박스 (완료 처리)
                     const chk = document.createElement("input");
-                    chk.type = "checkbox"; chk.className = "w-5 h-5 accent-blue-600 cursor-pointer justify-self-center";
+                    chk.type = "checkbox"; chk.className = "w-6 h-6 accent-blue-600 cursor-pointer justify-self-center";
                     chk.checked = v.gift_ds;
                     chk.onchange = () => updateDoc(doc(db, "visitors", v.id), { gift_ds: chk.checked });
 
-                    // [수정] name-field 클래스 부여하여 취소선 적용
+                    // 이름 (수정 가능)
                     const name = document.createElement("div");
-                    name.className = "name-field font-bold text-slate-800 text-sm outline-none";
+                    name.className = "font-bold text-slate-800 text-base outline-none";
                     name.contentEditable = "true"; name.innerText = v.id_name || "이름";
                     name.onfocus = () => { activeId = v.id; card.classList.add("active-card"); };
                     name.onblur = () => updateDoc(doc(db, "visitors", v.id), { id_name: name.innerText });
 
+                    // SNS 링크 (수정 가능, 링크 자동 변환)
                     const sns = document.createElement("div");
-                    sns.className = "outline-none sns-link-container";
+                    sns.className = "outline-none sns-link-container text-sm";
                     sns.contentEditable = "true";
                     makeLink(v.sns, sns);
                     sns.onblur = () => updateDoc(doc(db, "visitors", v.id), { sns: sns.innerText });
 
+                    // 시간 (수정 가능)
                     const time = document.createElement("div");
-                    time.className = "text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-lg text-center outline-none";
+                    time.className = "text-sm font-bold text-blue-500 bg-blue-50 px-2 py-1.5 rounded-lg text-center outline-none";
                     time.contentEditable = "true"; time.innerText = v.time || "00:00";
                     time.onblur = () => updateDoc(doc(db, "visitors", v.id), { time: time.innerText });
 
+                    // 기프트 (확대됨, 수정 가능)
                     const gift = document.createElement("div");
-                    gift.className = "text-[11px] text-slate-500 font-bold text-center outline-none";
+                    gift.className = "text-[13px] text-slate-600 font-bold text-center outline-none bg-slate-50 rounded px-2 py-1";
                     gift.contentEditable = "true"; gift.innerText = v.gift || "-";
                     gift.onblur = () => updateDoc(doc(db, "visitors", v.id), { gift: gift.innerText });
 
+                    // 비고 (축소됨, 수정 가능)
                     const other = document.createElement("div");
-                    other.className = "text-xs text-slate-500 outline-none truncate border-l pl-2";
+                    other.className = "text-sm text-slate-500 outline-none truncate border-l pl-3";
                     other.contentEditable = "true"; other.innerText = v.gift_others || "-";
                     other.onblur = () => updateDoc(doc(db, "visitors", v.id), { gift_others: other.innerText });
                     
+                    // 이미지 있을 경우 미리보기 표시
+                    if (v.image) {
+                        const img = document.createElement("img"); img.src = v.image; img.className = "img-preview";
+                        img.onclick = (e) => { e.stopPropagation(); window.zoomImg(img.src); };
+                        other.appendChild(img);
+                    }
+
+                    // 개별 삭제 버튼
                     const del = document.createElement("button");
-                    del.innerText = "✕"; del.className = "text-slate-300 hover:text-red-500 font-bold justify-self-center";
-                    del.onclick = () => { updateHistory({ type: 'delete', data: [{...v}] }); deleteDoc(doc(db, "visitors", v.id)); };
+                    del.innerText = "✕"; del.className = "text-slate-300 hover:text-red-500 font-bold text-lg justify-self-center";
+                    del.onclick = () => { if(confirm("삭제하시겠습니까?")) { updateHistory({ type: 'delete', data: [{...v}] }); deleteDoc(doc(db, "visitors", v.id)); }};
 
                     card.append(chk, name, sns, time, gift, other, del);
                     list.appendChild(card);
@@ -255,10 +266,12 @@
 
                 content.append(list); block.append(header, content); board.appendChild(block);
 
+                // 드래그 앤 드롭 정렬 (SortableJS)
                 new Sortable(list, {
                     group: "visitors", animation: 150, filter: "[contenteditable='true'], input, button", preventOnFilter: false,
                     onEnd: async (e) => {
                         if (e.to.id) {
+                            // 날짜 이동 또는 순서 변경 시 Firebase 업데이트
                             await updateDoc(doc(db, "visitors", e.item.getAttribute("data-id")), { date: e.to.id });
                             Array.from(e.to.children).forEach((c, i) => updateDoc(doc(db, "visitors", c.getAttribute("data-id")), { order: i }));
                         }
@@ -266,15 +279,22 @@
                 });
             });
 
-            if (isFirstLoad) {
-                setTimeout(() => {
-                    const todayEl = document.querySelector('.today-block');
-                    if (todayEl) todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // [수정 완료] 렌더링될 때마다 오늘 날짜 섹션에 테두리 유지
+            const todaySection = document.getElementById(`section-${todayStr}`);
+            if (todaySection) {
+                todaySection.classList.add("highlight-today"); // 렌더링 시마다 테두리 적용
+                
+                // 최초 로드 시에만 스크롤 이동
+                if (isFirstLoad) {
                     isFirstLoad = false;
-                }, 500);
+                    setTimeout(() => {
+                        todaySection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 500);
+                }
             }
         });
 
+        // 되돌리기(Undo) 버튼 클릭
         document.getElementById("undo-btn").onclick = async function() {
             if(!historyAction) return;
             if (historyAction.type === 'delete') for(let i of historyAction.data) { const {id, ...cl} = i; await addDoc(visitorsCol, cl); }
@@ -282,6 +302,7 @@
             updateHistory(null);
         };
 
+        // 이미지 붙여넣기(Paste) 이벤트 처리
         window.addEventListener("paste", function(e) {
             const item = Array.from(e.clipboardData.items).find(i => i.type.indexOf("image") !== -1);
             if (item) {
@@ -289,6 +310,7 @@
                 reader.onload = (ev) => {
                     const img = new Image(); img.src = ev.target.result;
                     img.onload = async () => {
+                        // 이미지 캔버스 압축
                         const cvs = document.createElement("canvas");
                         const maxW = 800; let w = img.width, h = img.height;
                         if (w > maxW) { h *= maxW / w; w = maxW; }
@@ -297,7 +319,8 @@
                         const b64 = cvs.toDataURL('image/jpeg', 0.7);
                         if (activeId) await updateDoc(doc(db, "visitors", activeId), { image: b64 });
                         else {
-                            const n = await addDoc(visitorsCol, { id_name: "이미지 기록", sns: "", date: getTodayKST(), time: "", gift: "디에스 3종", gift_ds: false, gift_others: "", order: 999, image: b64 });
+                            // 선택된 행이 없을 경우 새로운 행으로 이미지 등록
+                            const n = await addDoc(visitorsCol, { id_name: "이미지 기록", sns: "", date: new Date().toISOString().substring(0, 10), time: "", gift: "디에스 3종", gift_ds: false, gift_others: "", order: 999, image: b64 });
                             updateHistory({ type: 'add', id: n.id });
                         }
                     };
@@ -306,11 +329,13 @@
             }
         });
 
+        // 등록 버튼 클릭 (신규 방문자 추가)
         document.getElementById("add-btn").onclick = async () => {
             const n = document.getElementById("new-id-name"), s = document.getElementById("new-sns"), d = document.getElementById("new-date"), t = document.getElementById("new-time"), g = document.getElementById("new-gift"), o = document.getElementById("new-others");
             if (n.value) {
                 const res = await addDoc(visitorsCol, { id_name: n.value, sns: s.value, date: d.value, time: t.value, gift: g.value, gift_ds: false, gift_others: o.value, order: 0, image: "" });
                 updateHistory({ type: 'add', id: res.id });
+                // 날짜, 시간, 기프트(기본값)는 남겨두고 나머지만 초기화
                 n.value = ""; s.value = ""; o.value = "";
             }
         };
