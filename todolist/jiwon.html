@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>김지원 | 디자인 업무현황</title>
+    <title>inf-list | 디자인 업무현황</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
@@ -20,15 +20,10 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         ::-webkit-scrollbar { height: 10px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        /* 고정 링크 버튼 스타일 */
-        .drive-link { 
-            display: inline-flex; align-items: center; gap: 8px; 
-            background: #ffffff; color: #1e293b; padding: 8px 16px; 
-            border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; 
-            font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
+        .drive-link { display: inline-flex; align-items: center; gap: 8px; background: #ffffff; color: #1e293b; padding: 8px 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .drive-link:hover { background: #f8fafc; border-color: #3b82f6; color: #3b82f6; transform: translateY(-1px); }
+        /* 검색창 포커스 효과 */
+        #search-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
     </style>
 </head>
 <body class="bg-[#f0f2f5] p-4 md:p-8">
@@ -39,6 +34,11 @@
             <a href="https://drive.google.com/drive/folders/1oMUQNLeDIZpad2Obx0L8yZLOK6lxuH5k" target="_blank" class="drive-link mt-3">
                 <span class="text-lg">📁</span> 디자인 공유 드라이브 바로가기
             </a>
+        </div>
+
+        <div class="w-full">
+            <input id="search-input" type="text" placeholder="🔍 업무 내용 검색 (단어 입력 시 자동 필터링)" 
+                   class="w-full p-3 bg-white rounded-xl border border-slate-200 shadow-sm outline-none text-sm transition-all">
         </div>
 
         <div class="w-full flex flex-wrap gap-2 p-4 bg-white rounded-xl shadow-sm border border-slate-200 text-left items-center">
@@ -74,6 +74,8 @@
         let historyAction = null; 
         let activeTaskId = null;
         let isFirstLoad = true;
+        let searchQuery = ""; // 검색어 상태 변수
+        let allTasks = []; // 전체 데이터를 담아둘 배열
 
         const getTodayKST = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
         const todayKST = getTodayKST();
@@ -121,21 +123,35 @@
             container.appendChild(document.createTextNode(text.substring(lastIdx)));
         }
 
-        onSnapshot(tasksCol, (snapshot) => {
+        // 렌더링 핵심 함수 분리
+        function renderBoard() {
             const board = document.getElementById("board");
             const dataMap = {};
-            snapshot.forEach(d => {
-                const data = d.data();
-                if (!dataMap[data.date]) dataMap[data.date] = [];
-                dataMap[data.date].push({ id: d.id, ...data });
+
+            // 데이터 분류 및 필터링
+            allTasks.forEach(task => {
+                const titleMatch = (task.title || "").toLowerCase().includes(searchQuery.toLowerCase());
+                // 이미지는 검색에서 제외하거나 제목이 있는 경우만 검색됨
+                if (titleMatch || searchQuery === "") {
+                    if (!dataMap[task.date]) dataMap[task.date] = [];
+                    dataMap[task.date].push(task);
+                }
             });
 
             const sortedDates = Object.keys(dataMap).sort((a, b) => new Date(b) - new Date(a));
-            if (isFirstLoad) {
+            
+            // 첫 로딩 시 오늘 외 데이터 접기 (검색 중이 아닐 때만)
+            if (isFirstLoad && searchQuery === "") {
                 sortedDates.forEach(date => { if (date !== todayKST) collapsedDates.add(date); });
+                isFirstLoad = false;
             }
 
             board.innerHTML = "";
+
+            if (sortedDates.length === 0) {
+                board.innerHTML = `<div class="text-center py-20 text-slate-400 text-sm">검색 결과가 없습니다.</div>`;
+                return;
+            }
 
             sortedDates.forEach(date => {
                 dataMap[date].sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -143,7 +159,10 @@
                 const block = document.createElement("div");
                 block.className = "w-full bg-white rounded-xl border border-slate-300 shadow-sm overflow-hidden mb-2 transition-all";
                 if (isToday) block.classList.add("today-block");
-                if (collapsedDates.has(date)) block.classList.add("is-collapsed");
+                
+                // 검색 중일 때는 강제로 모든 블록을 펼칩니다.
+                const isCollapsed = searchQuery === "" && collapsedDates.has(date);
+                if (isCollapsed) block.classList.add("is-collapsed");
 
                 const header = document.createElement("div");
                 header.className = "p-4 bg-slate-50 flex items-center justify-between border-b cursor-pointer hover:bg-slate-100";
@@ -172,7 +191,8 @@
                 header.append(headLeft, delAllBtn);
 
                 const contentBody = document.createElement("div");
-                contentBody.className = "content-body" + (collapsedDates.has(date) ? " collapsed-content" : "");
+                contentBody.className = "content-body" + (isCollapsed ? " collapsed-content" : "");
+                
                 header.onclick = (e) => {
                     e.stopPropagation();
                     if (collapsedDates.has(date)) collapsedDates.delete(date); else collapsedDates.add(date);
@@ -245,14 +265,29 @@
                     }
                 });
             });
+        }
 
-            if (isFirstLoad) {
+        // Firebase 데이터 감시
+        onSnapshot(tasksCol, (snapshot) => {
+            allTasks = [];
+            snapshot.forEach(d => {
+                allTasks.push({ id: d.id, ...d.data() });
+            });
+            renderBoard();
+            
+            // 첫 로드 스크롤 (한 번만)
+            if (allTasks.length > 0 && document.querySelectorAll('.today-block').length > 0 && !searchQuery) {
                 setTimeout(() => {
                     const todayEl = document.querySelector('.today-block');
                     if (todayEl) todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    isFirstLoad = false;
                 }, 500);
             }
+        });
+
+        // 검색창 입력 이벤트
+        document.getElementById("search-input").addEventListener("input", (e) => {
+            searchQuery = e.target.value;
+            renderBoard();
         });
 
         document.getElementById("undo-btn").onclick = async () => {
