@@ -313,37 +313,36 @@ function filterLedger() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. 현재 한국 시간 기준으로 날짜 객체 생성
+    // 1. 날짜 계산 (오늘 및 180일 전) ㅡㅡ^
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth(); // 0 (1월) ~ 11 (12월)
+    const past = new Date();
+    past.setDate(now.getDate() - 180); // 오늘로부터 180일 전으로 세팅
 
-    // 2. 시작일(1일) 조립: "YYYY-MM-01"
-    const firstDay = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    // 2. YYYY-MM-DD 형식으로 변환하는 함수 (내부 전용)
+    const toYmd = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
 
-    // 3. 말일 계산: 다음 달의 0번째 날 = 이번 달의 마지막 날
-    const lastDayDate = new Date(year, month + 1, 0);
-    const lastDayYear = lastDayDate.getFullYear();
-    const lastDayMonth = String(lastDayDate.getMonth() + 1).padStart(2, '0');
-    const lastDayDay = String(lastDayDate.getDate()).padStart(2, '0');
+    // 3. HTML 필터에 값 할당 (180일 전 ~ 오늘)
+    if(document.getElementById('startDate')) document.getElementById('startDate').value = toYmd(past);
+    if(document.getElementById('endDate')) document.getElementById('endDate').value = toYmd(now);
+
+    // [이하 기존 로직 동일] ㅡㅡ^
     
-    // 최종 조립: "YYYY-MM-DD" (ISO 문자열 변환 없이 직접 조립하여 오류 차단)
-    const lastDay = `${lastDayYear}-${lastDayMonth}-${lastDayDay}`;
-
-    // 4. HTML 필터에 값 할당
-    if(document.getElementById('startDate')) document.getElementById('startDate').value = firstDay;
-    if(document.getElementById('endDate')) document.getElementById('endDate').value = lastDay;
-
-    // 체크박스(totalBalanceFullMode)의 상태가 바뀔 때마다 renderLedger 함수를 다시 실행해라!
+    // 체크박스(totalBalanceFullMode) 상태 변경 리스너
     const balanceCheckbox = document.getElementById('totalBalanceFullMode');
     if (balanceCheckbox) {
         balanceCheckbox.addEventListener('change', renderLedger);
     }
 
-    // 5. 기존 초기화 로직 유지
+    // 초기화 데이터 로드
     await fillVendorFilterOnly(); 
     await loadPharmacyName();
     
+    // 안내 메시지 표시
     const tableBody = document.getElementById('ledgerTableBody');
     if (tableBody) {
         tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:50px; color:#666;">🔎 조회하실 <b>거래처를 선택</b>해 주세요.</td></tr>';
