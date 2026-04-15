@@ -221,17 +221,24 @@ function addNewRow() {
     updateAllTotals();
 }
 
-/* [수정] 합계 입력 시 콤마 유지 및 역산 로직 */
+/* [수정] 합계 입력 시 콤마 유지 및 역산 로직 (마이너스 허용) ㅡㅡ^ */
 function reverseCalculate(input) {
-    // 1. 입력된 값에서 숫자만 추출
-    let val = input.value.replace(/[^0-9]/g, "");
+    // 1. 숫자와 마이너스(-) 기호만 추출
+    let val = input.value.replace(/[^0-9-]/g, "");
+    
+    // 2. 마이너스 기호만 있을 때 배려
+    if (val === "-") {
+        input.value = "-";
+        return;
+    }
+
     let total = parseFloat(val) || 0;
 
-    // 2. 화면에 실시간으로 콤마 찍힌 숫자 표시
-    input.value = total > 0 ? total.toLocaleString() : "";
+    // 3. 화면에 실시간으로 콤마 찍힌 숫자 표시
+    input.value = total !== 0 ? total.toLocaleString() : "";
 
-    if (total > 0) {
-        // 3. 공급가와 세액 역산 (소수점 버림)
+    if (total !== 0) {
+        // 4. 공급가와 세액 역산 (소수점 버림)
         let supply = Math.floor(total / 1.1);
         let vat = total - supply;
 
@@ -252,17 +259,24 @@ function removeRow(btn) {
     updateAllTotals();
 }
 
-/* [수정] 공급가, 세액 입력 시 콤마 유지 및 정방향 계산 로직 */
+/* [수정] 공급가, 세액 입력 시 콤마 유지 및 정방향 계산 로직 (마이너스 허용) ㅡㅡ^ */
 function calculateRow(input) {  
     const row = input.closest('tr');
     
-    // 1. 입력된 값에서 숫자만 추출하여 콤마 실시간 적용
-    let val = input.value.replace(/[^0-9]/g, "");
-    input.value = val ? parseInt(val).toLocaleString() : "";
+    // 1. 숫자와 마이너스(-) 추출 및 콤마 실시간 적용
+    let val = input.value.replace(/[^0-9-]/g, "");
+    
+    if (val === "-") {
+        input.value = "-";
+    } else {
+        input.value = val ? parseInt(val).toLocaleString() : "";
+    }
 
-    // 2. 계산을 위해 콤마 제거 후 숫자형 변환
+    // 2. 계산을 위해 콤마 제거 후 숫자형 변환 (Number 사용으로 음수 완벽 지원)
     const qty = parseFloat(row.querySelector('.in-qty').value) || 0;
-    const supply = parseFloat(row.querySelector('.in-supply').value.replace(/,/g, '')) || 0;
+    const supplyText = row.querySelector('.in-supply').value.replace(/,/g, '');
+    const supply = supplyText === "-" ? 0 : (parseFloat(supplyText) || 0);
+    
     const vatField = row.querySelector('.in-vat');
     
     // 3. 세액 자동 계산 (공급가 입력 시에만 작동)
@@ -272,10 +286,11 @@ function calculateRow(input) {
     }
 
     // 4. 합계 계산
-    const vat = parseFloat(vatField.value.replace(/,/g, '')) || 0;
+    const vatText = vatField.value.replace(/,/g, '');
+    const vat = vatText === "-" ? 0 : (parseFloat(vatText) || 0);
     const total = (supply + vat);
     
-    row.querySelector('.in-total').value = total > 0 ? total.toLocaleString() : "";
+    row.querySelector('.in-total').value = total !== 0 ? total.toLocaleString() : "";
     
     updateAllTotals();
 }
