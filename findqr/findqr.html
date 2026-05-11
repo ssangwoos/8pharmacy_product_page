@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eight Pharmacy - QR코드 빠른 검색</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; font-family: 'Noto Sans KR', sans-serif; }
+        body { background-color: #f4f6f8; margin: 0; padding: 0; }
+        
+        /* 상단 검색바 (고정) */
+        .top-bar {
+            background: #1D5C36; color: white; padding: 15px 20px;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .app-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;}
+        .search-box { width: 100%; position: relative; }
+        .search-input {
+            width: 100%; padding: 14px 15px; border-radius: 8px; border: none; font-size: 1.05rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); outline: none;
+        }
+        
+        /* 리스트 영역 */
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+        .list-container { display: flex; flex-direction: column; gap: 12px; }
+        
+        /* ✨ 개별 리스트 아이템 (이미지 포함으로 디자인 변경) */
+        .list-item {
+            background: white; border-radius: 10px; padding: 12px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #eee;
+        }
+        
+        /* 왼쪽 영역 (이미지 + 텍스트) 묶음 */
+        .item-left {
+            display: flex; align-items: center; gap: 15px; flex: 1; margin-right: 15px;
+        }
+        
+        /* 상품 이미지 썸네일 */
+        .item-image {
+            width: 60px; height: 60px; object-fit: contain; 
+            border-radius: 8px; background-color: #fff; border: 1px solid #f0f0f0;
+            flex-shrink: 0; /* 사진 크기 찌그러짐 방지 */
+            padding: 2px;
+        }
+
+        .item-info { display: flex; flex-direction: column; gap: 4px; }
+        .item-name { font-size: 1.05rem; font-weight: bold; color: #333; word-break: keep-all; line-height: 1.3; }
+        .item-id { font-size: 0.85rem; color: #888; }
+        
+        /* 다운로드 버튼 */
+        .btn-download {
+            background: #e8f5e9; color: #1D5C36; border: 1px solid #1D5C36;
+            padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .btn-download:hover { background: #1D5C36; color: white; }
+        .btn-download:active { transform: scale(0.95); }
+        
+        /* QR 없는 경우 */
+        .no-qr { color: #e74c3c; font-size: 0.9rem; font-weight: bold; padding: 10px; }
+        
+        .empty-msg { text-align: center; color: #888; margin-top: 50px; font-size: 1.1rem; }
+        .loading { text-align: center; padding: 30px; color: #666; font-size: 1.1rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="app-title">🏁 QR코드 빠른 검색 & 다운로드</div>
+        <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="상품명 또는 ID 검색..." onkeyup="filterProducts()">
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="productList" class="list-container">
+            <div class="loading">데이터를 불러오는 중입니다 ⏳...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCygpc_WS2_35_8eYgdTEJwZCtNGJjHvY4",
+            authDomain: "pharmacy-productlist.firebaseapp.com",
+            projectId: "pharmacy-productlist",
+            storageBucket: "pharmacy-productlist.firebasestorage.app",
+            messagingSenderId: "409677826366",
+            appId: "1:409677826366:web:dc825470ef673194e2446f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        let allProducts = [];
+
+        // 1. 전체 상품 가져오기
+        async function loadProducts() {
+            const listDiv = document.getElementById('productList');
+            try {
+                const q = query(collection(db, "products"), orderBy("name"));
+                const snapshot = await getDocs(q);
+                
+                allProducts = [];
+                snapshot.forEach(doc => {
+                    allProducts.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderProducts(allProducts);
+
+            } catch (e) {
+                console.error(e);
+                listDiv.innerHTML = '<div class="empty-msg">데이터를 불러오지 못했습니다. 인터넷 연결을 확인하세요.</div>';
+            }
+        }
+
+        // 2. ✨ 화면에 리스트 그리기 (이미지 추가됨)
+        window.renderProducts = function(list) {
+            const listDiv = document.getElementById('productList');
+            if(list.length === 0) {
+                listDiv.innerHTML = '<div class="empty-msg">검색 결과가 없습니다 😢</div>';
+                return;
+            }
+
+            let html = '';
+            list.forEach(p => {
+                // QR 버튼 유무
+                const btnHtml = p.qrImage 
+                    ? `<button class="btn-download" onclick="downloadQR('${p.qrImage}', '${p.name}_QR.jpg')">다운로드 📥</button>`
+                    : `<span class="no-qr">QR 미등록</span>`;
+
+                // 상품 이미지가 없으면 회색 기본 이미지 표시
+                const imgUrl = p.image || 'https://via.placeholder.com/60?text=No+Img';
+
+                html += `
+                    <div class="list-item">
+                        <div class="item-left">
+                            <img src="${imgUrl}" class="item-image" loading="lazy">
+                            <div class="item-info">
+                                <div class="item-name">${p.name}</div>
+                                <div class="item-id">ID: ${p.id}</div>
+                            </div>
+                        </div>
+                        <div>
+                            ${btnHtml}
+                        </div>
+                    </div>
+                `;
+            });
+            listDiv.innerHTML = html;
+        }
+
+        // 3. 실시간 검색 기능 (이름 + ID 검색 가능)
+        window.filterProducts = function() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filtered = allProducts.filter(p => 
+                p.name.toLowerCase().includes(keyword) || p.id.toLowerCase().includes(keyword)
+            );
+            renderProducts(filtered);
+        }
+
+        // 4. QR 다운로드 기능 
+        window.downloadQR = async function(url, filename) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                window.open(url, '_blank');
+            }
+        }
+
+        // 페이지 열리자마자 실행
+        loadProducts();
+    </script>
+</body>
+</html>
