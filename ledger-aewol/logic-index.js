@@ -170,7 +170,7 @@ async function handleFileUpload(input) {
 
     const total = files.length;
     
-    // 1. 로딩 레이어 생성
+    // 1. 로딩 레이어 생성 (기존과 동일)
     const loader = document.createElement('div');
     loader.id = 'uploadLoader';
     loader.innerHTML = `
@@ -186,14 +186,17 @@ async function handleFileUpload(input) {
     const loaderText = document.getElementById('loaderText');
 
     try {
+        // [수정] 한국 시간 기준으로 오늘 날짜 미리 계산 ㅡㅡ^
+        const now = new Date();
+        const kstOffset = 9 * 60 * 60 * 1000; // 한국 시간은 UTC+9
+        const kstDate = new Date(now.getTime() + kstOffset).toISOString().split('T')[0];
+
         for (let i = 0; i < total; i++) {
-            // 진행 상태 표시
             loaderText.innerText = `명세서 업로드 중... (${i + 1} / ${total})`;
 
             const file = files[i];
             const fileName = `${Date.now()}_${file.name}`;
             
-            // Storage 저장
             const storageRef = firebase.storage().ref().child("pending_uploads/" + fileName);
             const uploadTask = await storageRef.put(file);
             const downloadURL = await uploadTask.ref.getDownloadURL();
@@ -202,13 +205,13 @@ async function handleFileUpload(input) {
             await db.collection("pending_uploads").add({
                 img: downloadURL,
                 fileName: fileName,
-                date: new Date().toISOString().split('T')[0],
+                // [변경] 가짜 영국 날짜 대신, 계산된 한국 날짜(kstDate)를 넣습니다! ㅡㅡ^
+                date: kstDate, 
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 status: "pending"
             });
         }
 
-        // 2. [변경] 이동하지 않고 로더만 제거 후 완료 알림
         if (document.getElementById('uploadLoader')) {
             document.body.removeChild(loader);
         }
@@ -221,7 +224,7 @@ async function handleFileUpload(input) {
         }
         alert("업로드 도중 오류가 발생했습니다: " + e.message);
     } finally {
-        input.value = ""; // 파일 선택창 리셋
+        input.value = ""; 
     }
 }
 
