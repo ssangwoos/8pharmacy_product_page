@@ -5,11 +5,11 @@
 // 1. 약국 식별자 (ID)
 // - 본점(기존 데이터 주인): "main" (절대 바꾸지 마세요!)
 // - 지점(새로운 약국): "pharmacy_b", "pharmacy_c" 등으로 영어로 변경
-export const SHOP_ID = "cmr8p"; 
+export const SHOP_ID = "aewol"; 
 
 // 2. 약국 표시 이름 (화면 왼쪽 상단에 뜸)
-export const SHOP_NAME = "충무로 에이트약국"; // 지점은 "비트약국" 등으로 변경
-export const MANAGER_NAME = "최소연"; // <-- 추가
+export const SHOP_NAME = "애월에이트약국"; // 지점은 "비트약국" 등으로 변경
+export const MANAGER_NAME = "이진배"; // <-- 추가
 
 // 3. Firebase 키값 (모든 약국이 공유)
 export const firebaseConfig = {
