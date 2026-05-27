@@ -1,0 +1,385 @@
+/* style-write.css - 줌 버튼 복구 및 장부 리모델링 최종 */
+
+/* 1. 전체 레이아웃 */
+.container.write-mode {
+    display: flex !important;
+    height: calc(100vh - 65px);
+    overflow: hidden;
+    background-color: #f1f5f9;
+}
+
+/* 사이드바 영역 고정 */
+.sidebar {
+    width: 280px !important;
+    min-width: 280px !important;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* 목록 스타일 초기화 (점 표시 제거) */
+.queue-list {
+    flex: 1;
+    overflow-y: auto;
+    list-style: none !important; /* 불필요한 점 제거 */
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* 항목 내부 정렬 (가로 한 줄 배치) */
+.queue-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex !important; /* 가로 배치 강제 */
+    justify-content: space-between; /* 텍스트는 왼쪽, 버튼은 오른쪽 */
+    align-items: center; /* 수직 중앙 정렬 */
+    cursor: pointer;
+}
+
+.queue-item:hover { background: #f8fbff; }
+.queue-item.active { background: #eef6ff; border-left: 4px solid #2563eb; }
+
+/* 텍스트 영역 좁아짐 방지 */
+.q-info-area {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1; /* 남은 공간 다 차지 */
+    overflow: hidden;
+}
+
+/* 삭제 버튼 스타일 (작게 우측 고정) */
+.btn-q-del {
+    background: none;
+    border: none;
+    color: #cbd5e0;
+    cursor: pointer;
+    padding: 5px 10px;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.btn-q-del:hover { color: #ef4444; }
+
+.workspace.column-mode {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2. 상단 뷰어 및 줌 버튼 (이 부분이 핵심입니다) */
+.image-section-top {
+    height: 42%;
+    background: #1e293b;
+    position: relative; /* 줌 버튼 위치의 기준 */
+}
+
+.image-viewer-wide {
+    width: 100%;
+    height: 100%;
+    display: block !important;
+    overflow: auto !important;
+    text-align: center;
+}
+
+#docImage {
+    max-width: none !important;
+    display: inline-block;
+    margin-top: 20px;
+    margin-bottom: 400px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    vertical-align: top;
+    transition: none !important; /* 줌 튐 방지 */
+}
+
+/* 줌 컨트롤 버튼 스타일 (사라졌던 버튼들 복구) */
+.img-controls-floating {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    display: flex;
+    gap: 12px;
+    z-index: 1000; /* 버튼이 이미지 위로 올라오게 */
+}
+
+.btn-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    font-size: 1.2rem;
+    color: #334155;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #ffffff;
+    transform: translateY(-2px);
+    color: #2563eb;
+}
+
+/* 3. 하단 입력 섹션 (장부 카드 리모델링) */
+.form-section-bottom {
+    flex: 1;
+    overflow-y: auto;
+    padding: 25px;
+}
+
+.center-paper {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+
+
+/* [복구] 상단바: 원래의 슬림한 가로 한 줄 디자인 */
+.common-info-bar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    margin-bottom: 15px !important;
+    /* height나 position: absolute 같은 속성이 있다면 반드시 지워주세요 */
+}
+
+/* [복구] 입력 그룹: 라벨과 입력창 밀착 */
+.c-group {
+    display: flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+}
+
+.c-group label {
+    margin-right: 8px !important;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* [수정] 입력창 크기를 반으로 축소 */
+.common-info-bar input[type="date"],
+.common-info-bar select,
+.common-info-bar input[type="text"] {
+    padding: 5px 10px !important; /* 패딩 축소 */
+    font-size: 0.9rem !important;  /* 글자 크기 살짝 축소 */
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    height: 32px !important;       /* 높이를 45px에서 32px로 대폭 축소 */
+}
+
+/* [수정] 날짜 칸 너비 최적화 */
+.common-info-bar input[type="date"] {
+    width: 140px !important;
+}
+
+/* [수정] 거래처 칸 너비 보정 */
+.common-info-bar input[type="text"] {
+    min-width: 200px !important;
+}
+
+/* [추가] 거래처 입력칸 너비 특별 확대 */
+.common-info-bar input[name="vendor"] {
+    min-width: 300px; /* 거래처 이름이 길어도 잘 보이게 */
+    flex: 1;         /* 남는 공간 활용 */
+}
+
+/* [추가] 날짜 칸 너비 조절 */
+.common-info-bar input[type="date"] {
+    width: 180px;
+}
+
+/* [추가] 구분(입고/출고) 칸 너비 조절 */
+.common-info-bar select {
+    width: 100px;
+}
+
+/* 테이블 디자인 */
+.item-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 4px;
+}
+
+.item-table th {
+    background: #f1f5f9;
+    padding: 12px;
+    font-size: 0.85rem;
+    color: #475569;
+    border-radius: 4px;
+}
+
+.item-table td {
+    padding: 4px;
+}
+
+/* [수정] 입력 칸 높이 및 여백 축소 */
+.item-table input {
+    width: 100%;
+    padding: 6px 10px !important; /* 위아래 패딩을 줄여서 칸 높이를 슬림하게 */
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+}
+
+/* [수정] 테이블 셀 패딩 축소 */
+.item-table td {
+    padding: 2px 4px !important; /* 셀 자체의 여백을 최소화 */
+    vertical-align: middle !important;
+}
+
+/* [추가] 마지막 버튼 칸 너비 고정으로 행 정렬 일치 */
+.item-table th:last-child,
+.item-table td:last-child {
+    width: 65px !important;
+    min-width: 65px !important;
+    padding: 2px 8px !important;
+}
+
+/* [추가] 행 우측 추가 버튼 스타일 */
+.btn-row-add {
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 24x;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+.btn-row-add:hover {
+    background: #1d4ed8;
+}
+
+/* 기존 삭제 버튼(X) 스타일 보정 */
+.btn-row-del {
+    background: none;
+    border: none;
+    color: #cbd5e0;
+    cursor: pointer;
+    font-size: 18px;
+}
+.btn-row-del:hover { color: #ef4444; }
+
+.btn-row-del, .btn-row-add {
+    flex-shrink: 0; /* 크기 변형 방지 */
+}
+.item-table input:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* [수정] 합계 입력 필드 스타일 */
+.item-table .in-total {
+    background: #ffffff !important; /* 흰색으로 변경하여 입력 가능함 표시 */
+    border: 1px solid #3b82f6 !important; /* 합계 강조를 위해 테두리 색상 유지 */
+    color: #2563eb !important;
+}
+
+/* [복구] 하단 서머리 영역 디자인 */
+/* [수정] 하단 서머리 영역 - 가운데 집중형 디자인 */
+/* [수정] 푸터 금액 영역을 오른쪽으로 더 밀어서 가운데 정렬 */
+/* [최종] 푸터: 버튼은 우측 끝, 금액은 화면 정중앙 */
+.footer-summary {
+    display: flex !important;
+    align-items: center !important;
+    padding: 25px 40px !important;
+    background-color: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    border-radius: 0 0 12px 12px;
+    position: relative !important; /* 중앙 배치를 위한 기준 */
+}
+
+/* [핵심] 금액 영역을 부모 기준 정중앙으로 강제 이동 */
+.summary-text {
+    display: flex !important;
+    align-items: center !important;
+    gap: 40px !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important; /* 정확히 수평 중앙 정렬 */
+    white-space: nowrap !important;
+}
+
+/* 텍스트와 숫자 높낮이 완벽 일치 */
+.summary-text span, .grand-total {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 1.05rem;
+    color: #475569;
+}
+
+.summary-text b {
+    margin-left: 10px;
+    color: #1e293b;
+    font-size: 1.15rem;
+}
+
+/* 합계 강조 및 구분선 */
+.grand-total {
+    padding-left: 40px;
+    border-left: 2px solid #e2e8f0;
+}
+
+.grand-total b {
+    font-size: 2.2rem !important; /* 합계 숫자 크기 유지 */
+    color: #2563eb !important;
+    font-weight: 800 !important;
+    margin-left: 15px;
+    line-height: 1;
+}
+
+/* 저장 버튼 우측 끝 고정 */
+.btn-save-all {
+    margin-left: auto !important; /* 오른쪽 끝으로 밀기 */
+    min-width: 180px;
+    height: 52px;
+    background-color: #2563eb !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    z-index: 10; /* 금액 영역과 겹침 방지 */
+}
+/* 유틸리티 */
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+/* [복구] 거래처 콤보박스 디자인 (다른 칸과 높이/너비 통일) */
+#vendorInput {
+    height: 32px !important;
+    width: 180px !important;
+    padding: 0 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    font-size: 0.9rem !important;
+}
+
+.grid-container {
+    display: block !important;
+    visibility: visible !important;
+}
+
+
+/* [복구] 거래처 입력창의 강제 화살표(▼) 숨기기 */
+#vendorInput::-webkit-calendar-picker-indicator {
+    display: none !important;
+}
+

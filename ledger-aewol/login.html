@@ -1,0 +1,11 @@
+async function checkLogin() {
+    const inputPw = document.getElementById('pwInput').value;
+    const doc = await db.collection("settings").doc("pharmacy_info").get();
+    
+    if (doc.exists && inputPw === doc.data().userPassword) {
+        sessionStorage.setItem("isLoggedIn", "true"); // 세션 저장
+        location.href = "ledger.html";
+    } else {
+        alert("비밀번호가 올바르지 않습니다.");
+    }
+}
