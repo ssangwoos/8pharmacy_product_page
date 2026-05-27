@@ -1,15 +1,18 @@
 let currentPage = 1;
 const itemsPerPage = 10;
 let allData = []; // 필터링된 전체 데이터를 담을 변수
+// logic-ledger.js 맨 위쪽에 이렇게 되어 있는지 확인하세요!
 
 // [데이터 호출 함수] 거래처 선택 시 해당 데이터만 DB에서 쿼리하여 최적화
-async function loadLedgerData() {
+// page 매개변수에 기본값 false를 줍니다. 
+// 아무것도 안 넣고 호출하면(기존 방식) 1페이지로 가고, 
+// currentPage를 넣고 호출하면 그 페이지를 유지합니다.
+async function loadLedgerData(page = false) {
     const tableBody = document.getElementById('ledgerTableBody');
     const vendorFilter = document.getElementById('vendorFilter').value;
 
     if (!tableBody) return;
-    
-    // [변경] 거래처를 선택하지 않았을 때의 처리
+
     if (vendorFilter === 'none') {
         tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:50px; color:#666;">🔎 조회하실 <b>거래처를 선택</b>해 주세요.</td></tr>';
         return;
@@ -19,20 +22,29 @@ async function loadLedgerData() {
 
     try {
         let query = db.collection("transactions");
+        
         if (vendorFilter !== 'all') {
             query = query.where("vendor", "==", vendorFilter);
         }
 
-        // 지금 생성 중인 색인이 완료되어야 이 부분이 에러 없이 작동합니다.
         const snapshot = await query.orderBy("date", "asc").orderBy("createdAt", "asc").get();
+        
         allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        currentPage = 1;
-        renderLedger(); // 기존에 만든 렌더링 함수 호출
+        // [핵심 수정 부분] 
+        // page 인자가 전달되었다면(수정 시) 그 페이지를 유지하고, 
+        // 인자가 없다면(처음 조회 시) 1페이지로 초기화합니다.
+        if (page) {
+            currentPage = page; 
+        } else {
+            currentPage = 1;
+        }
+
+        renderLedger(); 
 
     } catch (e) {
         console.error("데이터 로드 오류:", e);
-        tableBody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:red; padding:20px;">데이터 로드 실패: 색인이 아직 생성 중일 수 있습니다. 5분 후 다시 시도해 주세요.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:red; padding:20px;">데이터 로드 실패: 색인이 생성 중일 수 있습니다.</td></tr>`;
     }
 }
 
@@ -40,77 +52,122 @@ async function loadLedgerData() {
 
 function renderLedger() {
     const tableBody = document.getElementById('ledgerTableBody');
+    if (!tableBody) return;
+
+    // 1. 필터 및 체크박스 상태 가져오기
     const start = document.getElementById('startDate')?.value || '';
     const end = document.getElementById('endDate')?.value || '';
-    const searchKeyword = document.getElementById('searchInput')?.value.toLowerCase() || ''; // 검색어 가져오기
-    const isSearching = searchKeyword.length > 0;
-    // 1. 기간 필터링
-    let filtered = allData.filter(item => (!start || item.date >= start) && (!end || item.date <= end));
-    
-    let html = '';
-    let displayBuy = 0, displayPay = 0, runningBalance = 0;
+    const searchKeyword = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    const vendorFilter = document.getElementById('vendorFilter')?.value || 'all';
+    const isFullMode = document.getElementById('totalBalanceFullMode')?.checked || false;
 
-    // 2. 전체를 돌며 잔액을 먼저 계산하고, 검색 조건에 맞는 줄만 HTML에 추가
-    filtered.forEach(item => {
+    // 2. 누적 계산용 변수 (전체용/기간용 분리)
+    let runningGrandTotal = 0;  // 내부 계산용 (태초부터 지금까지 전체 잔액)
+    let runningPeriodTotal = 0; // 표 표시용 (현재 선택된 기간 내 잔액)
+    let totalBuy = 0;           // 하단 Summary용 (입고 합계)
+    let totalPay = 0;           // 하단 Summary용 (결제 합계)
+    let displayList = [];
+
+    // 3. 전체 데이터 순회 (allData는 이미 해당 거래처의 전체 데이터임)
+    allData.forEach(item => {
         const rowItems = (item.items && item.items.length > 0) 
             ? item.items 
             : [{ memo: item.memo, qty: item.qty || 1, supply: item.supply, vat: item.vat, total: item.total }];
 
         rowItems.forEach((subItem) => {
             const amount = Number(subItem.total) || 0;
-            const isBuy = (item.type === 'buy');
+            const isBuy = (item.type === 'buy' || item.type === '입고');
 
-            // [핵심] 잔액은 검색 여부와 상관없이 '전체 흐름'을 따라 누적 계산
-            if (isBuy) runningBalance += amount;
-            else runningBalance -= amount;
+            // [A] 전체 누적 잔액은 루프 돌 때마다 '무조건' 계산 (상단 서머리용) ㅡㅡ^
+            if (isBuy) runningGrandTotal += amount;
+            else runningGrandTotal -= amount;
 
-            // [검색 필터] 거래처명 또는 품목명에 검색어가 포함되어 있는지 확인
-            const isMatch = item.vendor.toLowerCase().includes(searchKeyword) || 
-                            (subItem.memo && subItem.memo.toLowerCase().includes(searchKeyword));
+            // 필터링 조건 (날짜 및 검색어)
+            const dateMatch = (!start || item.date >= start) && (!end || item.date <= end);
+            const searchMatch = !searchKeyword || 
+                                item.vendor.toLowerCase().includes(searchKeyword) || 
+                                (subItem.memo && subItem.memo.toLowerCase().includes(searchKeyword));
 
-            if (isMatch) {
-                // 화면에 표시될 금액들만 별도로 합산 (상단 카드용)
-                if (isBuy) displayBuy += amount;
-                else displayPay += amount;
+            if (dateMatch && searchMatch) {
+                // [B] 기간 내 잔액 및 서머리 합산 (표 표시용) ㅡㅡ^
+                if (isBuy) {
+                    runningPeriodTotal += amount;
+                    totalBuy += amount;
+                } else {
+                    runningPeriodTotal -= amount;
+                    totalPay += amount;
+                }
 
-                // 그룹화를 위한 ID (아까 만든 img 기준)
-                const groupId = item.img || item.id;
-
-                html += `
-                    <tr class="ledger-row" 
-                        data-parent-id="${groupId}" 
-                        onmouseover="highlightGroup('${groupId}')" 
-                        onmouseout="removeHighlight()">
-                        <td style="text-align:center;">${item.date}</td>
-                        <td style="text-align:center;">${getBadgeHtml(item.type)}</td>
-                        <td style="text-align:center;">${item.vendor}</td>
-                        <td style="text-align:left; padding-left:10px;">${subItem.memo || ''}</td>
-                        <td style="text-align:center;">${subItem.qty || 0}</td>
-                        <td style="text-align:right;">${(Number(subItem.supply) || 0).toLocaleString()}</td>
-                        <td style="text-align:right;">${(Number(subItem.vat) || 0).toLocaleString()}</td>
-                        <td style="color:#2563eb; font-weight:bold; text-align:right;">${isBuy ? amount.toLocaleString() : ''}</td>
-                        <td style="color:#dc2626; font-weight:bold; text-align:right;">${!isBuy ? amount.toLocaleString() : ''}</td>
-                        <td style="font-weight:700; text-align:right; background:#f9fafb;">${runningBalance.toLocaleString()}</td>
-                        <td style="text-align:center;">${item.img ? `<a href="${item.img}" target="_blank">📄</a>` : '-'}</td>
-                        <td style="text-align:center;">
-                            <div style="display: flex; justify-content: center; gap: 8px;">
-                                <button onclick="openEditModal('${item.id}')" style="color:#2563eb; border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteEntry('${item.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        </td>
-                    </tr>`;
+                displayList.push({
+                    ...item,
+                    subItem,
+                    // 🔥 표 안의 잔액은 체크박스 상관없이 '기간 잔액'으로 고정! ㅡㅡ^
+                    currentBalance: runningPeriodTotal, 
+                    isBuy: isBuy,
+                    amount: amount
+                });
             }
         });
     });
 
-    tableBody.innerHTML = html || '<tr><td colspan="12" style="text-align:center; padding:30px;">검색 결과가 없습니다.</td></tr>';
-    
-    // 3. 상단 요약 카드 업데이트 (검색된 품목들의 합계로 갱신)
-    if(document.getElementById('sumBuy')) document.getElementById('sumBuy').innerText = displayBuy.toLocaleString();
-    if(document.getElementById('sumPay')) document.getElementById('sumPay').innerText = displayPay.toLocaleString();
-    if(document.getElementById('sumBalance')) document.getElementById('sumBalance').innerText = (displayBuy - displayPay).toLocaleString();
-}
+    // 4. 페이지네이션 계산
+    const totalItems = displayList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const endIdx = totalItems - (currentPage - 1) * itemsPerPage;
+    const startIdx = Math.max(0, endIdx - itemsPerPage);
+    const currentPageData = displayList.slice(startIdx, endIdx);
 
+    // 5. HTML 테이블 생성
+    let html = '';
+    currentPageData.forEach((row) => {
+        const isRealImg = row.img && row.img.startsWith('http') && !row.img.includes('write.html');
+        const groupId = isRealImg ? row.img : row.id;
+        // renderLedger 함수 내부
+        // renderLedger 함수 내 아이콘 생성 줄 수정
+       // logic-ledger.js 내 renderLedger 함수 내부
+       const proofIcon = isRealImg 
+        ? `<button type="button" onclick="openProofViewer('${row.img}', ${row.rotation || 0}, '${row.id}')" 
+            style="border:none; background:none; cursor:pointer; font-size:1.2rem;">📄</button>` 
+        : '-';
+        const typeBadge = row.isBuy ? '<span class="badge buy">입고</span>' : '<span class="badge pay">결제</span>';
+
+        html += `
+            <tr class="ledger-row" data-parent-id="${groupId}" onmouseover="highlightGroup('${groupId}')" onmouseout="removeHighlight()">
+                <td style="text-align:center;">${row.date}</td>
+                <td style="text-align:center;">${typeBadge}</td>
+                <td style="text-align:center;">${row.vendor}</td>
+                <td style="text-align:left; padding-left:10px;">${row.subItem.memo || ''}</td>
+                <td style="text-align:center;">${row.subItem.qty || 0}</td>
+                <td style="text-align:right;">${(Number(row.subItem.supply) || 0).toLocaleString()}</td>
+                <td style="text-align:right;">${(Number(row.subItem.vat) || 0).toLocaleString()}</td>
+                <td style="color:#2563eb; font-weight:bold; text-align:right;">${row.isBuy ? row.amount.toLocaleString() : ''}</td>
+                <td style="color:#dc2626; font-weight:bold; text-align:right;">${!row.isBuy ? row.amount.toLocaleString() : ''}</td>
+                <td style="font-weight:700; text-align:right; background:#f9fafb;">${row.currentBalance.toLocaleString()}</td>
+                <td style="text-align:center;">${proofIcon}</td>
+                <td style="text-align:center;">
+                    <div style="display: flex; justify-content: center; gap: 8px;">
+                        <button onclick="openEditModal('${row.id}')" style="color:#2563eb; border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteEntry('${row.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+    });
+
+    tableBody.innerHTML = html || '<tr><td colspan="12" style="text-align:center; padding:30px;">결과가 없습니다.</td></tr>';
+    
+    // 6. UI 업데이트 (페이지네이션 및 서머리)
+    if(typeof renderPaginationUI === 'function') renderPaginationUI(totalPages);
+
+    // [상단 서머리 업데이트] ㅡㅡ^
+    if(document.getElementById('sumBuy')) document.getElementById('sumBuy').innerText = totalBuy.toLocaleString();
+    if(document.getElementById('sumPay')) document.getElementById('sumPay').innerText = totalPay.toLocaleString();
+    
+    // 🔥 상단 잔액 칸만 체크박스 모드에 따라 변신! ㅡㅡ^
+    if(document.getElementById('sumBalance')) {
+        const finalSumBalance = isFullMode ? runningGrandTotal : (totalBuy - totalPay);
+        document.getElementById('sumBalance').innerText = finalSumBalance.toLocaleString();
+    }
+}
 
 // [수정] 그룹 내 모든 항목의 금액을 합산하여 툴팁에 표시
 function highlightGroup(groupId) {
@@ -256,37 +313,41 @@ function filterLedger() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. 현재 한국 시간 기준으로 날짜 객체 생성
+    // 1. 날짜 계산 (오늘 및 180일 전) ㅡㅡ^
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth(); // 0 (1월) ~ 11 (12월)
+    const past = new Date();
+    past.setDate(now.getDate() - 180); // 오늘로부터 180일 전으로 세팅
 
-    // 2. 시작일(1일) 조립: "YYYY-MM-01"
-    const firstDay = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    // 2. YYYY-MM-DD 형식으로 변환하는 함수 (내부 전용)
+    const toYmd = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
 
-    // 3. 말일 계산: 다음 달의 0번째 날 = 이번 달의 마지막 날
-    const lastDayDate = new Date(year, month + 1, 0);
-    const lastDayYear = lastDayDate.getFullYear();
-    const lastDayMonth = String(lastDayDate.getMonth() + 1).padStart(2, '0');
-    const lastDayDay = String(lastDayDate.getDate()).padStart(2, '0');
+    // 3. HTML 필터에 값 할당 (180일 전 ~ 오늘)
+    if(document.getElementById('startDate')) document.getElementById('startDate').value = toYmd(past);
+    if(document.getElementById('endDate')) document.getElementById('endDate').value = toYmd(now);
+
+    // [이하 기존 로직 동일] ㅡㅡ^
     
-    // 최종 조립: "YYYY-MM-DD" (ISO 문자열 변환 없이 직접 조립하여 오류 차단)
-    const lastDay = `${lastDayYear}-${lastDayMonth}-${lastDayDay}`;
+    // 체크박스(totalBalanceFullMode) 상태 변경 리스너
+    const balanceCheckbox = document.getElementById('totalBalanceFullMode');
+    if (balanceCheckbox) {
+        balanceCheckbox.addEventListener('change', renderLedger);
+    }
 
-    // 4. HTML 필터에 값 할당
-    if(document.getElementById('startDate')) document.getElementById('startDate').value = firstDay;
-    if(document.getElementById('endDate')) document.getElementById('endDate').value = lastDay;
-
-    // 5. 기존 초기화 로직 유지
+    // 초기화 데이터 로드
     await fillVendorFilterOnly(); 
     await loadPharmacyName();
     
+    // 안내 메시지 표시
     const tableBody = document.getElementById('ledgerTableBody');
     if (tableBody) {
         tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:50px; color:#666;">🔎 조회하실 <b>거래처를 선택</b>해 주세요.</td></tr>';
     }
 });
-
 async function loadPharmacyName() {
     const doc = await db.collection("settings").doc("pharmacy_info").get();
     if (doc.exists) {
@@ -408,7 +469,7 @@ async function addQuickItem() {
         });
 
         // 4. 입력창 비우기
-        document.getElementById('qVendor').value = "";
+        //document.getElementById('qVendor').value = "";
         document.getElementById('qMemo').value = "";
         document.getElementById('qQty').value = "";
         document.getElementById('qSupply').value = "";
@@ -530,7 +591,8 @@ async function saveEdit() {
         await db.collection("transactions").doc(docId).update(updateData);
         alert("수정되었습니다.");
         closeEditModal();
-        loadLedgerData(); 
+        // ★ 중요: 현재 보고 있던 페이지 번호(currentPage)를 넘겨줍니다!
+        loadLedgerData(currentPage);
     } catch (e) {
         alert("수정 실패: " + e.message);
     }
@@ -578,3 +640,141 @@ function onEditTotalInput(el) {
     document.getElementById('editVat').value = formatNum(vat);
 }
 
+// 특정 거래처의 전체 기간 누적 잔액을 가져오는 함수 ㅡㅡ^
+async function getFullCumulativeBalance(vendorName) {
+    try {
+        let query = db.collection("transactions");
+        
+        // 전체 내역 중 해당 거래처 것만 필터링 (날짜 조건 없음)
+        if (vendorName && vendorName !== "전체") {
+            query = query.where("vendor", "==", vendorName);
+        }
+
+        const snapshot = await query.get();
+        let totalBuy = 0;
+        let totalPay = 0;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const amount = Number(data.amount) || 0;
+            if (data.type === "입고") {
+                totalBuy += amount;
+            } else if (data.type === "결제" || data.type === "반품") {
+                totalPay += amount;
+            }
+        });
+
+        return totalBuy - totalPay; // 진짜 최종 잔액
+    } catch (e) {
+        console.error("전체 잔액 로드 오류:", e);
+        return 0;
+    }
+}
+
+
+// logic-ledger.js 파일 맨 하단에 추가 ㅡㅡ^
+// [수정된 뷰어 함수] 회전 시 DB 저장 기능 추가 ㅡㅡ^
+function openProofViewer(imgUrl, savedRotation, docId) {
+    if (!imgUrl || imgUrl === 'null') return alert("이미지가 없습니다.");
+
+    const width = 1000; // 확대 기능을 위해 창을 조금 더 크게 잡습니다.
+    const height = 900;
+    const left = (window.screen.width / 2) - (width / 2);
+    const top = (window.screen.height / 2) - (height / 2);
+
+    const viewer = window.open('', '_blank', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+
+    viewer.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>증빙 뷰어 (회전/확대)</title>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+            <style>
+                body { margin: 0; background: #0f172a; color: white; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; overflow: hidden; }
+                .nav { background: #1e293b; padding: 12px; display: flex; justify-content: center; gap: 15px; border-bottom: 1px solid #334155; align-items: center; }
+                .btn { background: #3b82f6; color: white; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+                .btn:hover { background: #2563eb; }
+                .btn-gray { background: #64748b; }
+                .img-box { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 50px; cursor: grab; }
+                .img-box:active { cursor: grabbing; }
+                img { transition: transform 0.2s ease; max-width: 90%; transform-origin: center center; box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+                #status { font-size: 11px; color: #94a3b8; width: 80px; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="nav">
+                <button class="btn" onclick="rotate(-90)"><i class="fas fa-undo"></i> 좌회전</button>
+                <button class="btn" onclick="rotate(90)"><i class="fas fa-redo"></i> 우회전</button>
+                <div style="width: 1px; height: 20px; background: #475569;"></div>
+                <button class="btn btn-gray" onclick="zoom(0.1)"><i class="fas fa-search-plus"></i></button>
+                <button class="btn btn-gray" onclick="zoom(-0.1)"><i class="fas fa-search-minus"></i></button>
+                <button class="btn btn-gray" onclick="resetAll()">원본</button>
+                <div id="status">대기 중</div>
+                <button class="btn" style="background:#ef4444;" onclick="window.close()">닫기</button>
+            </div>
+            <div class="img-box" id="container">
+                <img id="pImg" src="${imgUrl}">
+            </div>
+            <script>
+                let currentRot = ${savedRotation || 0};
+                let currentScale = 1.0;
+                const docId = "${docId}";
+                const img = document.getElementById('pImg');
+                const status = document.getElementById('status');
+
+                function updateStyle() {
+                    img.style.transform = "rotate(" + currentRot + "deg) scale(" + currentScale + ")";
+                }
+
+                // 회전 및 DB 저장 ㅡㅡ^
+                async function rotate(deg) {
+                    currentRot += deg;
+                    updateStyle();
+                    if (docId && window.opener) {
+                        status.innerText = "저장 중...";
+                        try {
+                            await window.opener.updateRotationFromPopup(docId, currentRot);
+                            status.innerText = "저장 완료";
+                        } catch(e) { status.innerText = "저장 실패"; }
+                    }
+                }
+
+                // 확대 축소 ㅡㅡ^
+                function zoom(val) {
+                    currentScale = Math.max(0.1, currentScale + val);
+                    updateStyle();
+                }
+
+                function resetAll() {
+                    currentScale = 1.0;
+                    updateStyle();
+                }
+
+                
+
+                window.onload = updateStyle;
+            </script>
+        </body>
+        </html>
+    `);
+    viewer.document.close();
+}
+
+// [수정] 저장 후 부모창 화면까지 갱신하는 대행 함수 ㅡㅡ^
+// 팝업창에서 시키는 대로 DB를 업데이트하는 대행 함수 ㅡㅡ^
+// [부모창] 팝업창에서 시키는 대로 저장해주는 '확실한' 함수 ㅡㅡ^
+// [부모창] 팝업창에서 회전 버튼을 누르면 DB를 업데이트해주는 함수 ㅡㅡ^
+async function updateRotationFromPopup(docId, newRot) {
+    try {
+        if (!docId) return;
+        // Firestore의 해당 문서를 직접 업데이트합니다.
+        await db.collection("transactions").doc(docId).update({
+            rotation: Number(newRot)
+        });
+        console.log("✅ DB 회전값 업데이트 완료:", docId, newRot);
+    } catch (e) {
+        console.error("❌ DB 업데이트 실패:", e);
+    }
+}
