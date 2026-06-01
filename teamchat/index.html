@@ -75,6 +75,27 @@
                     <tbody id="admin-store-list"></tbody>
                 </table>
             </div>
+
+            <<div class="card-box" style="margin-top: 20px;">
+    <h4 style="color: #4e73df; margin-bottom: 15px;">⚙️ 알람 실행기(.bat) 정적 다운로드</h4>
+    <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
+        GitHub에 업로드된 각 매장별 실행 파일(.bat)을 포스기에 다운로드합니다.
+    </p>
+    
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <select id="staticStoreSelect" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+            <option value="run_1호점.bat">1호점 실행기 (run_1호점.bat)</option>
+            <option value="run_2호점.bat">2호점 실행기 (run_2호점.bat)</option>
+            <option value="run_admin.bat">최상위 관리자 실행기 (run_admin.bat)</option>
+        </select>
+        
+        <!-- 💡 onclick 내부에 직접 window.location.href 로직을 박아버려서 에러 소지를 없앴습니다 -->
+        <button onclick="window.location.href = document.getElementById('staticStoreSelect').value;" 
+                style="padding: 8px 15px; background-color: #4e73df; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; font-weight: bold;">
+            실행 파일 다운로드
+        </button>
+    </div>
+</div>
         </div>
     </div>
 

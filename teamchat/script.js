@@ -473,3 +473,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) { alert("이미지 전송 실패"); }
     });
 });
+
+function downloadExistingBatFile() {
+    // 1. 선택된 파일명 가져오기 (예: run_1호점.bat)
+    const fileName = document.getElementById('staticStoreSelect').value;
+    
+    // 2. [보안 우회 핵심] 브라우저가 'fake 클릭'으로 오해하지 못하도록 다이렉트 주소 이동 명령을 내립니다.
+    // .bat 파일은 웹 브라우저가 화면에 띄울 수 없는 파일이기 때문에, 이 명령을 받으면 무조건 다운로드 창을 켭니다.
+    window.location.href = fileName;
+}
