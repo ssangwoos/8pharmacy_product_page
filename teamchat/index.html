@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매장 간 1:1 비밀 채팅 & 관리자 시스템</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 1. 로그인 컨테이너 -->
+<div id="login-container">
+    <h2>🏬 매장 로그인</h2>
+    <p style="color: #858796; font-size: 0.85rem; margin-bottom: 20px;">접속할 매장을 선택하세요</p>
+    <div id="login-buttons-parent"></div>
+</div>
+
+<!-- 2. 메인 앱 컨테이너 (로그인 후 보임) -->
+<div id="main-container">
+    <!-- 왼쪽: 작업 영역 -->
+    <div class="main-section">
+        <div class="main-header">
+            <span id="view-title">대화 상대를 선택해 주세요.</span>
+            <div>
+                <button class="admin-toggle-btn" id="btn-admin-panel" style="display: none;">⚙️ 관리자 설정</button>
+                <button class="logout-btn" id="btn-logout">로그아웃</button>
+            </div>
+        </div>
+        
+        <!-- 대화 상대 선택 전 안내 화면 -->
+        <div id="no-chat-view" class="view-content placeholder-box">
+            👉 오른쪽 목록에서 대화할 매장을 클릭하세요.
+        </div>
+        
+        <!-- [뷰 1] 1:1 채팅창 화면 -->
+        <div id="chat-view" class="view-content" style="display: none; flex-direction: column;">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-area">
+                <input type="file" id="image-input" accept="image/*" style="display: none;">
+                <button class="file-btn" id="btn-file-trigger">🖼️</button>
+                <input type="text" id="msg-input" placeholder="메시지를 입력하세요...">
+                <button id="btn-send">전송</button>
+            </div>
+        </div>
+
+        <!-- [뷰 2] 관리자 설정 페이지 화면 -->
+        <div id="admin-view" class="view-content" style="display: none;">
+            <div class="admin-box">
+                <h3>👑 관리자 비밀번호 변경</h3>
+                <div class="input-group">
+                    <input type="password" id="admin-new-pw" placeholder="새 관리자 비밀번호 입력">
+                    <button id="btn-update-admin-pw">변경</button>
+                </div>
+            </div>
+
+            <div class="admin-box">
+                <h3>➕ 신규 매장 등록</h3>
+                <div class="input-group">
+                    <input type="text" id="new-store-name" placeholder="매장 이름 (예: 강남점)">
+                    <input type="password" id="new-store-pw" placeholder="접속 비밀번호">
+                    <button id="btn-add-store">등록</button>
+                </div>
+            </div>
+
+            <div class="admin-box">
+                <h3>📋 등록된 매장 관리</h3>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>매장 이름</th>
+                            <th>비밀번호 수정</th>
+                            <th>삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-store-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 오른쪽: 매장 목록 (친구목록) -->
+    <div class="sidebar-section">
+        <div class="sidebar-header">👥 매장 목록</div>
+        <ul class="member-list" id="member-list"></ul>
+    </div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

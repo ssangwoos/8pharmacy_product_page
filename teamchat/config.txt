@@ -1,0 +1,8 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyCUqV3NCRuPS_1s5yKXoeNF2IZQWpOtvQU",
+  authDomain: "teamchat-d623c.firebaseapp.com",
+  projectId: "teamchat-d623c",
+  storageBucket: "teamchat-d623c.firebasestorage.app",
+  messagingSenderId: "699718942268",
+  appId: "1:699718942268:web:2e99e744d122bb15c58d39"
+};
