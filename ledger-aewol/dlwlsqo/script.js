@@ -92,8 +92,7 @@ function saveMarginSettings() {
         D: groupMargins.D
     }).then(() => {
         modal.classList.remove('active');
-        
-        renderCalendar(); // 달력이 리렌더링되면서 상단 요약도 새 마진율로 자동 갱신됩니다.
+        renderCalendar(); 
         
         const currentDetailDate = document.getElementById('selectedDateText').textContent;
         if (globalSalesData[currentDetailDate]) showDayDetail(currentDetailDate);
@@ -129,7 +128,6 @@ function loadTransactionsFromFirestore() {
             globalSalesData[dateKey].groupD += (data.groupD || 0);
         });
 
-        // 최초 로드시에만 데이터가 존재하는 가장 최신 월로 달력 자동 이동
         if (snapshot.size > 0 && isFirstLoad) {
             const dates = Object.keys(globalSalesData).sort();
             const lastDate = new Date(dates[dates.length - 1]);
@@ -137,7 +135,7 @@ function loadTransactionsFromFirestore() {
             currentMonth = lastDate.getMonth();
         }
 
-        renderCalendar(); // 달력을 그리면서 내부에서 상단 UI 스코어보드도 함께 호출합니다.
+        renderCalendar(); 
     }, (error) => {
         console.error("Firestore 리스닝 실패:", error);
     });
@@ -162,7 +160,7 @@ function handleFileUpload(e) {
         
         uploadExcelToFirestore(rawRows);
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsBuffer(file);
 }
 
 function uploadExcelToFirestore(rows) {
@@ -213,6 +211,36 @@ function uploadExcelToFirestore(rows) {
     });
 }
 
+// [기능 추가] 선택한 날짜의 매출 데이터를 클라우드에서 일괄 삭제하는 함수
+function deleteDateData(dateKey) {
+    if (!confirm(`⚠️ 정말로 ${dateKey}일의 모든 매출 데이터를 클라우드에서 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
+        return;
+    }
+
+    // dashboard_sales 컬렉션에서 해당 날짜를 가진 문서만 쿼리로 전부 긁어옴
+    db.collection("dashboard_sales").where("date", "==", dateKey).get()
+        .then((querySnapshot) => {
+            const batch = db.batch();
+            querySnapshot.forEach((doc) => {
+                batch.delete(doc.ref); // 삭제 배치에 추가
+            });
+            return batch.commit(); // 파이어베이스 서버에 전송 일괄 실행
+        })
+        .then(() => {
+            alert(`🗑️ ${dateKey}일의 모든 데이터가 성공적으로 삭제되었습니다.`);
+            
+            // 우측 상세 화면 창 비우고 초기화 상태로 복구
+            document.getElementById('selectedDateText').textContent = "날짜를 선택하세요";
+            document.getElementById('detailContent').innerHTML = `
+                <p class="placeholder-text">캘린더에서 데이터가 있는 날짜를 클릭하면 상세 매출 그룹 요약이 표시됩니다.</p>
+            `;
+        })
+        .catch((error) => {
+            console.error("데이터 삭제 실패:", error);
+            alert("데이터 삭제 중 오류가 발생했습니다: " + error.message);
+        });
+}
+
 
 // =================================================================
 // 6. 데이터 가공 및 날짜 헬퍼 로직
@@ -257,7 +285,6 @@ function parseAmount(val) {
 // 7. 대시보드 화면 및 인터랙티브 캘린더 렌더링 코어
 // =================================================================
 
-// 상단 7가지 카드 UI 그리기 함수
 function updateSummaryUI(orig, tax, real, a, b, c, d) {
     const totalMarginA = a * (groupMargins.A / 100);
     const totalMarginB = b * (groupMargins.B / 100);
@@ -293,7 +320,6 @@ function updateSummaryUI(orig, tax, real, a, b, c, d) {
     document.getElementById('summarySection').style.display = 'grid';
 }
 
-// 달력 엔진 구현부
 function renderCalendar() {
     const grid = document.getElementById('calendarGrid');
     grid.innerHTML = '';
@@ -302,9 +328,6 @@ function renderCalendar() {
     const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
     const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-    // ------------------------------------------------=================
-    // [핵심 변경 사항] 현재 달력 화면에 띄워진 '선택 월'의 데이터만 필터링 합산
-    // ------------------------------------------------=================
     let monthlyOrig = 0, monthlyTax = 0, monthlyReal = 0;
     let monthlyA = 0, monthlyB = 0, monthlyC = 0, monthlyD = 0;
 
@@ -321,18 +344,14 @@ function renderCalendar() {
             monthlyD += dayData.groupD;
         }
     }
-    // 월간 필터링된 결과값으로 상단 대시보드 7가지 요약 UI 카드 실시간 업데이트
     updateSummaryUI(monthlyOrig, monthlyTax, monthlyReal, monthlyA, monthlyB, monthlyC, monthlyD);
-    // ------------------------------------------------=================
 
-    // 달력 공백 채우기
     for (let i = 0; i < firstDayIndex; i++) {
         const emptyCell = document.createElement('div');
         emptyCell.className = 'calendar-day empty';
         grid.appendChild(emptyCell);
     }
 
-    // 일별 셀 생성
     for (let day = 1; day <= lastDate; day++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'calendar-day';
@@ -374,6 +393,7 @@ function renderCalendar() {
     }
 }
 
+// [요구사항 반영 수정] 하단에 붉은 톤의 텍스트 매칭 '날짜 데이터 전체 삭제' 버튼 추가 바인딩
 function showDayDetail(dateKey) {
     const data = globalSalesData[dateKey];
     document.getElementById('selectedDateText').textContent = dateKey;
@@ -434,6 +454,11 @@ function showDayDetail(dateKey) {
                 <span class="label" style="color: var(--accent-red); font-weight:700;">일일 총 예상마진 합계</span>
                 <span class="val" style="color: var(--accent-red);">${Math.round(estimatedMargin).toLocaleString()} 원</span>
             </div>
+            
+            <button onclick="deleteDateData('${dateKey}')" style="width: 100%; margin-top: 14px; padding: 12px; background-color: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#fecaca'" onmouseout="this.style.backgroundColor='#fee2e2'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                이 날짜의 모든 데이터 삭제하기
+            </button>
         </div>
     `;
 }
@@ -445,5 +470,5 @@ function changeMonth(offset) {
     renderCalendar();
 }
 
-// 최초 렌더링 가동
+// 대시보드 캘린더 엔진 최초 기동
 renderCalendar();
