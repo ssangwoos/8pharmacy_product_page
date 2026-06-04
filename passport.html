@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>여권 MRZ (44자) 자동 완성기 V3</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f5f7fa; padding: 20px; display: flex; justify-content: center; }
+        .container { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 650px; box-sizing: border-box; }
+        h1 { font-size: 22px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 0; }
+        .input-group { margin-bottom: 25px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #34495e; font-size: 14px; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; font-family: monospace; text-transform: uppercase; }
+        .result-container { position: relative; margin-top: 10px; }
+        .result-box { background: #f8f9fa; border: 1px solid #e2e8f0; padding: 15px; padding-right: 80px; border-radius: 6px; font-family: monospace; font-size: 16px; font-weight: bold; letter-spacing: 1.5px; word-break: break-all; min-height: 20px; color: #2c3e50; }
+        .btn-copy { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background-color: #3498db; color: white; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-copy:hover { background-color: #2980b9; }
+        
+        /* 📋 실시간 상시 노출 통합본 스타일 */
+        .combined-container { margin-top: 25px; border-top: 2px dashed #cbd5e1; padding-top: 20px; display: block; }
+        .combined-title { font-size: 14px; font-weight: bold; color: #1e293b; margin-bottom: 8px; }
+        .combined-box { background: #eef2f7; border: 1px solid #94a3b8; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 16px; font-weight: bold; letter-spacing: 1.5px; color: #0f172a; white-space: pre-wrap; line-height: 1.6; }
+        
+        /* 🟢 통합본 아래로 이동한 복사 버튼 */
+        .btn-all { display: block; width: 100%; padding: 14px; background-color: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: background-color 0.2s; }
+        .btn-all:hover { background-color: #27ae60; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>✈️ 여권 MRZ (44자) 자동 완성기 V3</h1>
+    <p style="font-size:14px; color:#7f8c8d; margin-bottom:25px;">정보를 입력하면 남는 공간을 꺾쇠(&lt;)로 채워 정확히 44자를 만듭니다. (공백은 자동으로 &lt; 가 됩니다)</p>
+
+    <div class="input-group">
+        <label>1번째 줄 (여권종류 + 국가코드 + 영문성명)</label>
+        <input type="text" id="line1" placeholder="예: P<KORHONG  GILDONG" oninput="processMRZ()">
+        <div class="result-container"><div class="result-box" id="view1"></div><button class="btn-copy" onclick="copyToClipboard('text1')">복사</button></div>
+        <span id="text1" style="display:none;"></span>
+    </div>
+
+    <div class="input-group">
+        <label>2번째 줄 (여권번호 + 생년월일 + 만료일 등)</label>
+        <input type="text" id="line2" placeholder="예: M12345678<1KOR8501017M2606051" oninput="processMRZ()">
+        <div class="result-container"><div class="result-box" id="view2"></div><button class="btn-copy" onclick="copyToClipboard('text2')">복사</button></div>
+        <span id="text2" style="display:none;"></span>
+    </div>
+    
+    <div class="combined-container" id="combinedContainer">
+        <div class="combined-title">📋 실시간 합쳐진 전체 내용 (총 88자):</div>
+        <div class="combined-box" id="viewAll"></div>
+    </div>
+
+    <button class="btn-all" onclick="copyAll()">두 줄 모두 복사하기 (줄바꿈 포함)</button>
+</div>
+
+<script>
+    function processMRZ() {
+        let l1 = document.getElementById('line1').value.toUpperCase().replace(/ /g, '<');
+        let l2 = document.getElementById('line2').value.toUpperCase().replace(/ /g, '<');
+        let final1 = l1.padEnd(44, '<').substring(0, 44);
+        let final2 = l2.padEnd(44, '<').substring(0, 44);
+        document.getElementById('text1').innerText = final1;
+        document.getElementById('text2').innerText = final2;
+        document.getElementById('view1').textContent = final1;
+        document.getElementById('view2').textContent = final2;
+        
+        // 글자를 입력하는 순간 즉시 아래쪽 큰 상자에도 반영됩니다.
+        document.getElementById('viewAll').textContent = final1 + '\n' + final2;
+    }
+    function copyToClipboard(id) {
+        navigator.clipboard.writeText(document.getElementById(id).innerText).then(() => alert('복사되었습니다!'));
+    }
+    function copyAll() {
+        let t1 = document.getElementById('text1').innerText;
+        let t2 = document.getElementById('text2').innerText;
+        navigator.clipboard.writeText(t1 + '\n' + t2).then(() => alert('두 줄 모두 복사되었습니다!'));
+    }
+    processMRZ(); // 초기 실행
+</script>
+</body>
+</html>
