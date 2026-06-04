@@ -32,13 +32,14 @@ const COL_CODE = 9;   // J열: 상품코드
 const COL_TAX = 26;   // AA열: 즉시환급
 const COL_ORIG = 30;  // AE열: 순판매(할인제외) -> 원판매금액
 const COL_REAL = 31;  // AF열: 순판매(할인포함) -> 실결제금액
+const COL_TIME = 49;  // AX열: 입력시간
 
 // =================================================================
 // 3. 초기화 및 이벤트 리스너 등록
 // =================================================================
 window.addEventListener('DOMContentLoaded', () => {
-    loadMarginsFromFirestore();       // 1. 클라우드에서 대시보드 전용 마진율 불러오기
-    loadTransactionsFromFirestore();  // 2. 대시보드 전용 컬렉션 실시간 동기화
+    loadMarginsFromFirestore();       
+    loadTransactionsFromFirestore();  
 });
 
 // 상단 컨트롤 및 업로드 이벤트
@@ -57,7 +58,6 @@ document.getElementById('saveSettingsBtn').addEventListener('click', saveMarginS
 // 4. FIRESTORE 실시간 데이터 연동
 // =================================================================
 
-// [GET] 대시보드 전용 설정 문서에서 마진율 가져오기
 function loadMarginsFromFirestore() {
     db.collection("settings").doc("dashboard_marginRates").get().then((doc) => {
         if (doc.exists) {
@@ -67,7 +67,6 @@ function loadMarginsFromFirestore() {
             groupMargins.C = data.C || 0;
             groupMargins.D = data.D || 0;
             
-            // 모달 인풋 UI에 세팅
             document.getElementById('marginInputA').value = groupMargins.A;
             document.getElementById('marginInputB').value = groupMargins.B;
             document.getElementById('marginInputC').value = groupMargins.C;
@@ -78,7 +77,6 @@ function loadMarginsFromFirestore() {
     }).catch((error) => console.error("대시보드 마진율 로드 실패:", error));
 }
 
-// [SET] 대시보드 전용 마진율을 Firestore에 저장
 function saveMarginSettings() {
     groupMargins.A = parseFloat(document.getElementById('marginInputA').value) || 0;
     groupMargins.B = parseFloat(document.getElementById('marginInputB').value) || 0;
@@ -93,18 +91,15 @@ function saveMarginSettings() {
     }).then(() => {
         modal.classList.remove('active');
         renderCalendar(); 
-        
         const currentDetailDate = document.getElementById('selectedDateText').textContent;
         if (globalSalesData[currentDetailDate]) showDayDetail(currentDetailDate);
-        
         alert("💾 대시보드 전용 마진율이 클라우드에 저장되었으며, 모든 데이터가 재계산되었습니다.");
     }).catch((error) => alert("마진율 저장 실패: " + error));
 }
 
-// [LISTEN] 분리된 대시보드 전용 컬렉션('dashboard_sales')을 실시간 감시
 function loadTransactionsFromFirestore() {
     db.collection("dashboard_sales").onSnapshot((snapshot) => {
-        globalSalesData = {}; // 캐시 초기화
+        globalSalesData = {}; 
         let isFirstLoad = Object.keys(globalSalesData).length === 0;
 
         snapshot.forEach((doc) => {
@@ -143,7 +138,7 @@ function loadTransactionsFromFirestore() {
 
 
 // =================================================================
-// 5. 엑셀 파싱 및 독립 컬렉션('dashboard_sales')에 업로드
+// 5. 엑셀 파싱 및 강력한 중복 제외 처리 후 업로드
 // =================================================================
 function handleFileUpload(e) {
     const file = e.target.files[0];
@@ -160,12 +155,16 @@ function handleFileUpload(e) {
         
         uploadExcelToFirestore(rawRows);
     };
-    reader.readAsBuffer(file);
+    reader.readAsArrayBuffer(file);
 }
 
 function uploadExcelToFirestore(rows) {
     const batch = db.batch(); 
     let validRowCount = 0;
+    let duplicateCount = 0;
+
+    // 현재 업로드 세션 내부 중복 필터용 Set
+    const seenRecords = new Set();
 
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
@@ -178,9 +177,26 @@ function uploadExcelToFirestore(rows) {
         const taxAmt = parseAmount(row[COL_TAX]);
         const realAmt = parseAmount(row[COL_REAL]);
         const prodCode = String(row[COL_CODE] || '').trim();
+        
+        // [보완] 입력시간 포맷을 엄격하게 정형화 추출
+        const inputTime = parseExcelTime(row[COL_TIME]); 
         const group = determineGroup(prodCode);
 
-        const docRef = db.collection("dashboard_sales").doc(`${dateKey}_row_${i}`);
+        // 중복 판별 고유 키 생성
+        const uniqueKey = `${inputTime}_${realAmt}_${prodCode}`;
+
+        // 1. 파일 내부 자체 중복 데이터 스킵
+        if (seenRecords.has(uniqueKey)) {
+            duplicateCount++;
+            continue;
+        }
+        seenRecords.add(uniqueKey);
+
+        // 2. 문서 ID 규칙을 고유 키 기반으로 통일하여 클라우드 중복 업로드 원천 차단
+        // 파일 분할 업로드 시에도 동일 문서에 덮어쓰기되므로 중복 누적이 불가능해집니다.
+        const cleanKeyStr = uniqueKey.replace(/[^a-zA-Z0-9]/g, '_');
+        const safeDocId = `doc_${dateKey}_${cleanKeyStr}`;
+        const docRef = db.collection("dashboard_sales").doc(safeDocId);
         
         batch.set(docRef, {
             date: dateKey,
@@ -192,6 +208,7 @@ function uploadExcelToFirestore(rows) {
             groupC: group === 'C' ? realAmt : 0,
             groupD: group === 'D' ? realAmt : 0,
             productCode: prodCode,
+            inputTime: inputTime,
             uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
@@ -204,32 +221,28 @@ function uploadExcelToFirestore(rows) {
     }
 
     batch.commit().then(() => {
-        alert(`🚀 총 ${validRowCount}건의 매출 데이터가 전용 클라우드(dashboard_sales)에 분리 저장되었습니다!`);
+        alert(`🚀 업로드 완료!\n- 정상 등록: ${validRowCount}건\n- 중복 제외: ${duplicateCount}건이 필터링되었습니다.`);
     }).catch(err => {
         console.error(err);
         alert("클라우드 전송 실패: " + err.message);
     });
 }
 
-// [기능 추가] 선택한 날짜의 매출 데이터를 클라우드에서 일괄 삭제하는 함수
 function deleteDateData(dateKey) {
     if (!confirm(`⚠️ 정말로 ${dateKey}일의 모든 매출 데이터를 클라우드에서 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) {
         return;
     }
 
-    // dashboard_sales 컬렉션에서 해당 날짜를 가진 문서만 쿼리로 전부 긁어옴
     db.collection("dashboard_sales").where("date", "==", dateKey).get()
         .then((querySnapshot) => {
             const batch = db.batch();
             querySnapshot.forEach((doc) => {
-                batch.delete(doc.ref); // 삭제 배치에 추가
+                batch.delete(doc.ref);
             });
-            return batch.commit(); // 파이어베이스 서버에 전송 일괄 실행
+            return batch.commit();
         })
         .then(() => {
             alert(`🗑️ ${dateKey}일의 모든 데이터가 성공적으로 삭제되었습니다.`);
-            
-            // 우측 상세 화면 창 비우고 초기화 상태로 복구
             document.getElementById('selectedDateText').textContent = "날짜를 선택하세요";
             document.getElementById('detailContent').innerHTML = `
                 <p class="placeholder-text">캘린더에서 데이터가 있는 날짜를 클릭하면 상세 매출 그룹 요약이 표시됩니다.</p>
@@ -243,7 +256,7 @@ function deleteDateData(dateKey) {
 
 
 // =================================================================
-// 6. 데이터 가공 및 날짜 헬퍼 로직
+// 6. 데이터 가공 및 날짜/시간 포맷 정형화 헬퍼 함수
 // =================================================================
 function parseExcelDate(val) {
     if (!val) return null;
@@ -262,6 +275,24 @@ function formatDateObject(dateObj) {
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');
     const d = String(dateObj.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+}
+
+// [추가 보완] 입력시간 포맷의 변동성을 잡아내는 정규화 함수
+function parseExcelTime(val) {
+    if (!val) return '';
+    if (val instanceof Date) {
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const d = String(val.getDate()).padStart(2, '0');
+        const hh = String(val.getHours()).padStart(2, '0');
+        const mm = String(val.getMinutes()).padStart(2, '0');
+        const ss = String(val.getSeconds()).padStart(2, '0');
+        return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+    }
+    if (typeof val === 'number') {
+        return val.toFixed(6); // 엑셀 고유 타임 시리얼 숫자로 넘어올 경우 소수점 고정 고유 키화
+    }
+    return String(val).trim();
 }
 
 function determineGroup(code) {
@@ -393,7 +424,6 @@ function renderCalendar() {
     }
 }
 
-// [요구사항 반영 수정] 하단에 붉은 톤의 텍스트 매칭 '날짜 데이터 전체 삭제' 버튼 추가 바인딩
 function showDayDetail(dateKey) {
     const data = globalSalesData[dateKey];
     document.getElementById('selectedDateText').textContent = dateKey;
@@ -454,7 +484,6 @@ function showDayDetail(dateKey) {
                 <span class="label" style="color: var(--accent-red); font-weight:700;">일일 총 예상마진 합계</span>
                 <span class="val" style="color: var(--accent-red);">${Math.round(estimatedMargin).toLocaleString()} 원</span>
             </div>
-            
             <button onclick="deleteDateData('${dateKey}')" style="width: 100%; margin-top: 14px; padding: 12px; background-color: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#fecaca'" onmouseout="this.style.backgroundColor='#fee2e2'">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                 이 날짜의 모든 데이터 삭제하기
@@ -470,5 +499,4 @@ function changeMonth(offset) {
     renderCalendar();
 }
 
-// 대시보드 캘린더 엔진 최초 기동
 renderCalendar();
