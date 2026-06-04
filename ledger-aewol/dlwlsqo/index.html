@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매출 분석 대시보드</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-title">
+                <h1>Sales Performance Dashboard</h1>
+                <p>엑셀 파일을 업로드하여 일별 매출 통계를 확인하세요.</p>
+            </div>
+            <div class="upload-zone">
+                <button id="openSettingsBtn" class="settings-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    마진율 설정
+                </button>
+                <input type="file" id="excelFile" accept=".xlsx, .xls" hidden>
+                <label for="excelFile" class="upload-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    엑셀 파일 업로드
+                </label>
+                <span id="fileName" class="file-name">선택된 파일 없음</span>
+            </div>
+        </header>
+
+        <section class="summary-section" id="summarySection" style="display: none;">
+            <div class="summary-card">
+                <h3>총 원판매금액 (AE)</h3>
+                <p id="totalOrig">0원</p>
+            </div>
+            <div class="summary-card">
+                <h3>총 즉시환급액 (AA)</h3>
+                <p id="totalTax">0원</p>
+            </div>
+            <div class="summary-card accent">
+                <h3>총 실결제금액 (AF)</h3>
+                <p id="totalReal">0원</p>
+            </div>
+            <div class="summary-card group-a">
+                <h3>그룹 A 총 매출</h3>
+                <p id="totalA">0원</p>
+            </div>
+            <div class="summary-card group-b">
+                <h3>그룹 B 총 매출</h3>
+                <p id="totalB">0원</p>
+            </div>
+            <div class="summary-card group-c">
+                <h3>그룹 C 총 매출</h3>
+                <p id="totalC">0원</p>
+            </div>
+            <div class="summary-card group-d">
+                <h3>그룹 D 총 매출</h3>
+                <p id="totalD">0원</p>
+            </div>
+        </section>
+
+        <main class="dashboard-main">
+            <div class="calendar-wrapperCard">
+                <div class="calendar-controls">
+                    <button id="prevMonth" class="nav-btn">&lt;</button>
+                    <h2 id="calendarTitle">2026년 06월</h2>
+                    <button id="nextMonth" class="nav-btn">&gt;</button>
+                </div>
+                <div class="calendar-grid-header">
+                    <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                </div>
+                <div id="calendarGrid" class="calendar-grid"></div>
+            </div>
+
+            <div class="detail-wrapperCard">
+                <div class="detail-header">
+                    <h2 id="selectedDateText">날짜를 선택하세요</h2>
+                    <span class="badge">상세 집계</span>
+                </div>
+                <div class="detail-content" id="detailContent">
+                    <p class="placeholder-text">캘린더에서 데이터가 있는 날짜를 클릭하면 상세 매출 그룹 요약이 표시됩니다.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h2>그룹별 마진율 설정 (%)</h2>
+                <button id="closeModalBtn" class="close-x-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-tip">각 상품 그룹별 마진율(%)을 입력하시면 달력에 예상 마진이 실시간 반영됩니다.</p>
+                <div class="input-field-group">
+                    <div class="input-item">
+                        <label for="marginInputA">그룹 A 마진율 (코드 'A')</label>
+                        <div class="input-wrapper"><input type="number" id="marginInputA" value="0" min="0" max="100"><span>%</span></div>
+                    </div>
+                    <div class="input-item">
+                        <label for="marginInputB">그룹 B 마진율 (코드 'B')</label>
+                        <div class="input-wrapper"><input type="number" id="marginInputB" value="0" min="0" max="100"><span>%</span></div>
+                    </div>
+                    <div class="input-item">
+                        <label for="marginInputC">그룹 C 마진율 (기타 알파벳)</label>
+                        <div class="input-wrapper"><input type="number" id="marginInputC" value="0" min="0" max="100"><span>%</span></div>
+                    </div>
+                    <div class="input-item">
+                        <label for="marginInputD">그룹 D 마진율 (숫자 시작)</label>
+                        <div class="input-wrapper"><input type="number" id="marginInputD" value="0" min="0" max="100"><span>%</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveSettingsBtn" class="save-action-btn">적용 및 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

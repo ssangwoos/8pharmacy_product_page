@@ -1,0 +1,270 @@
+:root {
+    --bg-color: #f4f7f5;
+    --card-bg: #ffffff;
+    --primary-pastel: #76b893;
+    --primary-light: #eaf4ee;
+    --primary-dark: #3b604c;
+    --text-main: #2c3e35;
+    --text-muted: #70857a;
+    --border-color: #d1e2d9;
+    --sunday-color: #e57373;
+    --saturday-color: #64b5f6;
+    --accent-red: #e53935; /* 마진 표시용 소프트 레드 */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.dashboard-container {
+    width: 100%;
+    max-width: 1280px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.dashboard-header {
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.header-title h1 {
+    font-size: 24px;
+    color: var(--primary-dark);
+    margin-bottom: 4px;
+}
+
+.header-title p { color: var(--text-muted); font-size: 14px; }
+.upload-zone { display: flex; align-items: center; gap: 12px; }
+
+/* 설정 버튼 스타일 */
+.settings-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+    border: 1px solid var(--primary-pastel);
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.settings-btn:hover {
+    background-color: var(--primary-pastel);
+    color: white;
+}
+
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--primary-pastel);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.upload-btn:hover { background-color: var(--primary-dark); }
+.file-name { font-size: 14px; color: var(--text-muted); }
+
+.summary-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+}
+
+.summary-card {
+    background: var(--card-bg);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+.summary-card h3 { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.summary-card p { font-size: 18px; font-weight: 700; color: var(--text-main); }
+.summary-card.accent { background-color: var(--primary-light); border-color: var(--primary-pastel); }
+.summary-card.accent p { color: var(--primary-dark); }
+
+.summary-card.group-a { border-left: 4px solid #81c784; }
+.summary-card.group-b { border-left: 4px solid #4db6ac; }
+.summary-card.group-c { border-left: 4px solid #afb42b; }
+.summary-card.group-d { border-left: 4px solid #a1887f; }
+
+.dashboard-main {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+}
+@media (max-width: 900px) { .dashboard-main { grid-template-columns: 1fr; } }
+
+.calendar-wrapperCard, .detail-wrapperCard {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 24px;
+}
+
+.calendar-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.nav-btn {
+    background: var(--primary-light);
+    border: none;
+    color: var(--primary-dark);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-weight: bold;
+    cursor: pointer;
+}
+.nav-btn:hover { background: var(--primary-pastel); color: white; }
+
+.calendar-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 600;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-muted);
+}
+.calendar-grid-header div:nth-child(1) { color: var(--sunday-color); }
+.calendar-grid-header div:nth-child(7) { color: var(--saturday-color); }
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: minmax(95px, auto);
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.calendar-day {
+    border: 1px solid #f0f4f1;
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    background-color: #fafdfb;
+}
+.calendar-day .day-num { font-weight: 600; font-size: 13px; margin-bottom: auto;}
+.calendar-day.sun .day-num { color: var(--sunday-color); }
+.calendar-day.sat .day-num { color: var(--saturday-color); }
+.calendar-day.empty { background: transparent; border: none; }
+
+.calendar-day.has-data {
+    background-color: var(--primary-light);
+    border-color: var(--primary-pastel);
+    cursor: pointer;
+}
+
+/* 금액과 마진 데이터 배치 */
+.calendar-day .day-summary {
+    font-size: 11px;
+    text-align: right;
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+
+/* 추가된 빨간색 마진 텍스트 스타일 */
+.calendar-day .day-margin {
+    font-size: 11px;
+    text-align: right;
+    color: var(--accent-red);
+    font-weight: 700;
+    margin-top: 1px;
+}
+
+/* 모달 팝업 레이아웃 스타일 */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+.modal-overlay.active { display: flex; }
+
+.modal-window {
+    background: var(--card-bg);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    overflow: hidden;
+    animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+.modal-header {
+    background: var(--primary-light);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+.modal-header h2 { font-size: 18px; color: var(--primary-dark); }
+.close-x-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+
+.modal-body { padding: 20px; }
+.modal-tip { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4; }
+
+.input-field-group { display: flex; flex-direction: column; gap: 14px; }
+.input-item { display: flex; flex-direction: column; gap: 6px; }
+.input-item label { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.input-wrapper { display: flex; align-items: center; gap: 8px; }
+.input-wrapper input {
+    width: 100%; padding: 8px 12px; 
+    border: 1px solid var(--border-color); 
+    border-radius: 6px; font-size: 14px; font-weight: 600;
+}
+.input-wrapper input:focus { outline: none; border-color: var(--primary-pastel); }
+.input-wrapper span { font-weight: 600; color: var(--text-muted); }
+
+.modal-footer { padding: 16px 20px; border-top: 1px solid var(--border-color); text-align: right; }
+.save-action-btn {
+    background: var(--primary-pastel); color: white; border: none;
+    padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;
+}
+.save-action-btn:hover { background: var(--primary-dark); }
+
+.detail-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary-light); padding-bottom: 12px; margin-bottom: 20px; }
+.badge { background: var(--primary-pastel); color: white; font-size: 12px; padding: 4px 8px; border-radius: 4px; }
+.placeholder-text { color: var(--text-muted); font-size: 14px; text-align: center; padding: 40px 0; }
+.detail-item-list { display: flex; flex-direction: column; gap: 12px; }
+.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-color); border-radius: 8px; border-left: 4px solid var(--text-muted); }
+.detail-row.group-A { border-left-color: #81c784; }
+.detail-row.group-B { border-left-color: #4db6ac; }
+.detail-row.group-C { border-left-color: #afb42b; }
+.detail-row.group-D { border-left-color: #a1887f; }
+.detail-row.total-row { background: var(--primary-light); border-left-color: var(--primary-pastel); font-weight: 700; margin-top: 8px; }
+.detail-row .label { font-size: 14px; font-weight: 600; }
+.detail-row .val { font-size: 16px; font-weight: 700; }
