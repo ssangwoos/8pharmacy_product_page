@@ -298,3 +298,176 @@ body {
     border-color: var(--primary-pastel);
     outline: none;
 }
+
+/* 최하단 3D 차트 카드 스타일 */
+.chart-section {
+    width: 100%;
+}
+.chart-wrapperCard {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 24px;
+}
+.chart-wrapperCard h2 {
+    font-size: 18px;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+/* 상단 내비게이션 탭 바 스타일 */
+.navigation-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+}
+.tab-btn {
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.tab-btn:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+}
+.tab-btn.active {
+    background-color: var(--primary-pastel);
+    color: white;
+}
+
+/* 탭 패널 제어 활성화 */
+.tab-panel {
+    display: none;
+}
+.tab-panel.active {
+    display: block;
+}
+
+/* 지출 관리 탭 2분할 그리드 */
+.expense-container-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 24px;
+    margin-top: 12px;
+}
+@media (max-width: 900px) {
+    .expense-container-grid { grid-template-columns: 1fr; }
+}
+
+.expense-form-card, .expense-list-card, .profit-analysis-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    padding: 24px;
+}
+.expense-form-card h2, .expense-list-card h2, .profit-analysis-card h2 {
+    font-size: 18px;
+    color: var(--primary-dark);
+    margin-bottom: 16px;
+    font-weight: 700;
+}
+
+/* 입력 폼 필드 스타일 */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+.form-group input, .form-group select {
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text-main);
+}
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--primary-pastel);
+}
+
+/* 데이터 출력 범용 테이블 */
+.data-display-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.data-display-table th, .data-display-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+}
+.data-display-table th {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+
+/* 영업이익 분석 지표 카드 스케일 */
+.profit-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+.metric-box {
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: #fafdfb;
+}
+.metric-box h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.metric-box span { font-size: 22px; font-weight: 700; color: var(--text-main); }
+.metric-box.bg-sales { border-left: 5px solid var(--saturday-color); }
+.metric-box.bg-margin { border-left: 5px solid var(--primary-pastel); }
+.metric-box.bg-expense { border-left: 5px solid var(--sunday-color); }
+
+/* 최종 순 영업이익강화 상자 알림 테마 */
+.metric-box.bg-netprofit {
+    background: var(--primary-light);
+    border: 1px solid var(--primary-pastel);
+    border-left: 5px solid var(--primary-dark);
+}
+.metric-box.bg-netprofit span { color: var(--primary-dark); }
+.metric-box.bg-netprofit small { display: block; font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 600; }
+
+/* 팝업 세팅 전용 테이블 인라인 고정 */
+.settings-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;}
+.settings-table th, .settings-table td { padding: 12px; border: 1px solid var(--border-color); text-align: center; }
+.settings-table th { background-color: var(--primary-light); color: var(--primary-dark); font-weight: 700; }
+.settings-table input { width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: right; font-weight: 600; }
+
+/* 글로벌 연월 선택 바 중앙 배치 디자인 스타일 추가 */
+.global-month-selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    background: var(--card-bg);
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+.global-month-selector h2 {
+    font-size: 20px;
+    color: var(--primary-dark);
+    font-weight: 700;
+    min-width: 140px;
+    text-align: center;
+}

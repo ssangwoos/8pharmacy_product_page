@@ -3,152 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>매출 분석 대시보드</title>
+    <title>약국 통합 경영 관리 대시보드</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
     <div class="dashboard-container">
-        <header class="dashboard-header">
-            <div class="header-title">
-                <h1>Sales Performance Dashboard</h1>
-                <p>엑셀 파일을 업로드하여 일별 매출 통계를 확인하세요.</p>
-            </div>
-            <div class="upload-zone">
-                <button id="openSettingsBtn" class="settings-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    마진율 설정
-                </button>
-                <input type="file" id="excelFile" accept=".xlsx, .xls" hidden>
-                <label for="excelFile" class="upload-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    엑셀 파일 업로드
-                </label>
-                <span id="fileName" class="file-name">선택된 파일 없음</span>
-            </div>
-        </header>
+        <nav class="navigation-tabs">
+            <button class="tab-btn active" onclick="switchTab('sales-tab-content', this)">📊 매출 대시보드</button>
+            <button class="tab-btn" onclick="switchTab('expense-tab-content', this)">💸 지출항목 등록</button>
+            <button class="tab-btn" onclick="switchTab('profit-tab-content', this)">📈 월간 영업이익 리포트</button>
+        </nav>
 
-        <section class="summary-section" id="summarySection" style="display: none;">
-            <div class="summary-card">
-                <h3>총 원판매금액 (AE)</h3>
-                <p id="totalOrig">0원</p>
-            </div>
-            <div class="summary-card">
-                <h3>총 즉시환급액 (AA)</h3>
-                <p id="totalTax">0원</p>
-            </div>
-            <div class="summary-card accent">
-                <h3>총 실결제금액 (AF)</h3>
-                <p id="totalReal">0원</p>
-            </div>
-            <div class="summary-card group-a">
-                <h3>그룹 A 총 매출</h3>
-                <p id="totalA">0원</p>
-            </div>
-            <div class="summary-card group-b">
-                <h3>그룹 B 총 매출</h3>
-                <p id="totalB">0원</p>
-            </div>
-            <div class="summary-card group-c">
-                <h3>그룹 C 총 매출</h3>
-                <p id="totalC">0원</p>
-            </div>
-            <div class="summary-card group-d">
-                <h3>그룹 D 총 매출</h3>
-                <p id="totalD">0원</p>
-            </div>
-        </section>
+        <div class="global-month-selector">
+            <button id="prevMonth" class="nav-btn">&lt;</button>
+            <h2 id="calendarTitle">2026년 06월</h2>
+            <button id="nextMonth" class="nav-btn">&gt;</button>
+        </div>
 
-        <main class="dashboard-main">
-            <div class="calendar-wrapperCard">
-                <div class="calendar-controls">
-                    <button id="prevMonth" class="nav-btn">&lt;</button>
-                    <h2 id="calendarTitle">2026년 06월</h2>
-                    <button id="nextMonth" class="nav-btn">&gt;</button>
+        <div id="sales-tab-content" class="tab-panel active">
+            <header class="dashboard-header">
+                <div class="header-title">
+                    <h1>Sales Performance Dashboard</h1>
+                    <p>엑셀 파일을 업로드하여 일별 매출 통계를 확인하세요.</p>
                 </div>
-                <div class="calendar-grid-header">
-                    <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                <div class="upload-zone">
+                    <button id="openSettingsBtn" class="settings-btn">⚙️ 마진율 설정</button>
+                    <input type="file" id="excelFile" accept=".xlsx, .xls" hidden>
+                    <label for="excelFile" class="upload-btn">📁 엑셀 파일 업로드</label>
+                    <span id="fileName" class="file-name">선택된 파일 없음</span>
                 </div>
-                <div id="calendarGrid" class="calendar-grid"></div>
-            </div>
+            </header>
 
-            <div class="detail-wrapperCard">
-                <div class="detail-header">
-                    <h2 id="selectedDateText">날짜를 선택하세요</h2>
-                    <span class="badge">상세 집계</span>
+            <section class="summary-section" id="summarySection" style="display: none;">
+                <div class="summary-card"><h3>총 원판매금액 (AE)</h3><p id="totalOrig">0원</p></div>
+                <div class="summary-card"><h3>총 즉시환급액 (AA)</h3><p id="totalTax">0원</p></div>
+                <div class="summary-card accent"><h3>총 실결제금액 (AF)</h3><p id="totalReal">0원</p></div>
+                <div class="summary-card group-a"><h3>그룹 A 총 매출</h3><p id="totalA">0원</p></div>
+                <div class="summary-card group-b"><h3>그룹 B 총 매출</h3><p id="totalB">0원</p></div>
+                <div class="summary-card group-c"><h3>그룹 C 총 매출</h3><p id="totalC">0원</p></div>
+                <div class="summary-card group-d"><h3>그룹 D 총 매출</h3><p id="totalD">0원</p></div>
+            </section>
+
+            <main class="dashboard-main">
+                <div class="calendar-wrapperCard">
+                    <div class="calendar-grid-header">
+                        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+                    </div>
+                    <div id="calendarGrid" class="calendar-grid"></div>
                 </div>
-                <div class="detail-content" id="detailContent">
-                    <p class="placeholder-text">캘린더에서 데이터가 있는 날짜를 클릭하면 상세 매출 그룹 요약이 표시됩니다.</p>
+
+                <div class="detail-wrapperCard">
+                    <div class="detail-header">
+                        <h2 id="selectedDateText">날짜를 선택하세요</h2>
+                        <span class="badge">상세 집계</span>
+                    </div>
+                    <div class="detail-content" id="detailContent">
+                        <p class="placeholder-text">캘린더에서 데이터가 있는 날짜를 클릭하면 상세 매출 그룹 요약이 표시됩니다.</p>
+                    </div>
                 </div>
-            </div>
-        </main>
+            </main>
+
+            <section class="chart-section" id="chartSection" style="display: none; margin-top: 24px;">
+                <div class="chart-wrapperCard">
+                    <h2>월간 그룹별 매출 구성비 (3D 비율 분석)</h2>
+                    <div id="piechart_3d" style="width: 100%; height: 450px;"></div>
+                </div>
+            </section>
+        </div>
+
+        <div id="expense-tab-content" class="tab-panel">
+            <main class="expense-container-grid">
+                <div class="expense-form-card">
+                    <h2>💸 신규 지출 항목 등록</h2>
+                    <form id="expenseForm">
+                        <div class="form-group">
+                            <label>거래처 선택 (장부 자동연동)</label>
+                            <select id="expVendorSelect" onchange="toggleManualVendorInput()" required>
+                                <option value="">-- 거래처 로딩중 --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="manualVendorFormGroup" style="display: none;">
+                            <label>수동 거래처 입력</label>
+                            <input type="text" id="expVendorManual" placeholder="거래처명을 직접 입력하세요">
+                        </div>
+                        <div class="form-group">
+                            <label>지출 일자</label>
+                            <input type="date" id="expDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>지출 금액 (원)</label>
+                            <input type="number" id="expAmount" placeholder="숫자만 입력" required>
+                        </div>
+                        <div class="form-group">
+                            <label>지출 분류 항목</label>
+                            <select id="expCategory" required>
+                                <option value="의약품/자재구입">의약품 및 자재 구입비</option>
+                                <option value="임차료/관리비">임차료 / 관리비</option>
+                                <option value="인건비">인건비 (급여/상여)</option>
+                                <option value="세금/공과금">세금 및 공과금</option>
+                                <option value="기타운영비">기타 일반 운영비</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>적요 / 메모사항</label>
+                            <input type="text" id="expNote" placeholder="상세 영수증 및 증빙 메모">
+                        </div>
+                        <button type="submit" class="upload-btn" style="width: 100%; justify-content: center;">지출 내역 반영하기</button>
+                    </form>
+                </div>
+
+                <div class="expense-list-card">
+                    <h2>📋 등록된 지출 내역 명세서</h2>
+                    <div class="table-responsive">
+                        <table class="data-display-table">
+                            <thead>
+                                <tr>
+                                    <th>일자</th>
+                                    <th>지출분류</th>
+                                    <th>거래처</th>
+                                    <th>지출금액</th>
+                                    <th>메모</th>
+                                    <th>삭제</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseTableBody">
+                                <tr><td colspan="6" class="placeholder-text">등록된 지출 내역이 없습니다.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="profit-tab-content" class="tab-panel">
+            <section class="profit-analysis-card">
+                <div class="profit-header-wrapper">
+                    <h2 id="profitReportTitle">2026년 06월 손익분석 보고서</h2>
+                    <p>매출총이익 및 지출 비용 통계를 합산하여 약국의 순 영업이익을 산출합니다.</p>
+                </div>
+                
+                <div class="profit-metric-grid">
+                    <div class="metric-box bg-sales">
+                        <h4>총 매출액 (실결제 기준)</h4>
+                        <span id="pMetricReal">0 원</span>
+                    </div>
+                    <div class="metric-box bg-margin">
+                        <h4>총 매출총이익 (A+B+C+D 마진합계)</h4>
+                        <span id="pMetricMargin">0 원</span>
+                    </div>
+                    <div class="metric-box bg-expense">
+                        <h4>총 판관비 (지출 합계액)</h4>
+                        <span id="pMetricExpense">0 원</span>
+                    </div>
+                    <div class="metric-box bg-netprofit" id="netProfitBox">
+                        <h4>최종 순 영업이익 (마진 - 지출)</h4>
+                        <span id="pMetricNetProfit">0 원</span>
+                        <small id="pMetricNetRate">이익률: 0.0%</small>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
 
     <div id="settingsModal" class="modal-overlay">
-    <div class="modal-window" style="max-width: 800px;"> <div class="modal-header">
-            <h2>구간별 마진율 및 누진공제 설정</h2>
-            <button id="closeModalBtn" class="close-x-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p class="modal-tip">월간 총 실결제액 구간에 따라 그룹 A, B, C의 마진율과 B의 누진공제액을 설정합니다. (D는 25% 고정)</p>
-            
-            <div class="table-responsive">
-                <table class="settings-table">
-                    <thead>
-                        <tr>
-                            <th>월 매출 구간</th>
-                            <th>A 마진(%)</th>
-                            <th>B 마진(%)</th>
-                            <th>C 마진(%)</th>
-                            <th>B 누진공제</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tierSettingsBody">
-                        <tr data-tier="1">
-                            <td>0 ~ 1억 미만</td>
-                            <td><input type="number" class="in-a" value="20"></td>
-                            <td><input type="number" class="in-b" value="20"></td>
-                            <td><input type="number" class="in-c" value="10"></td>
-                            <td><input type="number" class="in-deduct" value="0"></td>
-                        </tr>
-                        <tr data-tier="2">
-                            <td>1억 ~ 2억 미만</td>
-                            <td><input type="number" class="in-a" value="15"></td>
-                            <td><input type="number" class="in-b" value="15"></td>
-                            <td><input type="number" class="in-c" value="10"></td>
-                            <td><input type="number" class="in-deduct" value="-1500000"></td>
-                        </tr>
-                        <tr data-tier="3">
-                            <td>2억 ~ 3억 미만</td>
-                            <td><input type="number" class="in-a" value="10"></td>
-                            <td><input type="number" class="in-b" value="10"></td>
-                            <td><input type="number" class="in-c" value="10"></td>
-                            <td><input type="number" class="in-deduct" value="-3000000"></td>
-                        </tr>
-                        <tr data-tier="4">
-                            <td>3억 초과</td>
-                            <td><input type="number" class="in-a" value="7.5"></td>
-                            <td><input type="number" class="in-b" value="7.5"></td>
-                            <td><input type="number" class="in-c" value="10"></td>
-                            <td><input type="number" class="in-deduct" value="0"></td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="modal-window" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>구간별 마진율 및 누진공제 설정</h2>
+                <button id="closeModalBtn" class="close-x-btn">&times;</button>
             </div>
-            
-            <div style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 8px; font-size: 13px;">
-                <strong>알림:</strong> 그룹 D 마진율은 요청하신 대로 <strong>25% 고정</strong> 적용됩니다.
+            <div class="modal-body">
+                <p class="modal-tip">월간 총 실결제액 구간에 따라 그룹 A, B, C의 마진율과 B의 누진공제액을 설정합니다. (D는 25% 고정)</p>
+                <div class="table-responsive">
+                    <table class="settings-table">
+                        <thead>
+                            <tr>
+                                <th>월 매출 구간</th>
+                                <th>A 마진(%)</th>
+                                <th>B 마진(%)</th>
+                                <th>C 마진(%)</th>
+                                <th>B 누진공제</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tierSettingsBody">
+                            <tr data-tier="1">
+                                <td>0 ~ 1억 이하</td>
+                                <td><input type="number" class="in-a" value="20"></td>
+                                <td><input type="number" class="in-b" value="20"></td>
+                                <td><input type="number" class="in-c" value="70"></td>
+                                <td><input type="number" class="in-deduct" value="0"></td>
+                            </tr>
+                            <tr data-tier="2">
+                                <td>1억 초과 ~ 2억 이하</td>
+                                <td><input type="number" class="in-a" value="15"></td>
+                                <td><input type="number" class="in-b" value="15"></td>
+                                <td><input type="number" class="in-c" value="80"></td>
+                                <td><input type="number" class="in-deduct" value="-1500000"></td>
+                            </tr>
+                            <tr data-tier="3">
+                                <td>2억 초과 ~ 3억 이하</td>
+                                <td><input type="number" class="in-a" value="10"></td>
+                                <td><input type="number" class="in-b" value="10"></td>
+                                <td><input type="number" class="in-c" value="90"></td>
+                                <td><input type="number" class="in-deduct" value="-3000000"></td>
+                            </tr>
+                            <tr data-tier="4">
+                                <td>3억 초과</td>
+                                <td><input type="number" class="in-a" value="7.5"></td>
+                                <td><input type="number" class="in-b" value="7.5"></td>
+                                <td><input type="number" class="in-c" value="90"></td>
+                                <td><input type="number" class="in-deduct" value="0"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-        <div class="modal-footer">
-            <button id="saveSettingsBtn" class="save-action-btn">설정 저장 및 재계산</button>
+            <div class="modal-footer">
+                <button id="saveSettingsBtn" class="save-action-btn">설정 저장 및 재계산</button>
+            </div>
         </div>
     </div>
-</div>
 
     <script src="script.js"></script>
 </body>
