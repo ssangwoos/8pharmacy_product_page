@@ -268,3 +268,33 @@ body {
 .detail-row.total-row { background: var(--primary-light); border-left-color: var(--primary-pastel); font-weight: 700; margin-top: 8px; }
 .detail-row .label { font-size: 14px; font-weight: 600; }
 .detail-row .val { font-size: 16px; font-weight: 700; }
+
+/* 설정 테이블 스타일 */
+.settings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+}
+.settings-table th, .settings-table td {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+}
+.settings-table th {
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+.settings-table input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: right;
+    font-weight: 600;
+}
+.settings-table input:focus {
+    border-color: var(--primary-pastel);
+    outline: none;
+}

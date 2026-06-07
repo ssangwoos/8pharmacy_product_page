@@ -89,37 +89,66 @@
     </div>
 
     <div id="settingsModal" class="modal-overlay">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h2>그룹별 마진율 설정 (%)</h2>
-                <button id="closeModalBtn" class="close-x-btn">&times;</button>
+    <div class="modal-window" style="max-width: 800px;"> <div class="modal-header">
+            <h2>구간별 마진율 및 누진공제 설정</h2>
+            <button id="closeModalBtn" class="close-x-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-tip">월간 총 실결제액 구간에 따라 그룹 A, B, C의 마진율과 B의 누진공제액을 설정합니다. (D는 25% 고정)</p>
+            
+            <div class="table-responsive">
+                <table class="settings-table">
+                    <thead>
+                        <tr>
+                            <th>월 매출 구간</th>
+                            <th>A 마진(%)</th>
+                            <th>B 마진(%)</th>
+                            <th>C 마진(%)</th>
+                            <th>B 누진공제</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tierSettingsBody">
+                        <tr data-tier="1">
+                            <td>0 ~ 1억 미만</td>
+                            <td><input type="number" class="in-a" value="20"></td>
+                            <td><input type="number" class="in-b" value="20"></td>
+                            <td><input type="number" class="in-c" value="10"></td>
+                            <td><input type="number" class="in-deduct" value="0"></td>
+                        </tr>
+                        <tr data-tier="2">
+                            <td>1억 ~ 2억 미만</td>
+                            <td><input type="number" class="in-a" value="15"></td>
+                            <td><input type="number" class="in-b" value="15"></td>
+                            <td><input type="number" class="in-c" value="10"></td>
+                            <td><input type="number" class="in-deduct" value="-1500000"></td>
+                        </tr>
+                        <tr data-tier="3">
+                            <td>2억 ~ 3억 미만</td>
+                            <td><input type="number" class="in-a" value="10"></td>
+                            <td><input type="number" class="in-b" value="10"></td>
+                            <td><input type="number" class="in-c" value="10"></td>
+                            <td><input type="number" class="in-deduct" value="-3000000"></td>
+                        </tr>
+                        <tr data-tier="4">
+                            <td>3억 초과</td>
+                            <td><input type="number" class="in-a" value="7.5"></td>
+                            <td><input type="number" class="in-b" value="7.5"></td>
+                            <td><input type="number" class="in-c" value="10"></td>
+                            <td><input type="number" class="in-deduct" value="0"></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="modal-body">
-                <p class="modal-tip">각 상품 그룹별 마진율(%)을 입력하시면 달력에 예상 마진이 실시간 반영됩니다.</p>
-                <div class="input-field-group">
-                    <div class="input-item">
-                        <label for="marginInputA">그룹 A 마진율 (코드 'A')</label>
-                        <div class="input-wrapper"><input type="number" id="marginInputA" value="0" min="0" max="100"><span>%</span></div>
-                    </div>
-                    <div class="input-item">
-                        <label for="marginInputB">그룹 B 마진율 (코드 'B')</label>
-                        <div class="input-wrapper"><input type="number" id="marginInputB" value="0" min="0" max="100"><span>%</span></div>
-                    </div>
-                    <div class="input-item">
-                        <label for="marginInputC">그룹 C 마진율 (기타 알파벳)</label>
-                        <div class="input-wrapper"><input type="number" id="marginInputC" value="0" min="0" max="100"><span>%</span></div>
-                    </div>
-                    <div class="input-item">
-                        <label for="marginInputD">그룹 D 마진율 (숫자 시작)</label>
-                        <div class="input-wrapper"><input type="number" id="marginInputD" value="0" min="0" max="100"><span>%</span></div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="saveSettingsBtn" class="save-action-btn">적용 및 저장</button>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #f9f9f9; border-radius: 8px; font-size: 13px;">
+                <strong>알림:</strong> 그룹 D 마진율은 요청하신 대로 <strong>25% 고정</strong> 적용됩니다.
             </div>
         </div>
+        <div class="modal-footer">
+            <button id="saveSettingsBtn" class="save-action-btn">설정 저장 및 재계산</button>
+        </div>
     </div>
+</div>
 
     <script src="script.js"></script>
 </body>
