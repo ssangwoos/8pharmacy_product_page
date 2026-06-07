@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8pharmacy beauty Magazine</title>
+    <!-- Google Fonts: Premium & Clean Font Styles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght=0,400;0,600;1,400&family=Noto+Sans+JP:wght=300;400;500;700&family=Noto+Sans+TC:wght=300;400;500;700&family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #FAFAFA;
+            --card-bg: #FFFFFF;
+            --text-primary: #1A1A1A;
+            --text-secondary: #666666;
+            --accent-color: #9A847A; /* Sophisticated Taupe */
+            --accent-light: #F6F4F4;
+            --border-color: #EAEAEA;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            --transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', 'Noto Sans JP', 'Noto Sans TC', sans-serif;
+            line-height: 1.7;
+            letter-spacing: 0.03em;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Language Toggle Utility */
+        .lang-jp :is(.text-tw, .text-en) { display: none !important; }
+        .lang-tw :is(.text-jp, .text-en) { display: none !important; }
+        .lang-en :is(.text-jp, .text-tw) { display: none !important; }
+
+        /* Header Navigation */
+        header {
+            position: sticky;
+            top: 0;
+            background-color: rgba(250, 250, 250, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: var(--text-primary);
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 0.3rem;
+            background: var(--accent-light);
+            padding: 0.25rem;
+            border-radius: 30px;
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 20px;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .lang-btn.active {
+            background-color: var(--card-bg);
+            color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        /* Container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.8rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .hero h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 1.5rem;
+        }
+        .lang-en .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.8rem;
+            font-weight: 400;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* Section Styling */
+        h2.section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            text-align: center;
+            letter-spacing: 0.05em;
+            position: relative;
+        }
+        h2.section-title::after {
+            content: '';
+            display: block;
+            width: 30px;
+            height: 1px;
+            background: var(--accent-color);
+            margin: 0.8rem auto 0;
+        }
+
+        /* Retinoid Family Breakdown */
+        .comparison-wrapper {
+            margin-bottom: 5rem;
+        }
+
+        .ingredient-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .ingredient-grid { grid-template-columns: 1fr; }
+            .product-grid { grid-template-columns: 1fr !important; }
+        }
+
+        .ing-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .ing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+            border-color: var(--accent-color);
+        }
+
+        .ing-card h3 {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .ing-card .step {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: var(--accent-light);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .ing-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Hierarchy Bar */
+        .hierarchy-box {
+            background: var(--accent-light);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+        .hierarchy-line {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        /* Product Showcase Grid */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 5rem;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+            border-color: #D1C7C1;
+        }
+        
+        .prod-img-wrapper {
+            width: 100%;
+            height: 240px;
+            background-color: #FAF9F9;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .prod-img-wrapper img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: var(--transition);
+        }
+        .product-card:hover .prod-img-wrapper img {
+            transform: scale(1.05);
+        }
+
+        .prod-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            font-style: italic;
+            color: var(--accent-color);
+            opacity: 0.4;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+
+        .prod-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .prod-conc {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            background: rgba(154, 132, 122, 0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 1.2rem;
+        }
+
+        .prod-desc {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+            min-height: 5.5rem;
+        }
+
+        .prod-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: auto;
+        }
+        .tag-check {
+            font-size: 0.8rem;
+            background: #F9F9F9;
+            border: 1px solid var(--border-color);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            color: var(--text-primary);
+        }
+
+        /* Pharmacist Recommendation Box */
+        .pharmacist-pick {
+            background: #FDFBF9;
+            border: 1px dashed var(--accent-color);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            margin-bottom: 4rem;
+        }
+        .pharmacist-pick h3 {
+            text-align: center;
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .pick-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+        @media (max-width: 600px) {
+            .pick-list { grid-template-columns: 1fr; }
+        }
+        .pick-item {
+            background: var(--card-bg);
+            padding: 1.2rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .pick-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+        }
+        .pick-value {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Footer & Community */
+        footer {
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            padding: 4rem 2rem;
+            background: #FFF;
+        }
+
+        .community-prompt {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .hashtags {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .hashtags span {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body class="lang-jp">
+
+    <!-- Sticky Navigation with Language Toggle -->
+    <header>
+        <div class="logo">8PHARMACY BEAUTY</div>
+        <div class="lang-switcher">
+            <button id="btn-jp" class="lang-btn active" onclick="switchLang('jp')">JP</button>
+            <button id="btn-tw" class="lang-btn" onclick="switchLang('tw')">TW</button>
+            <button id="btn-en" class="lang-btn" onclick="switchLang('en')">EN</button>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- Hero Section -->
+        <section class="hero">
+            <span class="badge">Dermatology Insights</span>
+            
+            <h1 class="text-jp">レチノールって本当に全部同じ？</h1>
+            <h1 class="text-tw">A醇真的都一樣嗎？</h1>
+            <h1 class="text-en">Is Retinol Really All the Same?</h1>
+            
+            <p class="text-jp">韓国の薬局でお客様からよく聞かれる質問です。実は、すべてビタミンA系成分ですが、効果も刺激もかなり違います。</p>
+            <p class="text-tw">這是韓國藥局最常被問到的問題之一。其實，它們都屬於維生素A家族，但效果與刺激性差異非常大。</p>
+            <p class="text-en">This is one of the most frequently asked questions by customers at pharmacies in Korea. In fact, while they all belong to the Vitamin A family, their efficacy and irritation levels differ significantly.</p>
+        </section>
+
+        <!-- Section 1: The Retinoid Family -->
+        <section class="comparison-wrapper">
+            <h2 class="section-title">
+                <span class="text-jp">成分の特性と違い</span>
+                <span class="text-tw">成分特性與差異</span>
+                <span class="text-en">Ingredient Profiles & Differences</span>
+            </h2>
+
+            <div class="ingredient-grid">
+                <!-- Tretinoin -->
+                <div class="ing-card">
+                    <h3 class="text-jp">トレチノイン</h3>
+                    <h3 class="text-tw">A酸 (Tretinoin)</h3>
+                    <h3 class="text-en">Tretinoin</h3>
+                    <span class="step text-jp">活性型ビタミンA</span>
+                    <span class="step text-tw">活性型維生素A</span>
+                    <span class="step text-en">Active Vitamin A</span>
+                    <p class="text-jp">塗った瞬間から作用するため、最も強力なレチノイドです。</p>
+                    <p class="text-tw">塗抹後即可直接作用，效果最強。</p>
+                    <p class="text-en">It works immediately upon application, making it the most potent retinoid.</p>
+                </div>
+                <!-- Retinal -->
+                <div class="ing-card">
+                    <h3 class="text-jp">レチナール</h3>
+                    <h3 class="text-tw">A醛 (Retinal)</h3>
+                    <h3 class="text-en">Retinal</h3>
+                    <span class="step text-jp">活性型まであと1段階</span>
+                    <span class="step text-tw">距離活性型只差一步</span>
+                    <span class="step text-en">1 Step Away from Active Form</span>
+                    <p class="text-jp">レチノールより強く、最近韓国で注目されている成分です。</p>
+                    <p class="text-tw">效果比A醇更強，也是近年韓國很受歡迎的成分。</p>
+                    <p class="text-en">Stronger than retinol, it is a highly trending ingredient in Korea recently.</p>
+                </div>
+                <!-- Retinol -->
+                <div class="ing-card">
+                    <h3 class="text-jp">レチノール</h3>
+                    <h3 class="text-tw">A醇 (Retinol)</h3>
+                    <h3 class="text-en">Retinol</h3>
+                    <span class="step text-jp">活性型まであと2段階</span>
+                    <span class="step text-tw">距離活性型還需兩次轉換</span>
+                    <span class="step text-en">2 Steps Away from Active Form</span>
+                    <p class="text-jp">刺激が比較的少なく、初心者向けとして人気があります。</p>
+                    <p class="text-tw">刺激較低，適合初學者使用。</p>
+                    <p class="text-en">It has relatively lower irritation and is popular as a beginner-friendly option.</p>
+                </div>
+            </div>
+
+            <!-- Strength Hierarchy Indicator -->
+            <div class="hierarchy-box">
+                <strong class="text-jp">効果 & 刺激の強さ</strong>
+                <strong class="text-tw">效果強度 & 刺激程度</strong>
+                <strong class="text-en">Potency & Irritation Levels</strong>
+                <div class="hierarchy-line">
+                    <span class="text-jp">トレチノイン ＞ レチナール ＞ レチノール</span>
+                    <span class="text-tw">A酸 ＞ A醛 ＞ A醇</span>
+                    <span class="text-en">Tretinoin ＞ Retinal ＞ Retinol</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Product Grid -->
+        <section style="margin-bottom: 5rem;">
+            <h2 class="section-title">
+                <span class="text-jp">注目の6製品を徹底比較</span>
+                <span class="text-tw">精選 6 款熱門產品比較</span>
+                <span class="text-en">Deep Dive into 6 Key Products</span>
+            </h2>
+
+            <div class="product-grid">
+                <!-- Product 1 -->
+                <div class="product-card">
+                    <div>
+                        <div class="prod-img-wrapper">
+                            <img src="1.png" alt="Dr.Different">
+                        </div>
+                        <div class="prod-num">01</div>
+                        <div class="prod-name">Dr.Different</div>
+                        <span class="prod-conc text-jp">レチナール 0.15%</span>
+                        <span class="prod-conc text-tw">A醛 0.15%</span>
+                        <span class="prod-conc text-en">Retinal 0.15%</span>
+                        <p class="prod-desc text-jp">今回紹介する中で最高濃度。小じわ・ハリ・弾力ケアを重視する方におすすめ。</p>
+                        <p class="prod-desc text-tw">本次最高濃度。適合重視細紋、彈力與緊緻保養者。</p>
+                        <p class="prod-desc text-en">The highest concentration in this lineup. Best for those focusing on fine lines, firmness, and elasticity care.</p>
+                    </div>
+                    <div class="prod-tags">
+                        <span class="tag-check text-jp">✓ 最高濃度</span><span class="tag-check text-tw">✓ 最高濃度</span><span class="tag-check text-en">✓ Highest Conc.</span>
+                        <span class="tag-check text-jp">✓ ハリ・弾力</span><span class="tag-check text-tw">✓ 緊緻彈力</span><span class="tag-check text-en">✓ Firmness</span>
+                    </div>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="product-card">
+                    <div>
+                        <div class="prod-img-wrapper">
+                            <img src="2.png" alt="Cellimax">
+                        </div>
+                        <div class="prod-num">02</div>
+                        <div class="prod-name">Cellimax</div>
+                        <span class="prod-conc text-jp">レチナール 0.1%</span>
+                        <span class="prod-conc text-tw">A醛 0.1%</span>
+                        <span class="prod-conc text-en">Retinal 0.1%</span>
+                        <p class="prod-desc text-jp">ナノリポソーム化レチナール配合。マイクロスピキュール技術により、浸透感の向上が期待できる処方。</p>
+                        <p class="prod-desc text-tw">奈米脂質體A醛。搭配微晶導入技術，可提升滲透效率。</p>
+                        <p class="prod-desc text-en">Features nano-liposomal retinal. Formulated with micro-spicule technology to maximize skin absorption.</p>
+                    </div>
+                    <div class="prod-tags">
+                        <span class="tag-check text-jp">✓ ナノリポソーム</span><span class="tag-check text-tw">✓ 奈米脂質體</span><span class="tag-check text-en">✓ Nano-Liposome</span>
+                        <span class="tag-check text-jp">✓ スピキュール技術</span><span class="tag-check text-tw">✓ 微晶導入</span><span class="tag-check text-en">✓ Spicule Tech</span>
+                    </div>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="product-card">
+                    <div>
+                        <div class="prod-img-wrapper">
+                            <img src="3.png" alt="Anua">
+                        </div>
+                        <div class="prod-num">03</div>
+                        <div class="prod-name">Anua</div>
+                        <span class="prod-conc text-jp">レチノール 0.1%</span>
+                        <span class="prod-conc text-tw">A醇 0.1%</span>
+                        <span class="prod-conc text-en">Retinol 0.1%</span>
+                        <p class="prod-desc text-jp">リポソーム化レチノール配合。レチナールより穏やかで、目元ケアや透明感ケア向け。</p>
+                        <p class="prod-desc text-tw">脂質體A醇配方。比A醛更溫和，適合眼周與提亮保養。</p>
+                        <p class="prod-desc text-en">Formulated with liposomal retinol. Milder than retinal, ideal for delicate eye care and brightening routines.</p>
+                    </div>
+                    <div class="prod-tags">
+                        <span class="tag-check text-jp">✓ リポソーム</span><span class="tag-check text-tw">✓ 脂質體配方</span><span class="tag-check text-en">✓ Liposomal</span>
+                        <span class="tag-check text-jp">✓ 目元・透明感</span><span class="tag-check text-tw">✓ 眼周提亮</span><span class="tag-check text-en">✓ Eye & Radiance</span>
+                    </div>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="product-card">
+                    <div>
+                        <div class="prod-img-wrapper">
+                            <img src="4.png" alt="Dr.VITA">
+                        </div>
+                        <div class="prod-num">04</div>
+                        <div class="prod-name">Dr.VITA</div>
+                        <span class="prod-conc text-jp">レチノール 0.0046%</span>
+                        <span class="prod-conc text-tw">A醇 0.0046%</span>
+                        <span class="prod-conc text-en">Retinol 0.0046%</span>
+                        <p class="prod-desc text-jp">低濃度処方。油分が少なく、他のスキンケアと併用しやすいデイリータイプ。</p>
+                        <p class="prod-desc text-tw">低濃度設計。質地清爽，適合日常搭配其他保養品使用。</p>
+                        <p class="prod-desc text-en">A low-concentration formula. Lightweight and non-greasy, making it perfect for daily layering with other skincare products.</p>
+                    </div>
+                    <div class="prod-tags">
+                        <span class="tag-check text-jp">✓ 低濃度</span><span class="tag-check text-tw">✓ 低濃度</span><span class="tag-check text-en">✓ Low Conc.</span>
+                        <span class="tag-check text-jp">✓ さっぱり・デイリー</span><span class="tag-check text-tw">✓ 清爽日常</span><span class="tag-check text-en">✓ Lightweight Daily</span>
+                    </div>
+                </div>
+
+                <!-- Product 5 -->
+                <div class="product-card">
+                    <div>
+                        <div class="prod-img-wrapper">
+                            <img src="5.png" alt="Dr.Melaxin">
+                        </div>
+                        <div class="prod-num">05</div>
+                        <div class="prod-name">Dr.Melaxin</div>
+                        <span class="prod-conc text-jp">レチノール 濃度非公開 (約0.0002%推測)</span>
+                        <span class="prod-conc text-tw">A醇 濃度未公開 (經推測約0.0002%)</span>
+                        <span class="prod-conc text-en">Retinol Undisclosed (Est. ~0.0002%)</span>
+                        <p class="prod-desc text-jp">リポソームレチノールとコラーゲンを組み合わせた、弾力にアプローチするクリーム。</p>
+                        <p class="prod-desc text-tw">脂質體A醇搭配膠原蛋白配方，主打彈力機能의乳霜。</p>
+                        <p class="prod-desc text-en">An elasticity-boosting cream that pairs liposomal retinol with collagen to target sagging skin.</p>
+                    </div>
+                    <div class="prod-tags">
+                        <span class="tag-check text-jp">✓ コラーゲン配合</span><span class="tag-check text-tw">✓ 膠原蛋白</span><span class="tag-check text-en">✓ Collagen Infused</span>
+                    </div>
+                </div>
+
+                <!-- Product 6 -->
+                <div class="product-card">
+                    <div>
+                        <div class="prod-img-wrapper">
+                            <img src="6.png" alt="Dr.Reju-All">
+                        </div>
+                        <div class="prod-num">06</div>
+                        <div class="prod-name">Dr.Reju-All</div>
+                        <span class="prod-conc text-jp">レチナール ＋ レチノール配合</span>
+                        <span class="prod-conc text-tw">A醛 ＋ A醇配方</span>
+                        <span class="prod-conc text-en">Retinal ＋ Retinol Blend</span>
+                        <p class="prod-desc text-jp">A醇濃度は低め。主目的はトラネキサム酸、アルブチン、ナイアシンアミドによる透明感ケアです。</p>
+                        <p class="prod-desc text-tw">A醇濃度為本次最低。主要訴求並非A醇，而是添加傳明酸、熊果素、菸鹼醯胺的亮白保養。</p>
+                        <p class="prod-desc text-en">Contains a minimal concentration of retinol. Designed primarily for complexion brightening via Tranexamic Acid, Arbutin, and Niacinamide.</p>
+                    </div>
+                    <div class="prod-tags">
+                        <span class="tag-check text-jp">✓ トラネキサム酸</span><span class="tag-check text-tw">✓ 傳明酸 / 熊果素</span><span class="tag-check text-en">✓ Tranexamic Acid</span>
+                        <span class="tag-check text-jp">✓ ナイアシンアミド</span><span class="tag-check text-tw">✓ 菸鹼醯胺</span><span class="tag-check text-en">✓ Niacinamide</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Pharmacist's Personal Pick -->
+        <section class="pharmacist-pick">
+            <h3 class="text-jp">✨ 韓国薬剤師の個人的なおすすめ</h3>
+            <h3 class="text-tw">✨ 韓國藥師個人推薦</h3>
+            <h3 class="text-en">✨ Korean Pharmacist's Personal Picks</h3>
+            
+            <div class="pick-list">
+                <div class="pick-item">
+                    <span class="pick-label text-jp">毛穴・ハリ重視</span>
+                    <span class="pick-label text-tw">毛孔與彈力保養</span>
+                    <span class="pick-label text-en">Pores & Firmness</span>
+                    <span class="pick-value">→ Dr.Different</span>
+                </div>
+                <div class="pick-item">
+                    <span class="pick-label text-jp">技術力重視</span>
+                    <span class="pick-label text-tw">技術導向</span>
+                    <span class="pick-label text-en">Technology-Focused</span>
+                    <span class="pick-value">→ Cellimax</span>
+                </div>
+                <div class="pick-item">
+                    <span class="pick-label text-jp">目元ケア</span>
+                    <span class="pick-label text-tw">眼周保養</span>
+                    <span class="pick-label text-en">Eye Area Care</span>
+                    <span class="pick-value">→ Anua</span>
+                </div>
+                <div class="pick-item">
+                    <span class="pick-label text-jp">デイリー使用</span>
+                    <span class="pick-label text-tw">日常使用</span>
+                    <span class="pick-label text-en">Daily Routine</span>
+                    <span class="pick-value">→ Dr.VITA</span>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer & Community section -->
+    <footer>
+        <p class="community-prompt text-jp">皆さんはどの製品が気になりますか？コメントで教えてください👇</p>
+        <p class="community-prompt text-tw">歡迎留言告訴我，你最想嘗試哪一款呢？👇</p>
+        <p class="community-prompt text-en">Which product are you most curious about? Let me know in the comments below! 👇</p>
+        
+        <div class="hashtags">
+            <span>#レチノール #レチナール #トレチノイン #毛穴ケア #韓国コスメ #韓国薬局 #韓国薬剤師 #エイジングケア</span>
+            <span style="display:block; width:100%; height:5px;"></span>
+            <span>#A醇 #A醛 #A酸 #韓國保養 #毛孔保養 #抗老保養 #韓國藥局 #韓國藥師 #保養分享</span>
+            <span style="display:block; width:100%; height:5px;"></span>
+            <span>#Retinol #Retinal #Tretinoin #PoreCare #Kbeauty #KoreanPharmacy #KoreanPharmacist #AntiAging</span>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Language Toggle -->
+    <script>
+        function switchLang(lang) {
+            // Set active body class
+            document.body.className = 'lang-' + lang;
+            
+            // Manage button active states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById('btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>
