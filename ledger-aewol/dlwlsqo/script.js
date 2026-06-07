@@ -25,7 +25,7 @@ let syncedVendors = [];         // 상시 자동 연동이 활성화된 거래�
 let currentYear = 2026;
 let currentMonth = 5;           // 0-indexed (5 = 6월)
 
-// 누진 구간별 요율 세팅 규칙 배열 기본값 (image_69897e.png 표준 매핑)
+// [확정 요율 매핑] image_69897e.png 기준 정확한 구간별 마진율 및 누진공제액 세팅
 let tierSettings = [
     { threshold: 0, a: 20, b: 20, c: 70, deductB: 0 },                  // 1구간: 0 ~ 1억 이하
     { threshold: 100000000, a: 15, b: 15, c: 80, deductB: -1500000 },   // 2구간: 1억 초과 ~ 2억 이하
@@ -43,7 +43,7 @@ const COL_REAL = 31;  // AF열: 순판매(할인포함) -> 실결제금액
 const COL_TIME = 49;  // AX열: 입력시간
 
 // =================================================================
-// 3. 비동기 데이터 처리 순서 오류(ReferenceError) 방지 최상단 연산 엔진
+// 3. 비동기 호출 호이스팅 에러 방지를 위한 핵심 연산 엔진 최상단 배치
 // =================================================================
 
 // 월 총매출 기준 구간(Tier) 확정 판독 함수
@@ -88,10 +88,9 @@ if (typeof google !== 'undefined' && google.charts) {
 }
 
 // =================================================================
-// 4. 라이프사이클 초기화 및 이벤트 리스너 완전 결합 (먹통 버그 완벽 수정)
+// 4. 라이프사이클 초기화 및 이벤트 리스너 안전 등록 (먹통 버그 완벽 수정)
 // =================================================================
 function initDashboard() {
-    // 캘린더 및 업로드 제어 이벤트 바인딩 가드
     const excelFile = document.getElementById('excelFile');
     if (excelFile) excelFile.onchange = handleFileUpload;
 
@@ -101,7 +100,6 @@ function initDashboard() {
     const nextMonthBtn = document.getElementById('nextMonth');
     if (nextMonthBtn) nextMonthBtn.onclick = () => changeMonth(1);
 
-    // 모달 제어 리스너 바인딩 안정화
     const openSettingsBtn = document.getElementById('openSettingsBtn');
     if (openSettingsBtn) openSettingsBtn.onclick = () => document.getElementById('settingsModal').classList.add('active');
 
@@ -111,27 +109,24 @@ function initDashboard() {
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
     if (saveSettingsBtn) saveSettingsBtn.onclick = saveMarginSettings;
 
-    // 지출 폼 서브밋 등록
     const expenseForm = document.getElementById('expenseForm');
     if (expenseForm) expenseForm.onsubmit = handleExpenseSubmit;
 
-    // 파이어베이스 데이터 스트림 실시간 동기화 구동
+    // 파이어베이스 데이터 세트 실시간 동기화 호출
     loadMarginsFromFirestore();       
     loadTransactionsFromFirestore();  
     loadLedgerVendors();              
     loadExpensesFromFirestore();      
-    loadRawTransactionsFromFirestore(); // 장부 실시간 감시 레이어 가동
-    loadSyncedVendorsFromFirestore();   // 상시 연동 거래처 설정 레이어 가동
+    loadRawTransactionsFromFirestore(); 
+    loadSyncedVendorsFromFirestore();   
 }
 
-// 문서 로딩 시점에 따른 가동 예외 가드 처리
 if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', initDashboard);
 } else {
     initDashboard();
 }
 
-// 탭 스위칭 컴포넌트 유틸리티
 function switchTab(tabContentId, element) {
     document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -143,7 +138,7 @@ function switchTab(tabContentId, element) {
 }
 
 // =================================================================
-// 5. FIRESTORE 실시간 데이터 연동 동기화 명세 파트
+// 5. FIRESTORE 실시간 데이터 연동 파트
 // =================================================================
 
 function loadMarginsFromFirestore() {
@@ -221,7 +216,6 @@ function loadTransactionsFromFirestore() {
     });
 }
 
-// 원격 장부 전표 스냅샷 리스너 
 function loadRawTransactionsFromFirestore() {
     db.collection("transactions").onSnapshot((snapshot) => {
         rawTransactions = [];
@@ -236,11 +230,10 @@ function loadRawTransactionsFromFirestore() {
                 memo: data.memo || ""
             });
         });
-        renderCalendar(); // 장부 기록 변동 시 캘린더/손익 자동 리렌더링
+        renderCalendar(); 
     });
 }
 
-// 상시 동기화 지정 거래처 명단 스냅샷 리스너
 function loadSyncedVendorsFromFirestore() {
     db.collection("settings").doc("synced_vendors").onSnapshot((doc) => {
         if (doc.exists) {
@@ -248,13 +241,13 @@ function loadSyncedVendorsFromFirestore() {
         } else {
             syncedVendors = [];
         }
-        renderCalendar(); // 상시연동 리스트 변경 시 데이터 즉시 리프레시
+        renderCalendar(); 
     });
 }
 
 
 // =================================================================
-// 6. 거래처 동기화 및 실시간 상시 연동 제어 파트 (비용 연동 고도화 수선)
+// 6. 거래처 동기화 및 실시간 상시 연동 제어 파트
 // =================================================================
 function loadLedgerVendors() {
     const select = document.getElementById('expVendorSelect');
@@ -298,7 +291,6 @@ function toggleManualVendorInput() {
         if(expNote) { expNote.disabled = false; expNote.value = ''; }
     } else if (select && select.value !== '') {
         if(manualGroup) manualGroup.style.display = 'none';
-        // 상시 연동 모드일 시 날짜와 비용 금액은 매달 장부에서 동적으로 끌어오므로 잠금 제어
         if(expAmount) { expAmount.required = false; expAmount.disabled = true; expAmount.value = ''; }
         if(expDate) { expDate.required = false; expDate.disabled = true; expDate.value = ''; }
         if(expCategory) { expCategory.value = "의약품/자재구입"; expCategory.disabled = true; }
@@ -306,7 +298,6 @@ function toggleManualVendorInput() {
     }
 }
 
-// [핵심 변경 및 수선] 상시 자동 연동 등록 및 수동 추가 분기 처리 스크립트
 function handleExpenseSubmit(e) {
     e.preventDefault();
     const selectVendor = document.getElementById('expVendorSelect').value;
@@ -322,19 +313,17 @@ function handleExpenseSubmit(e) {
     }
 
     if (selectVendor !== 'MANUAL_INPUT') {
-        if (!confirm(`💼 [${selectVendor}] 거래처를 상시 연동 거래처로 지정하시겠습니까?\n지정 시 원격 장부에 기입되는 모든 월별 매입금액이 실시간 대시보드 비용에 평생 자동 반영됩니다.`)) return;
+        if (!confirm(`💼 [${selectVendor}] 거래처를 상시 연동 거래처로 지정하시겠습니까?`)) return;
 
-        // settings/synced_vendors 문서에 배열 유니온으로 상시 연동 키 추가 결합
         db.collection("settings").doc("synced_vendors").set({
             vendors: firebase.firestore.FieldValue.arrayUnion(selectVendor)
         }, { merge: true }).then(() => {
-            alert(`🚀 [${selectVendor}] 거래처가 상시 연동 리스트에 바인딩되었습니다.\n이제 달력을 넘길 때마다 해당 월의 장부 금액만 동적으로 자동 취합됩니다.`);
+            alert(`🚀 [${selectVendor}] 거래처가 상시 연동 리스트에 바인딩되었습니다.`);
             document.getElementById('expenseForm').reset();
             toggleManualVendorInput();
         }).catch(err => alert("상시 연동 처리 실패: " + err.message));
 
     } else {
-        // 수동 비용 기입 추가 모드
         const finalVendor = manualVendor ? manualVendor.trim() : "수동 임의 경비";
         if (!dateInput || amountInput <= 0) {
             alert("정확한 지출 일자와 금액을 기입해 주세요.");
@@ -356,9 +345,8 @@ function handleExpenseSubmit(e) {
     }
 }
 
-// 상시 자동 연동 해제 구현 함수
 function deleteSyncedVendorLink(vendorName) {
-    if (confirm(`💼 [${vendorName}] 거래처의 상시 자동 연동을 해제하시겠습니까?\n해제 시 비용 분석 및 장부 연계 지표에서 실시간으로 스킵 처리됩니다.`)) {
+    if (confirm(`💼 [${vendorName}] 거래처의 상시 자동 연동을 해제하시겠습니까?`)) {
         db.collection("settings").doc("synced_vendors").update({
             vendors: firebase.firestore.FieldValue.arrayRemove(vendorName)
         }).then(() => {
@@ -392,7 +380,7 @@ function deleteExpenseData(id) {
 }
 
 // =================================================================
-// 7. 엑셀 업로드 유틸리티 엔진
+// 7. 대량 데이터 분할 배칭 업로드 엔진
 // =================================================================
 function handleFileUpload(e) {
     const file = e.target.files[0];
@@ -409,21 +397,76 @@ function handleFileUpload(e) {
     reader.readAsArrayBuffer(file);
 }
 
-function uploadExcelToFirestore(rows) {
-    const batch = db.batch(); let validRowCount = 0; let duplicateCount = 0; const seenRecords = new Set();
+async function uploadExcelToFirestore(rows) {
+    let validRowCount = 0;
+    let duplicateCount = 0;
+    const seenRecords = new Set();
+    const uploadPackets = []; 
+
     for (let i = 1; i < rows.length; i++) {
-        const row = rows[i]; if (!row || row.length === 0) continue;
-        const dateKey = parseExcelDate(row[COL_DATE]); if (!dateKey || dateKey.includes('소계') || dateKey.includes('합계')) continue;
-        const origAmt = parseAmount(row[COL_ORIG]); const taxAmt = parseAmount(row[COL_TAX]); const realAmt = parseAmount(row[COL_REAL]);
-        const prodCode = String(row[COL_CODE] || '').trim(); const inputTime = parseExcelTime(row[COL_TIME]); const group = determineGroup(prodCode);
+        const row = rows[i]; 
+        if (!row || row.length === 0) continue;
+
+        const dateKey = parseExcelDate(row[COL_DATE]); 
+        if (!dateKey || dateKey.includes('소계') || dateKey.includes('합계')) continue;
+
+        const origAmt = parseAmount(row[COL_ORIG]); 
+        const taxAmt = parseAmount(row[COL_TAX]); 
+        const realAmt = parseAmount(row[COL_REAL]);
+        const prodCode = String(row[COL_CODE] || '').trim(); 
+        const inputTime = parseExcelTime(row[COL_TIME]); 
+        const group = determineGroup(prodCode);
+
         const uniqueKey = `${inputTime}_${realAmt}_${prodCode}`;
-        if (seenRecords.has(uniqueKey)) { duplicateCount++; continue; } seenRecords.add(uniqueKey);
-        const docRef = db.collection("dashboard_sales").doc(`doc_${dateKey}_${uniqueKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
-        batch.set(docRef, { date: dateKey, originalTotal: origAmt, taxRefundTotal: taxAmt, realPaymentTotal: realAmt, groupA: group === 'A' ? realAmt : 0, groupB: group === 'B' ? realAmt : 0, groupC: group === 'C' ? realAmt : 0, groupD: group === 'D' ? realAmt : 0, productCode: prodCode, inputTime: inputTime });
+        if (seenRecords.has(uniqueKey)) { 
+            duplicateCount++; 
+            continue; 
+        } 
+        seenRecords.add(uniqueKey);
+
+        const safeDocId = `doc_${dateKey}_${uniqueKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        
+        uploadPackets.push({
+            id: safeDocId,
+            data: { 
+                date: dateKey, 
+                originalTotal: origAmt, 
+                taxRefundTotal: taxAmt, 
+                realPaymentTotal: realAmt, 
+                groupA: group === 'A' ? realAmt : 0, 
+                groupB: group === 'B' ? realAmt : 0, 
+                groupC: group === 'C' ? realAmt : 0, 
+                groupD: group === 'D' ? realAmt : 0, 
+                productCode: prodCode, 
+                inputTime: inputTime 
+            }
+        });
         validRowCount++;
     }
-    if (validRowCount === 0) return;
-    batch.commit().then(() => alert(`🚀 업로드 성공: ${validRowCount}건 / 중복 제외 필터: ${duplicateCount}건`));
+
+    if (validRowCount === 0) {
+        alert("⚠️ 업로드 실패: 유효한 데이터 행이 없거나 엑셀 열 배치가 올바르지 않습니다.\n\n[표준 인덱스 기준]\nB열: 판매일자 / J열: 상품코드 / AA열: 즉시환급액\nAE열: 원판매금액 / AF열: 실결제금액 / AX열: 입력시간\n위 항목들의 데이터가 비어있지 않은지 다시 한번 확인해 주세요.");
+        return;
+    }
+
+    try {
+        const chunkSize = 400; 
+        for (let i = 0; i < uploadPackets.length; i += chunkSize) {
+            const chunk = uploadPackets.slice(i, i + chunkSize);
+            const batch = db.batch();
+            
+            chunk.forEach(packet => {
+                const docRef = db.collection("dashboard_sales").doc(packet.id);
+                batch.set(docRef, packet.data);
+            });
+            
+            await batch.commit(); 
+        }
+        alert(`🚀 업로드 완벽 성공!\n\n- 정상 등록: ${validRowCount}건\n- 중복 제외 필터: ${duplicateCount}건이 제외되었습니다.`);
+    } catch (err) {
+        console.error("Firestore 배치 커밋 실패:", err);
+        alert("❌ 클라우드 서버 전송 중 에러가 발생했습니다:\n" + err.message);
+    }
 }
 
 function deleteDateData(dateKey) {
@@ -435,13 +478,50 @@ function deleteDateData(dateKey) {
     }).then(() => alert("삭제 완료"));
 }
 
-function parseExcelDate(val) { if (!val) return null; if (val instanceof Date) return formatDateObject(val); if (typeof val === 'number') return formatDateObject(new Date((val - 25569) * 86400 * 1000)); const str = String(val).trim(); return str ? str.split(' ')[0] : null; }
-function parseExcelTime(val) { if (!val) return ''; if (val instanceof Date) { return `${formatDateObject(val)} ${String(val.getHours()).padStart(2,'0')}:${String(val.getMinutes()).padStart(2,'0')}:${String(val.getSeconds()).padStart(2,'0')}`; } if (typeof val === 'number') return val.toFixed(6); return String(val).trim(); }
-function determineGroup(code) { if (!code) return 'C'; const f = code.charAt(0).toUpperCase(); if (f === 'A') return 'A'; if (f === 'B') return 'B'; return /[A-Z]/.test(f) ? 'C' : 'D'; }
-function parseAmount(val) { if (typeof val === 'number') return val; return parseFloat(String(val || '').replace(/,/g, '')) || 0; }
+// =================================================================
+// 8. [🚨 에러 수정 부] 날짜 가공 유틸리티 포맷 완전 명세 (formatDateObject 완벽 복구)
+// =================================================================
+function parseExcelDate(val) { 
+    if (!val) return null; 
+    if (val instanceof Date) return formatDateObject(val); 
+    if (typeof val === 'number') return formatDateObject(new Date((val - 25569) * 86400 * 1000)); 
+    const str = String(val).trim(); 
+    return str ? str.split(' ')[0] : null; 
+}
+
+// [ReferenceError 수정 완료] 누락되었던 핵심 날짜 구조화 헬퍼 복원
+function formatDateObject(dateObj) {
+    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return "";
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const d = String(dateObj.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function parseExcelTime(val) { 
+    if (!val) return ''; 
+    if (val instanceof Date) { 
+        return `${formatDateObject(val)} ${String(val.getHours()).padStart(2,'0')}:${String(val.getMinutes()).padStart(2,'0')}:${String(val.getSeconds()).padStart(2,'0')}`; 
+    } 
+    if (typeof val === 'number') return val.toFixed(6); 
+    return String(val).trim(); 
+}
+
+function determineGroup(code) { 
+    if (!code) return 'C'; 
+    const f = code.charAt(0).toUpperCase(); 
+    if (f === 'A') return 'A'; 
+    if (f === 'B') return 'B'; 
+    return /[A-Z]/.test(f) ? 'C' : 'D'; 
+}
+
+function parseAmount(val) { 
+    if (typeof val === 'number') return val; 
+    return parseFloat(String(val || '').replace(/,/g, '')) || 0; 
+}
 
 // =================================================================
-// 8. 시각화 및 종합 정산 디스플레이 구조 통합 제어단 (복구 및 누진 융합 파트)
+// 9. 시각화 및 종합 정산 디스플레이 구조 통합 제어단
 // =================================================================
 function draw3DPieChart(a, b, c, d) {
     if (typeof google === 'undefined' || !isChartLibLoaded || (!a && !b && !c && !d)) {
@@ -453,7 +533,6 @@ function draw3DPieChart(a, b, c, d) {
     chart.draw(data, { is3D: true, slices: { 0:{color:'#81c784'}, 1:{color:'#4db6ac'}, 2:{color:'#afb42b'}, 3:{color:'#a1887f'} }, backgroundColor:'transparent', chartArea:{left:'5%',top:'5%',width:'90%',height:'90%'} });
 }
 
-// [복구 완료] 상단 7가지 요약 대시보드 카드에 실시간 누진 연산 결과 출력 매핑
 function updateSummaryUI(sum, tier, totalMonthlyExpense) {
     const m = calculateProfit(sum, tier);
     const finalTotalMargin = m.a + m.b + m.c + m.d + tier.deductB;
@@ -467,7 +546,6 @@ function updateSummaryUI(sum, tier, totalMonthlyExpense) {
     document.getElementById('totalOrig').textContent = sum.originalTotal.toLocaleString() + '원';
     document.getElementById('totalTax').textContent = sum.taxRefundTotal.toLocaleString() + '원';
     
-    // [이미지 일치 복구] 상단 카드 내부에 마진금액 및 퍼센트 바인딩 활성화 
     document.getElementById('totalReal').innerHTML = `${sum.realPaymentTotal.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(finalTotalMargin).toLocaleString()}원, ${pctReal}%)</div>`;
     document.getElementById('totalA').innerHTML = `${sum.groupA.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(m.a).toLocaleString()}원, ${pctA}%)</div>`;
     document.getElementById('totalB').innerHTML = `${sum.groupB.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(m.b + tier.deductB).toLocaleString()}원, ${pctB}%)</div>`;
@@ -475,9 +553,8 @@ function updateSummaryUI(sum, tier, totalMonthlyExpense) {
     document.getElementById('totalD').innerHTML = `${sum.groupD.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(m.d).toLocaleString()}원, ${pctD}%)</div>`;
 
     const summaryCardSec = document.getElementById('summarySection');
-    if (summaryCardSec) summaryCardSec.style.display = 'grid'; // 매출 탭 진입 시 요약 노출 강제화
+    if (summaryCardSec) summaryCardSec.style.display = 'grid'; 
 
-    // 최하단 손익분석 탭 연산 지표 출력 매핑
     const finalOperatingProfit = finalTotalMargin - totalMonthlyExpense; 
     const netProfitRate = sum.realPaymentTotal > 0 ? ((finalOperatingProfit / sum.realPaymentTotal) * 100).toFixed(1) : '0.0';
 
@@ -493,7 +570,6 @@ function updateSummaryUI(sum, tier, totalMonthlyExpense) {
     draw3DPieChart(sum.groupA, sum.groupB, sum.groupC, sum.groupD);
 }
 
-// [핵심 로직 개편] 달력 및 지출 명세서를 선택한 월에 연동하여 하이브리드 자동 취합
 function renderCalendar() {
     const grid = document.getElementById('calendarGrid');
     if (!grid) return;
@@ -508,7 +584,6 @@ function renderCalendar() {
     let dailyExpenseMap = {}; 
     let activeMonthExpenseList = [];
 
-    // 1단계: 월간 매출 총액 누적 산출
     for (let d = 1; d <= lastDate; d++) {
         const dateKey = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${dayToTwoDigits(d)}`;
         if (globalSalesData[dateKey]) {
@@ -518,7 +593,6 @@ function renderCalendar() {
         }
     }
 
-    // 2단계: 상시 연동 활성화된 거래처의 장부 데이터 중 현재 선택 연월 조건에 일치하는 건만 실시간 누적 추출
     rawTransactions.forEach(t => {
         if (syncedVendors.includes(t.vendor) && (t.type === 'buy' || t.amount > 0)) {
             if (t.date) {
@@ -546,7 +620,6 @@ function renderCalendar() {
         }
     });
 
-    // 3단계: 개별 수동 등록한 비용 명세서 중 현재 선택 연월 조건에 일치하는 비용 일괄 누적
     rawManualExpenses.forEach(e => {
         if (e.date) {
             const parts = e.date.split('-');
@@ -572,7 +645,6 @@ function renderCalendar() {
         }
     });
 
-    // [월별 정렬 바인딩] 이번 달 지출 명세서 테이블 렌더링 출력
     activeMonthExpenseList.sort((a, b) => b.date.localeCompare(a.date));
     const tbody = document.getElementById('expenseTableBody');
     if (tbody) {
@@ -603,11 +675,9 @@ function renderCalendar() {
         }
     }
 
-    // 최종 마진 티어 세트 확정 및 UI 연동단 가동
     const activeTier = getActiveTier(monthlyData.realPaymentTotal);
     updateSummaryUI(monthlyData, activeTier, totalMonthlyExpense);
 
-    // 일별 캘린더 생성 및 비용 뱃지 동적 주입
     for (let i = 0; i < firstDayIndex; i++) grid.appendChild(createEmptyCell());
 
     for (let day = 1; day <= lastDate; day++) {
@@ -622,9 +692,7 @@ function renderCalendar() {
             const dayData = globalSalesData[dateKey];
             const m = calculateProfit(dayData, activeTier);
             dayCell.innerHTML += `<div class="day-summary">₩${dayData.realPaymentTotal.toLocaleString()}</div><div class="day-margin">(₩${(m.a+m.b+m.c+m.d).toLocaleString()})</div>`;
-            
-            // 수동비용과 상시연동 장부 비용이 취합된 당일 총 비용 마커 피드백
-            if (dailyExpenseMap[dateKey]) dayCell.innerHTML += `<div style="font-size:10px; color:#ef4444; font-weight:700; text-align:right; margin-top:2px;">비용: -${dailyExpenseMap[dateKey].toLocaleString()}원</div>`;
+            if (dailyExpenseMap[dateKey]) dayCell.innerHTML += `<div style="font-size:10px; color:#ef4444; font-weight:700; text-align:right;">비용: -${dailyExpenseMap[dateKey].toLocaleString()}원</div>`;
             dayCell.addEventListener('click', () => showDayDetail(dateKey, activeTier));
         } else if (dailyExpenseMap[dateKey]) {
             dayCell.innerHTML += `<div style="margin-top:auto; font-size:10px; color:#ef4444; font-weight:700; text-align:right;">비용: -${dailyExpenseMap[dateKey].toLocaleString()}원</div>`;
@@ -633,7 +701,6 @@ function renderCalendar() {
     }
 }
 
-// [완벽 원복] image_5be9a4.png 디자인과 100% 동일한 우측 일별 디테일 렌더러
 function showDayDetail(dateKey, tier) {
     const data = globalSalesData[dateKey]; if(!data) return;
     document.getElementById('selectedDateText').textContent = dateKey;
