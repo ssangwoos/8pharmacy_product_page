@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EIGHT PHARMACY — Dark Circle Tailored Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --surface-2: #f4f2ee;
+    --border: #e8e4dc;
+    --text-primary: #1a1814;
+    --text-secondary: #5a5650;
+    --text-muted: #9a9490;
+    --accent: #2d6a4f;
+    --accent-light: #e8f5ee;
+    --accent-dark: #1b4332;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+
+    /* Dark Circle Tag Colors */
+    --tag-v-bg: #eff6ff; --tag-v-text: #1d4ed8;
+    --tag-p-bg: #fff7ed; --tag-p-text: #c2410c;
+    --tag-s-bg: #f5f3ff; --tag-s-text: #6d28d9;
+    --tag-e-bg: #ecfdf5; --tag-e-text: #047857;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.8;
+    font-size: 16px;
+  }
+
+  .container {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* Header */
+  .post-header {
+    padding: 60px 0 30px;
+    text-align: center;
+  }
+
+  .post-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(24px, 4vw, 30px);
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .post-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+
+  /* Premium Language Navigation Toggle */
+  .lang-toggle-bar {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+
+  .btn-lang {
+    font-family: 'Noto Sans KR', sans-serif;
+    padding: 8px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-lang:hover {
+    background: var(--surface-2);
+  }
+
+  .btn-lang.active {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Tab Dynamic Blocks */
+  .lang-section {
+    display: none;
+  }
+
+  .lang-section.active {
+    display: block;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  h2.section-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+    letter-spacing: -0.01em;
+  }
+
+  /* Large Image Product Layout */
+  .product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Wide/Large Photo Box */
+  .product-image-box {
+    width: 160px;
+    height: 210px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .product-image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .product-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .product-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .product-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .otc-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #fecaca;
+    color: #dc2626;
+  }
+
+  .dc-type-tag {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+
+  .dc-type-tag.v { background: var(--tag-v-bg); color: var(--tag-v-text); }
+  .dc-type-tag.p { background: var(--tag-p-bg); color: var(--tag-p-text); }
+  .dc-type-tag.s { background: var(--tag-s-bg); color: var(--tag-s-text); }
+  .dc-type-tag.e { background: var(--tag-e-bg); color: var(--tag-e-text); }
+
+  .info-block {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .info-blockstrong {
+    color: var(--text-primary);
+  }
+
+  .use-method {
+    font-size: 13.5px;
+    background: var(--surface-2);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    border-left: 3px solid var(--text-muted);
+  }
+
+  .use-method.danger {
+    background: #fff5f5;
+    border-left-color: #ef4444;
+  }
+
+  /* Compare grid for routines */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .compare-card {
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .compare-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+  }
+
+  .compare-card.am h4 { color: #c2410c; }
+  .compare-card.pm h4 { color: #1d4ed8; }
+
+  .compare-card p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 600px) {
+    .product-card { flex-direction: column; padding: 16px; }
+    .product-image-box { width: 100%; height: 260px; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="post-header">
+    <h1 class="post-title">EIGHT PHARMACY</h1>
+    <p class="post-subtitle">Customized Dark Circle Solutions by Symptoms</p>
+  </header>
+
+  <div class="lang-toggle-bar">
+    <button class="btn-lang active" onclick="switchLang('en')">English</button>
+    <button class="btn-lang" onclick="switchLang('jp')">日本語</button>
+    <button class="btn-lang" onclick="switchLang('tw')">繁體中文</button>
+  </div>
+
+  <div id="lang-en" class="lang-section active">
+    <h2 class="section-title">Product Guide by Symptoms</h2>
+    <div class="product-list">
+      
+      <div class="product-card">
+        <div class="product-image-box"><img src="1.jpg" alt="K Cream"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Déesse After K Cream</div>
+          </div>
+          <span class="dc-type-tag v">Vascular (Blue/Purple)</span>
+          <div class="info-block"><strong>Mechanism:</strong> Vitamin K and Arnica work together to improve microcirculation in capillary walls, significantly reducing internal bruising and under-eye redness.</div>
+          <div class="use-method"><strong>How to use:</strong> Apply gently to the eye area or full face during AM & PM routines.</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="3.jpg" alt="Domina"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Domina Light Cream</div>
+            <span class="otc-badge">OTC Drug</span>
+          </div>
+          <span class="dc-type-tag p">Pigmented (Brown/Dark)</span>
+          <div class="info-block"><strong>Mechanism:</strong> Formulated with Hydroquinone 2% to inhibit Tyrosinase, the fundamental cause of melanin synthesis. Highly effective for fading targeted pigmented spots.</div>
+          <div class="use-method danger"><strong>Precautions:</strong> <span style="color:#dc2626; font-weight:700;">PM Only.</span> Apply a tiny amount strictly to dark brown spots using a cotton swab. Keep away from eye membranes.</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="2.jpg" alt="Celimax"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Celimax Retinal Shot Booster</div>
+          </div>
+          <span class="dc-type-tag s">Structural (Thin Skin / Aging)</span>
+          <div class="info-block"><strong>Mechanism:</strong> Pure Retinal 0.1% combined with micro-spicules accelerates collagen synthesis to increase skin thickness, resolving visible background veins underneath thin skin.</div>
+          <div class="use-method danger"><strong>Precautions:</strong> <span style="color:#dc2626; font-weight:700;">PM Only.</span> Apply every other night initially to build skin tolerance. Sunscreen is mandatory the next morning.</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="4.jpg" alt="Anua"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Anua Retinol 0.1 + Caffeine Eye Cream</div>
+          </div>
+          <span class="dc-type-tag e">Puffiness & Elasticity</span>
+          <div class="info-block"><strong>Mechanism:</strong> Synergistic blend of Retinol and Caffeine to tighten delicate skin structures and constrict surface blood vessels to diminish morning eye puffiness.</div>
+          <div class="use-method"><strong>How to use:</strong> During your PM routine, gently tap around the orbital bone area.</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="7.jpg" alt="Vita Ampoule"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">SKIN52&CO Pure Vita Ampoule</div>
+          </div>
+          <span class="dc-type-tag p">Dullness & Overall Tone</span>
+          <div class="info-block"><strong>Mechanism:</strong> Contains 13.5% Pure Vitamin C providing continuous antioxidant protection. It neutralizes oxidative stress and brightens dull, uneven skin tones around the eyes.</div>
+          <div class="use-method"><strong>How to use:</strong> Apply right after toner stage. Always follow up with high-SPF sunscreen if used in the morning.</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="5.jpg" alt="Eye Patch"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Centellian24 PDRN Glowing Eye Patch</div>
+          </div>
+          <span class="dc-type-tag e">Hydration Boost & Emergency</span>
+          <div class="info-block"><strong>Mechanism:</strong> Infused with active PDRN and TECA to immediately restore the moisture barrier, reducing fatigue shadows and offering an instant cooling glow.</div>
+          <div class="use-method"><strong>How to use:</strong> Use 2-3 times weekly. Leave patches on the under-eye area for 20-30 minutes before removal.</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="6.jpg" alt="Vitamin C"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Yuhan Vitamin C 1000mg</div>
+            <span class="otc-badge">OTC Oral</span>
+          </div>
+          <span class="dc-type-tag v">Inner Capillary Support</span>
+          <div class="info-block"><strong>Mechanism:</strong> High-dose oral Vitamin C reinforces inner capillary walls and supports base collagen generation, acting as an essential inner-beauty booster.</div>
+          <div class="use-method"><strong>Dosage:</strong> Take 1 tablet, 1-2 times daily, immediately after meals to avoid stomach irritation.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2 class="section-title">Recommended Synergy Routine</h2>
+    <div class="compare-grid">
+      <div class="compare-card am">
+        <h4>☀️ AM Routine</h4>
+        <p>Cleansing → Pure Vita Ampoule (Optional) → <strong>Déesse K Cream</strong> → <span style="color:#dc2626; font-weight:700;">Sunscreen (Mandatory)</span><br><small>*Take Vitamin C tablet after breakfast</small></p>
+      </div>
+      <div class="compare-card pm">
+        <h4>🌙 PM Routine</h4>
+        <p>Cleansing → Toner → <strong>Celimax Retinal Shot</strong> (or Anua Eye Cream) → <span style="color:#dc2626; font-weight:700;">Domina Cream</span> (Apply a tiny amount via cotton swab strictly on brown spots)</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="lang-jp" class="lang-section">
+    <h2 class="section-title">症状別製品ガイド</h2>
+    <div class="product-list">
+      
+      <div class="product-card">
+        <div class="product-image-box"><img src="1.jpg" alt="K Cream"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Déesse アフター K クリーム</div>
+          </div>
+          <span class="dc-type-tag v">青クマ・紫クマ（血行不良）</span>
+          <div class="info-block"><strong>メカニズム:</strong> ビタミンKとアルニカ成分の相互作用により、毛細血管の微小循環を効果的に改善し、滞った血行による青みや目元のどんより感をケアします。</div>
+          <div class="use-method"><strong>使用方法:</strong> 朝と夜のスキンケアの際、目元や顔全体に優しくなじませます。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="3.jpg" alt="Domina"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">ドミナ ライト クリーム</div>
+            <span class="otc-badge">一般医薬品</span>
+          </div>
+          <span class="dc-type-tag p">茶クマ（色素沈着）</span>
+          <div class="info-block"><strong>メカニズム:</strong> ハイドロキノン2%が、メラニン生成の根本原因であるチロシナーゼの活性を強力に抑制し、茶色く定着してしまった色素沈着をピンポイントで薄くします。</div>
+          <div class="use-method danger"><strong>注意点:</strong> <span style="color:#dc2626; font-weight:700;">夜間のみ使用。</span>綿棒を使い、茶色いシミ・色素沈着の部分にのみ薄く点付けしてください。粘膜に入らないよう注意が必要です。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="2.jpg" alt="Celimax"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Celimax レチナールショット</div>
+          </div>
+          <span class="dc-type-tag s">黒クマ・影クマ（皮膚の薄さ・たるみ）</span>
+          <div class="info-block"><strong>メカニズム:</strong> 純粋レチナール0.1%と微細な天然針（スピキュール）がコラーゲン生成を強力に促し、皮膚の厚みを強化。薄い皮膚から血管が透けて見えるのを根本から防ぎます。</div>
+          <div class="use-method danger"><strong>注意点:</strong> <span style="color:#dc2626; font-weight:700;">夜間のみ使用。</span>最初の2週間は肌を慣らすため1日おきに使用し、翌朝は必ず日焼け止めを塗ってください。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="4.jpg" alt="Anua"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Anua レチノール 0.1 + カフェイン アイクリーム</div>
+          </div>
+          <span class="dc-type-tag e">たるみ・目元のむくみ</span>
+          <div class="info-block"><strong>メカニズム:</strong> レチノールとカフェインの高効率な組み合わせが、目元のハリを高めると同時に、表面の毛細血管を適度に収縮させ、朝の不快なむくみをすっきりとケアします。</div>
+          <div class="use-method"><strong>使用方法:</strong> 夜のスキンケアの最後に、目元の骨に沿って優しく叩き込むように馴染ませます。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="7.jpg" alt="Vita Ampoule"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">SKIN52&CO ピュアビタアンプル</div>
+          </div>
+          <span class="dc-type-tag p">くすみ・全体のトーンアップ</span>
+          <div class="info-block"><strong>メカニズム:</strong> 純粋ビタミンC 13.5%による優れた抗酸化作用が肌を保護。酸化ストレスをブロックし、目元全体のくすんだ印象をパッと明るいトーンへと導きます。</div>
+          <div class="use-method"><strong>使用方法:</strong> 化粧水（トナー）のすぐ後に使用します。朝に使用する場合は、必ず日焼け止めを併用してください。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="5.jpg" alt="Eye Patch"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">センテリアン24 PDRN アイパッチ</div>
+          </div>
+          <span class="dc-type-tag e">乾燥・緊急水分補給</span>
+          <div class="info-block"><strong>メカニズム:</strong> PDRNとシカ（TECA）成分が目元に豊かな潤いを素早く届けます。疲れた目元のコンディションを即座に整え、みずみずしい透明感を与えます。</div>
+          <div class="use-method"><strong>使用方法:</strong> 週2〜3回、洗顔後に目元へ密着させ、20〜30分ほど経ってから剥がします。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="6.jpg" alt="Vitamin C"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">柳韓 ビタミンC 1000mg</div>
+            <span class="otc-badge">内服医薬品</span>
+          </div>
+          <span class="dc-type-tag v">インナーケア（血管壁の強化）</span>
+          <div class="info-block"><strong>メカニズム:</strong> 高濃度のビタミンCが内側から毛細血管の壁を丈夫にし、コラーゲンの結合をサポートすることで、血管が透けにくい健康的なベースを作ります。</div>
+          <div class="use-method"><strong>服用方法:</strong> 1日1〜2回、胃への負担を減らすため、食後すぐに1錠を水で服用します。</div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2 class="section-title">おすすめの併用ルーティン</h2>
+    <div class="compare-grid">
+      <div class="compare-card am">
+        <h4>☀️ 朝のルーティン（AM）</h4>
+        <p>洗顔 → ピュアビタアンプル（選択） → <strong>Déesse K クリーム</strong> → <span style="color:#dc2626; font-weight:700;">日焼け止め（必須）</span><br><small>*朝食後にビタミンC錠剤を服用</small></p>
+      </div>
+      <div class="compare-card pm">
+        <h4>🌙 夜のルーティン（PM）</h4>
+        <p>洗顔 → 化粧水 → <strong>Celimax レチナールショット</strong>（またはAnuaアイクリーム） → <span style="color:#dc2626; font-weight:700;">ドミナクリーム</span>（色素沈着部分のみに綿棒で薄く点付け）</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="lang-tw" class="lang-section">
+    <h2 class="section-title">依症狀推薦產品指南</h2>
+    <div class="product-list">
+      
+      <div class="product-card">
+        <div class="product-image-box"><img src="1.jpg" alt="K Cream"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Déesse 術後全效 K 修護霜</div>
+          </div>
+          <span class="dc-type-tag v">血管型（青紫色/循環不良）</span>
+          <div class="info-block"><strong>核心原理：</strong> 維他命K與阿尼卡成分相互 oriental 作用，有效改善毛細血管微循環，淡化因血液淤滯或皮膚過薄而透出的青色陰影。</div>
+          <div class="use-method"><strong>使用方法：</strong> 早晚護膚時，均勻塗抹於眼周肌膚或全臉。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="3.jpg" alt="Domina"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Domina 褪斑美白霜 Light</div>
+            <span class="otc-badge">一般藥品</span>
+          </div>
+          <span class="dc-type-tag p">色素型（褐色/暗沉斑點）</span>
+          <div class="info-block"><strong>核心原理：</strong> 含有 2% 對苯二酚 (Hydroquinone)，能強力阻斷黑色素生成的關鍵酪氨酸酶，針對已形成的深色色素沉著進行高效淡化治療。</div>
+          <div class="use-method danger"><strong>注意事項：</strong> <span style="color:#dc2626; font-weight:700;">限夜間使用。</span>請務必使用棉花棒，極少量地「點塗」於褐色暗沉部位，切勿靠近眼瞼粘膜。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="2.jpg" alt="Celimax"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Celimax A醛緊緻精華</div>
+          </div>
+          <span class="dc-type-tag s">結構型（眼下肌膚薄/老化淚溝）</span>
+          <div class="info-block"><strong>核心原理：</strong> 高活性 0.1% A醛 (Retinal) 結合天然微針，能直接激活真皮層膠原蛋白新生，增加皮膚厚度，從根本改善血管暴露引起的黑眼圈。</div>
+          <div class="use-method danger"><strong>注意事項：</strong> <span style="color:#dc2626; font-weight:700;">限夜間使用。</span>初期請隔日使用以建立肌膚耐受性，隔日白天必須徹底塗抹防曬霜。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="4.jpg" alt="Anua"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Anua 視黃醇咖啡因眼霜</div>
+          </div>
+          <span class="dc-type-tag e">浮腫型與鬆弛型</span>
+          <div class="info-block"><strong>核心原理：</strong> 視黃醇與高濃度咖啡因的黃金組合，能有效收緊眼周鬆弛結構，並使表層微血管適度收縮，快速消除早晨眼部的浮腫與眼袋。</div>
+          <div class="use-method"><strong>使用方法：</strong> 夜間護膚最後階段，順著眼眶骨周圍輕柔拍打至吸收。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="7.jpg" alt="Vita Ampoule"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">SKIN52&CO 純維他命C安瓶</div>
+          </div>
+          <span class="dc-type-tag p">暗沉與整體提亮</span>
+          <div class="info-block"><strong>核心原理：</strong> 含有 13.5% 高活性純維他命C，提供強大的抗氧化屏障，中和自由基，全方位還原黑色素，改善眼周發黃、暗沉的疲憊膚色。</div>
+          <div class="use-method"><strong>使用方法：</strong> 於化妝水後使用。若於日間使用，後續必須搭配高係數防曬產品。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="5.jpg" alt="Eye Patch"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">Centellian24 PDRN 煥采眼膜</div>
+          </div>
+          <span class="dc-type-tag e">深層補水與急救修護</span>
+          <div class="info-block"><strong>核心原理：</strong> 快速注入 DNA-PDRN 與高效積雪草 (TECA) 成分，即刻為乾燥脆弱的眼周肌膚密集補水、舒緩，消除疲勞引發的眼部暗 family。</div>
+          <div class="use-method"><strong>使用方法：</strong> 每週使用 2-3 次。貼於眼下靜置 20-30 分鐘後取下即可。</div>
+        </div>
+      </div>
+
+      <div class="product-card">
+        <div class="product-image-box"><img src="6.jpg" alt="Vitamin C"></div>
+        <div class="product-info">
+          <div class="product-name-row">
+            <div class="product-name">柳韓 維他命C錠 1000mg</div>
+            <span class="otc-badge">內服藥品</span>
+          </div>
+          <span class="dc-type-tag v">內在調理（強化微血管）</span>
+          <div class="info-block"><strong>核心原理：</strong> 高劑量口服純維他命C可從體內深層強化微血管壁，提升血管彈性並輔助全身抗氧化，阻斷黑色素沉著。</div>
+          <div class="use-method"><strong>服用方法：</strong> 每日 1-2 次，每次 1 錠，請於飯後立即服用以減少胃部刺激。</div>
+        </div>
+      </div>
+
+    </div>
+
+    <h2 class="section-title">建議高效護膚步驟</h2>
+    <div class="compare-grid">
+      <div class="compare-card am">
+        <h4>☀️ 日間護膚步驟 (AM)</h4>
+        <p>潔面 → 純維C安瓶（選用） → <strong>Déesse K 修護霜</strong> → <span style="color:#dc2626; font-weight:700;">防曬霜（必須）</span><br><small>*早餐後服用維他命C片</small></p>
+      </div>
+      <div class="compare-card pm">
+        <h4>🌙 夜間護膚步驟 (PM)</h4>
+        <p>潔面 → 化妝水 → <strong>Celimax A醛精華</strong>（或 Anua眼霜） → <span style="color:#dc2626; font-weight:700;">Domina 美白霜</span>（僅用棉花棒局部「點塗」於暗沉斑點處）</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function switchLang(lang) {
+    const buttons = document.querySelectorAll('.btn-lang');
+    buttons.forEach(btn => btn.classList.remove('active'));
+
+    const sections = document.querySelectorAll('.lang-section');
+    sections.forEach(sec => sec.classList.remove('active'));
+
+    const targetBtn = Array.from(buttons).find(btn => btn.getAttribute('onclick').includes(lang));
+    if (targetBtn) targetBtn.classList.add('active');
+
+    const targetSec = document.getElementById('lang-' + lang);
+    if (targetSec) targetSec.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
