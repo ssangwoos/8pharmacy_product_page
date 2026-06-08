@@ -1,0 +1,842 @@
+<div class="med-blog-container">
+  <style>
+    .med-blog-container {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #333333;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    
+    /* 🌐 메인 언어 탭 (상단) */
+    .lang-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      border-bottom: 2px solid #e0e0e0;
+      margin-bottom: 15px;
+      gap: 4px;
+    }
+    .lang-tabs label {
+      flex: 1;
+      min-width: 70px;
+      text-align: center;
+      padding: 10px 5px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      transition: all 0.3s ease;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .main-radio { display: none; }
+
+    /* 📱 서브 대상자 탭 (중단) */
+    .audience-tabs {
+      display: flex;
+      justify-content: center;
+      background: #f8f9fa;
+      padding: 5px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      gap: 4px;
+    }
+    .audience-tabs label {
+      flex: 1;
+      text-align: center;
+      padding: 10px 4px;
+      cursor: pointer;
+      font-weight: 600;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      font-size: 13px;
+      background: transparent;
+      border: none;
+    }
+    .sub-radio { display: none; }
+
+    /* 콘텐츠 탭 스위칭 제어 */
+    .lang-content { display: none; }
+    .aud-panel { display: none; }
+
+    /* 1단계 활성화: 언어 선택 */
+    #lang-kr:checked ~ .lang-tabs label[for="lang-kr"],
+    #lang-en:checked ~ .lang-tabs label[for="lang-en"],
+    #lang-jp:checked ~ .lang-tabs label[for="lang-jp"],
+    #lang-cn:checked ~ .lang-tabs label[for="lang-cn"],
+    #lang-tw:checked ~ .lang-tabs label[for="lang-tw"] {
+      background: #1d3557;
+      color: #ffffff;
+      border-color: #1d3557;
+    }
+    #lang-kr:checked ~ .content-kr, #lang-en:checked ~ .content-en, #lang-jp:checked ~ .content-jp, #lang-cn:checked ~ .content-cn, #lang-tw:checked ~ .content-tw { display: block; }
+
+    /* 2단계 활성화: 대상자 선택 */
+    #kr-aud1:checked ~ .audience-tabs label[for="kr-aud1"], #kr-aud2:checked ~ .audience-tabs label[for="kr-aud2"], #kr-aud3:checked ~ .audience-tabs label[for="kr-aud3"],
+    #en-aud1:checked ~ .audience-tabs label[for="en-aud1"], #en-aud2:checked ~ .audience-tabs label[for="en-aud2"], #en-aud3:checked ~ .audience-tabs label[for="en-aud3"],
+    #jp-aud1:checked ~ .audience-tabs label[for="jp-aud1"], #jp-aud2:checked ~ .audience-tabs label[for="jp-aud2"], #jp-aud3:checked ~ .audience-tabs label[for="jp-aud3"],
+    #cn-aud1:checked ~ .audience-tabs label[for="cn-aud1"], #cn-aud2:checked ~ .audience-tabs label[for="cn-aud2"], #cn-aud3:checked ~ .audience-tabs label[for="cn-aud3"],
+    #tw-aud1:checked ~ .audience-tabs label[for="tw-aud1"], #tw-aud2:checked ~ .audience-tabs label[for="tw-aud2"], #tw-aud3:checked ~ .audience-tabs label[for="tw-aud3"] {
+      background: #457b9d;
+      color: #ffffff;
+    }
+    #kr-aud1:checked ~ .panel-kr1, #kr-aud2:checked ~ .panel-kr2, #kr-aud3:checked ~ .panel-kr3,
+    #en-aud1:checked ~ .panel-en1, #en-aud2:checked ~ .panel-en2, #en-aud3:checked ~ .panel-en3,
+    #jp-aud1:checked ~ .panel-jp1, #jp-aud2:checked ~ .panel-jp2, #jp-aud3:checked ~ .panel-jp3,
+    #cn-aud1:checked ~ .panel-cn1, #cn-aud2:checked ~ .panel-cn2, #cn-aud3:checked ~ .panel-cn3,
+    #tw-aud1:checked ~ .panel-tw1, #tw-aud2:checked ~ .panel-tw2, #tw-aud3:checked ~ .panel-tw3 { display: block; }
+
+    /* 🎯 센터링 전용 카드 레이아웃 (3가지 버전 공통 적용) */
+    .med-card {
+      background: #ffffff;
+      border-top: 4px solid #457b9d;
+      border-left: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 25px 20px;
+      margin-bottom: 25px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+    .med-card h3 { 
+      margin-top: 0; 
+      color: #1d3557; 
+      font-size: 22px; 
+      margin-bottom: 5px;
+    }
+    .med-card p {
+      margin: 8px 0;
+      font-size: 15px;
+      color: #4a5568;
+    }
+    .med-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 15px auto 0 auto;
+      max-width: 550px;
+      text-align: left; /* 리스트 내부 텍스트는 가독성을 위해 좌측정렬이나 카드는 가운데 배치 */
+    }
+    .med-card li {
+      margin-bottom: 10px;
+      font-size: 14.5px;
+      border-bottom: 1px dashed #edf2f7;
+      padding-bottom: 6px;
+    }
+    .med-card li:last-child { border-bottom: none; }
+    
+    /* 📸 공통 이미지 규격 */
+    .med-img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      max-height: 180px;
+      object-fit: contain;
+      border-radius: 6px;
+      margin: 18px auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      padding: 4px;
+    }
+    
+    /* 💡 하단 결론 및 패러다임 전환 박스 */
+    .paradigm-box {
+      background: #f0f7ff;
+      border: 1px dashed #2b6cb0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 25px;
+      text-align: center;
+    }
+    .paradigm-box h4 { margin-top: 0; margin-bottom: 12px; color: #2b6cb0; font-size: 17px; }
+    .paradigm-box p { margin: 6px 0; font-size: 15px; font-weight: bold; }
+
+    /* 🏷️ 배지 스타일 */
+    .badge-recom { display: inline-block; background: #e63946; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
+    .badge-blue { display: inline-block; background: #3182ce; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
+    .badge-purple { display: inline-block; background: #805ad5; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
+  </style>
+
+  <input type="radio" id="lang-kr" name="lang-group" class="main-radio" checked>
+  <input type="radio" id="lang-en" name="lang-group" class="main-radio">
+  <input type="radio" id="lang-jp" name="lang-group" class="main-radio">
+  <input type="radio" id="lang-cn" name="lang-group" class="main-radio">
+  <input type="radio" id="lang-tw" name="lang-group" class="main-radio">
+
+  <div class="lang-tabs">
+    <label for="lang-kr">🇰🇷 한국어</label>
+    <label for="lang-en">🇺🇸 EN</label>
+    <label for="lang-jp">🇯🇵 JP</label>
+    <label for="lang-cn">🇨🇳 CN</label>
+    <label for="lang-tw">🇹🇼 TW</label>
+  </div>
+
+  <div class="lang-content content-kr">
+    <input type="radio" id="kr-aud1" name="kr-aud-group" class="sub-radio" checked>
+    <input type="radio" id="kr-aud2" name="kr-aud-group" class="sub-radio">
+    <input type="radio" id="kr-aud3" name="kr-aud-group" class="sub-radio">
+    <div class="audience-tabs">
+      <label for="kr-aud1">📱 일반인</label>
+      <label for="kr-aud2">🏃‍♂️ 다이어터</label>
+      <label for="kr-aud3">🥼 전문가</label>
+    </div>
+
+    <div class="aud-panel panel-kr1">
+      <div class="med-card">
+        <h3>삭센다 (Saxenda®)</h3>
+        <div><span class="badge-recom">야식 중독 극복</span></div>
+        <img src="1.jpg" alt="삭센다" class="med-img">
+        <p><strong>"배고픔을 줄여주는 기본 주사"</strong></p>
+        <p>뇌에 "배 안 고파"라는 신호를 보내어 자연스럽게 음식을 덜 먹도록 도와주는 비만 치료제입니다.</p>
+        <ul>
+          <li><strong>투여 주기:</strong> 하루에 1번 매일 주사</li>
+          <li><strong>체중 감량:</strong> 평균 5~10% 감소 효과</li>
+          <li><strong>한줄 요약:</strong> 야식 끊기 힘들고 식탐 조절이 안 되는 분들에게 적합합니다.</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>위고비 (Wegovy®)</h3>
+        <div><span class="badge-blue">식사량 전반 감소</span></div>
+        <img src="2.jpg" alt="위고비" class="med-img">
+        <p><strong>"삭센다의 강력한 업그레이드 버전"</strong></p>
+        <p>삭센다와 원리는 비슷하지만, 몸속에서 훨씬 강하고 오랜 기간 작동하여 식욕을 완벽히 통제합니다.</p>
+        <ul>
+          <li><strong>투여 주기:</strong> 일주일에 딱 1번만 주사</li>
+          <li><strong>체중 감량:</strong> 평균 15% 전후의 높은 체중 감소</li>
+          <li><strong>한줄 요약:</strong> 입이 짧아지고 먹는 양 자체가 통째로 줄어드는 느낌을 줍니다.</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>마운자로 (Mounjaro®)</h3>
+        <div><span class="badge-purple">체지방 집중 연소</span></div>
+        <img src="3.jpg" alt="마운자로" class="med-img">
+        <p><strong>"식욕 억제는 기본, 지방까지 직접 태우는 약"</strong></p>
+        <p>음식 섭취량을 줄여줄 뿐만 아니라, 몸이 들어온 영양소를 처리하는 대사 효율성까지 획기적으로 개선합니다.</p>
+        <ul>
+          <li><strong>투여 주기:</strong> 일주일에 딱 1번 주사 (현재 가장 강력한 감량제)</li>
+          <li><strong>체중 감량:</strong> 평균 20% 이상의 압도적인 체중 감소 실현</li>
+          <li><strong>한줄 요약:</strong> 배고픔은 사라지고, 몸속 체지방 위주로 쏙 빠지는 현존 최고의 약물입니다.</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>💡 비만 치료제 한 줄 총정리</h4>
+        <p>삭센다 ➔ 덜 먹게 만든다</p>
+        <p>위고비 ➔ 훨씬 덜 먹게 만든다</p>
+        <p>마운자로 ➔ 덜 먹게 만들고, 들어온 영양도 효율적으로 처리한다!</p>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-kr2">
+      <div class="med-card">
+        <h3>삭센다 (리라글루타이드)</h3>
+        <div><span class="badge-recom">지방 60~65% : 근육 35~40% 감소</span></div>
+        <img src="1.jpg" alt="삭센다" class="med-img">
+        <ul>
+          <li><strong>작용 기전:</strong> 위 배출 속도 지연 ➔ 포만감 증가 및 식욕 감소 유도</li>
+          <li><strong>체성분 변화 데이터:</strong> 10kg 감량 시 지방 약 6~7kg, 근육 3~4kg 감소</li>
+          <li><strong>근손실 리스크:</strong> 식사량이 급격히 줄어들기 때문에 상대적으로 근손실 비율이 높음</li>
+          <li><strong>운동 가이드:</strong> 근육 방어를 위해 웨이트 트레이닝 병행이 필수적임</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>위고비 (세마글루타이드)</h3>
+        <div><span class="badge-blue">지방 60~65% : 근육 35~40% 감소</span></div>
+        <img src="2.jpg" alt="위고비" class="med-img">
+        <ul>
+          <li><strong>작용 기전:</strong> 강력하고 지속적인 GLP-1 자극 ➔ 음식 생각 및 식탐 감소 극대화</li>
+          <li><strong>체성분 변화 데이터:</strong> 15kg 감량 시 지방 약 10~11kg, 근육 4~5kg 감소</li>
+          <li><strong>운동 가이드:</strong> 뼈대 근육량 유지를 위해 고단백 식단 및 강도 높은 근력 운동 권장</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>마운자로 (티르제파타이드)</h3>
+        <div><span class="badge-purple">지방 70~75% : 근육 25~30% 감소</span></div>
+        <img src="3.jpg" alt="마운자로" class="med-img">
+        <ul>
+          <li><strong>작용 기전:</strong> GLP-1 + GIP 이중 작용 ➔ 식욕 감소 + 인슐린 민감도 및 지방 대사 개선</li>
+          <li><strong>체성분 변화 데이터:</strong> 20kg 감량 시 지방 약 15~17kg, 근육은 단 3~4kg만 감소</li>
+          <li><strong>제지방(Lean Mass) 보존:</strong> 감량 폭이 압도적으로 크면서도 근육 감소 비율은 가장 낮음</li>
+          <li><strong>운동 가이드:</strong> 웨이트 병행 시 빠지는 무게의 대부분이 순수 지방 ➔ 최고의 체형 변화 체감</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-kr3">
+      <div class="med-card">
+        <h3>삭센다 (Liraglutide)</h3>
+        <div><span class="badge-recom">GLP-1 수용체 단독 작용제 (GLP-1 RA)</span></div>
+        <img src="1.jpg" alt="삭센다" class="med-img">
+        <ul>
+          <li><strong>구조적 특성:</strong> 인간 GLP-1과 97% 상동성(homologous)을 가짐</li>
+          <li><strong>약동학(PK):</strong> 반감기 약 13시간 ➔ 1일 1회 피하주사(SC) 필수</li>
+          <li><strong>세포 생리학적 경로:</strong> 소장 L-cell 분비 호르몬 모방 ➔ 시상하부(ARC) 내 POMC/CART 신경원 활성화 및 NPY/AgRP 억제 ➔ 위 배출 속도 감소를 통한 기계적 포만감 증진</li>
+          <li><strong>작용 특성 (비유):</strong> 재무팀의 역할 ➔ "지출(섭취)을 줄여!" 기전에 한정됨</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>위고비 (Semaglutide)</h3>
+        <div><span class="badge-blue">지속성 획득 GLP-1 수용체 작용제</span></div>
+        <img src="2.jpg" alt="위고비" class="med-img">
+        <ul>
+          <li><strong>구조적 특성:</strong> Albumin binding 능력 상향 및 DPP-4 효소 분해 저항성 극대화</li>
+          <li><strong>약동학(PK):</strong> 반감기 약 1주일(7일)로 대폭 연장 ➔ 주 1회 피하주사(SC) 가능</li>
+          <li><strong>임상 체성분 변화 (STEP):</strong> 총 체중 감량 폭 중 지방 감소 비율 60~65%, 제지방 감소 비율 35~40%</li>
+          <li><strong>작용 특성 (비유):</strong> 강력해진 재무팀 ➔ 지속적이고 강박적인 비용(섭취량) 절감 유도</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>마운자로 (Tirzepatide)</h3>
+        <div><span class="badge-purple">세계 최초의 Dual GIP/GLP-1 Receptor Agonist</span></div>
+        <img src="3.jpg" alt="마운자로" class="med-img">
+        <ul>
+          <li><strong>구조적 특성:</strong> 단일 분자 내 GIP 수용체 및 GLP-1 수용체를 동시 자극하는 이중 작용제</li>
+          <li><strong>약동학(PK):</strong> 반감기 약 5일 ➔ 주 1회 피하주사(SC) 최적화</li>
+          <li><strong>GIP 경로의 고유 이점 (십이지장 K-cell 경로):</strong> 췌장 내 포도당 의존적 인슐린 분비 촉진, 말초 지방조직의 대사 조절 및 정상화, 골격근 내 인슐린 감수성 증가 ➔ 근육 내 포도당 이용 증가로 이어져 근육 보존</li>
+          <li><strong>임상 체성분 변화 (SURMOUNT):</strong> 총 체중 감량량의 70~75%가 순수 지방 ➔ 제지방 감소는 25~30%로 방어</li>
+          <li><strong>근육 보존의 3대 요인:</strong> ① 인슐린 감수성 개선을 통한 근육 보존 ② 지방 산화(Lipid Oxidation) 증가로 지방 우선 소모 ③ 체중 감소량 대비 제지방 감소 비율 자체의 하락</li>
+          <li><strong>작용 특성 (비유):</strong> 재무팀 + 운영팀 합작 ➔ 비용(섭취)도 대폭 절감하고, 들어온 자원(영양)의 대사 효율도 개선</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>🎯 최종 결론 및 학술적 패러다임 변화</h4>
+        <p>비만 치료의 패러다임이 단순한 '식욕 억제(지출 차단)'에서</p>
+        <p>'인크레틴 시스템 전체 활용을 통한 대사 효율 개선(운영 최적화)'으로 진화 중입니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lang-content content-en">
+    <input type="radio" id="en-aud1" name="en-aud-group" class="sub-radio" checked>
+    <input type="radio" id="en-aud2" name="en-aud-group" class="sub-radio">
+    <input type="radio" id="en-aud3" name="en-aud-group" class="sub-radio">
+    <div class="audience-tabs">
+      <label for="en-aud1">📱 Public</label>
+      <label for="en-aud2">🏃‍♂️ Dieter</label>
+      <label for="en-aud3">🥼 Pro</label>
+    </div>
+
+    <div class="aud-panel panel-en1">
+      <div class="med-card">
+        <h3>Saxenda (Liraglutide)</h3>
+        <div><span class="badge-recom">Late-night Craving Control</span></div>
+        <img src="1.jpg" alt="Saxenda" class="med-img">
+        <p><strong>"The Standard Hunger-Reducing Shot"</strong></p>
+        <p>It sends a "not hungry" signal to your brain to help you naturally reduce your food intake.</p>
+        <ul>
+          <li><strong>Frequency:</strong> Once-daily injection</li>
+          <li><strong>Weight Loss:</strong> Average 5–10% reduction</li>
+          <li><strong>Summary:</strong> Best for individuals who struggle with constant snacking or late-night eating.</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>Wegovy (Semaglutide)</h3>
+        <div><span class="badge-blue">Overall Food Intake Reduction</span></div>
+        <img src="2.jpg" alt="Wegovy" class="med-img">
+        <p><strong>"The High-Powered Upgrade"</strong></p>
+        <p>Shares a similar mechanism with Saxenda, but acts much longer and stronger in the body for total appetite management.</p>
+        <ul>
+          <li><strong>Frequency:</strong> Just once-weekly injection</li>
+          <li><strong>Weight Loss:</strong> Average around 15% reduction</li>
+          <li><strong>Summary:</strong> Drastically decreases portions, making you feel completely indifferent to food.</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>Mounjaro (Tirzepatide)</h3>
+        <div><span class="badge-purple">Targeted Fat Burning</span></div>
+        <img src="3.jpg" alt="Mounjaro" class="med-img">
+        <p><strong>"Appetite Suppression + Direct Fat Burner"</strong></p>
+        <p>Not only curbs your hunger but changes your metabolic efficiency to handle incoming energy much better.</p>
+        <ul>
+          <li><strong>Frequency:</strong> Once-weekly injection (The most potent agent available)</li>
+          <li><strong>Weight Loss:</strong> Overwhelming 20%+ average reduction</li>
+          <li><strong>Summary:</strong> Hunger fades away completely, melting fat while retaining maximum body strength.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-en2">
+      <div class="med-card">
+        <h3>Saxenda</h3>
+        <div><span class="badge-recom">60-65% Fat Loss : 35-40% Muscle Loss</span></div>
+        <img src="1.jpg" alt="Saxenda" class="med-img">
+        <ul>
+          <li><strong>Mechanism:</strong> Delays gastric emptying ➔ Prolongs satiety & suppresses appetite.</li>
+          <li><strong>Body Comp Changes:</strong> Out of 10kg lost, ~6-7kg is fat and 3-4kg is muscle.</li>
+          <li><strong>Muscle Atrophy Risk:</strong> Higher proportion of lean mass loss due to a sudden drop in daily nutrition.</li>
+          <li><strong>Workout Tip:</strong> Heavy resistance training is strongly recommended to protect muscle.</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>Wegovy</h3>
+        <div><span class="badge-blue">60-65% Fat Loss : 35-40% Muscle Loss</span></div>
+        <img src="2.jpg" alt="Wegovy" class="med-img">
+        <ul>
+          <li><strong>Mechanism:</strong> Sustained and intense GLP-1 stimulation ➔ Maximizes total food-thought suppression.</li>
+          <li><strong>Body Comp Changes:</strong> Out of 15kg lost, ~10-11kg is fat and 4-5kg is muscle.</li>
+          <li><strong>Workout Tip:</strong> High-protein diet combined with intense lifting is crucial to safeguard skeletal muscle.</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>Mounjaro</h3>
+        <div><span class="badge-purple">70-75% Fat Loss : 25-30% Muscle Loss</span></div>
+        <img src="3.jpg" alt="Mounjaro" class="med-img">
+        <ul>
+          <li><strong>Mechanism:</strong> Dual GLP-1 + GIP pathways ➔ Appetite suppression + improved insulin sensitivity.</li>
+          <li><strong>Body Comp Changes:</strong> Out of 20kg lost, ~15-17kg is pure fat and only 3-4kg is muscle.</li>
+          <li><strong>Lean Mass Benefit:</strong> Shows the highest weight reduction with the lowest relative muscle loss.</li>
+          <li><strong>Workout Tip:</strong> Reshapes the body silhouettes phenomenally as almost all loss is driven from stubborn fat.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-en3">
+      <div class="med-card">
+        <h3>Saxenda (Liraglutide)</h3>
+        <div><span class="badge-recom">Selective GLP-1 Receptor Agonist (GLP-1 RA)</span></div>
+        <img src="1.jpg" alt="Saxenda" class="med-img">
+        <ul>
+          <li><strong>Structure:</strong> 97% homologous to native human GLP-1.</li>
+          <li><strong>Pharmacokinetics (PK):</strong> Half-life ~13 hours ➔ Mandates once-daily SC injection.</li>
+          <li><strong>Pathophysiology:</strong> Mimics L-cell incretin ➔ Activates ARC POMC/CART neurons and inhibits NPY/AgRP paths in the hypothalamus ➔ Mechanical satiety via delayed gastric emptying.</li>
+          <li><strong>Metaphor:</strong> The Finance Team ➔ Strictly limited to "cutting expenses" (intake control).</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>Wegovy (Semaglutide)</h3>
+        <div><span class="badge-blue">Long-Acting GLP-1 Receptor Agonist</span></div>
+        <img src="2.jpg" alt="Wegovy" class="med-img">
+        <ul>
+          <li><strong>Structure:</strong> Modified for increased albumin binding and robust resistance to DPP-4 degradation.</li>
+          <li><strong>Pharmacokinetics (PK):</strong> Half-life extended to ~7 days ➔ Once-weekly SC injection.</li>
+          <li><strong>Clinical Data (STEP Trials):</strong> Fat mass accounts for 60–65% of loss, lean mass accounts for 35–40%.</li>
+          <li><strong>Metaphor:</strong> Supercharged Finance Team ➔ Continuous and forceful cost-cutting.</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>Mounjaro (Tirzepatide)</h3>
+        <div><span class="badge-purple">First-in-class Dual GIP/GLP-1 Receptor Agonist</span></div>
+        <img src="3.jpg" alt="Mounjaro" class="med-img">
+        <ul>
+          <li><strong>Structure:</strong> A single peptide molecule that synergistically activates both GIP and GLP-1 receptors.</li>
+          <li><strong>Pharmacokinetics (PK):</strong> Half-life ~5 days ➔ Optimized for once-weekly SC injection.</li>
+          <li><strong>GIP-driven Advantages (K-cell pathway):</strong> Potentiates glucose-dependent insulin secretion, normalizes lipid storage in adipose tissues, and enhances skeletal muscle insulin sensitivity ➔ Drives glucose utilization into muscle, maintaining structural integrity.</li>
+          <li><strong>Clinical Data (SURMOUNT Trials):</strong> 70–75% of total weight drop is fat mass, limiting lean mass loss to just 25–30%.</li>
+          <li><strong>Mechanisms of Muscle Sparing:</strong> ① Preserves tissue via skeletal glucose uptake ② Elevates lipid oxidation to burn fat preferentially ③ Drops the relative lean mass loss ratio drastically.</li>
+          <li><strong>Metaphor:</strong> Finance Team + Operations Team ➔ Drastically cuts costs (intake) while optimizing resource allocation (metabolic efficiency).</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>🎯 Scientific Paradigm Shift</h4>
+        <p>Obesity medicine has evolved from basic "appetite suppression (spending cuts)"</p>
+        <p>to "improving metabolic efficiency via full coordination of the Incretin System (operational optimization)."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lang-content content-jp">
+    <input type="radio" id="jp-aud1" name="jp-aud-group" class="sub-radio" checked>
+    <input type="radio" id="jp-aud2" name="jp-aud-group" class="sub-radio">
+    <input type="radio" id="jp-aud3" name="jp-aud-group" class="sub-radio">
+    <div class="audience-tabs">
+      <label for="jp-aud1">📱 一般</label>
+      <label for="jp-aud2">🏃‍♂️ ﾀﾞｲｴｯﾀｰ</label>
+      <label for="jp-aud3">🥼 専門家</label>
+    </div>
+
+    <div class="aud-panel panel-jp1">
+      <div class="med-card">
+        <h3>サクセンダ (Saxenda®)</h3>
+        <div><span class="badge-recom">夜食・食欲のコントロール</span></div>
+        <img src="1.jpg" alt="サクセンダ" class="med-img">
+        <p><strong>「お腹を空きにくくする基本の注射」</strong></p>
+        <p>脳に「お腹が空いていない」というシグナルを送り、食べる量を自然に減らせる肥満治療薬です。</p>
+        <ul>
+          <li><strong>投与周期:</strong> 1日1回、毎日自己注射</li>
+          <li><strong>体重減少:</strong> 平均 5〜10% の減量効果</li>
+          <li><strong>一言まとめ:</strong> ついつい夜食を食べてしまう方や、食欲が抑えられない方に最適です。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>ウゴービ (Wegovy®)</h3>
+        <div><span class="badge-blue">食事全体のボリュームを抑制</span></div>
+        <img src="2.jpg" alt="ウゴービ" class="med-img">
+        <p><strong>「サクセンダの強力な進化版」</strong></p>
+        <p>サクセンダとメカニズムは似ていますが、体内でより強力かつ長時間作用し、食欲を徹底的に管理します。</p>
+        <ul>
+          <li><strong>投与周期:</strong> 週に1回だけの投与でOK</li>
+          <li><strong>体重減少:</strong> 平均約 15% 前後の高い減量効果</li>
+          <li><strong>一言まとめ:</strong> 食べる量そのものがガクッと減る感覚をはっきりと実感できます。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>マンジャロ (Mounjaro®)</h3>
+        <div><span class="badge-purple">体脂肪を集中的に燃焼</span></div>
+        <img src="3.jpg" alt="マンジャロ" class="med-img">
+        <p><strong>「食欲を抑え、さらに脂肪を直接燃やす薬」</strong></p>
+        <p>食事量を減らすだけでなく、摂取した栄養素をエネルギーに変える「代謝効率」を劇的に改善します。</p>
+        <ul>
+          <li><strong>投与周期:</strong> 週に1回（現在、最も強力な減量効果を持つ薬剤）</li>
+          <li><strong>体重減少:</strong> 平均 20% 以上の圧倒的な体重減少を達成</li>
+          <li><strong>一言まとめ:</strong> 空腹感が消え去り、筋肉を保ちながら体脂肪を中心に落とせる現役最強の薬です。</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>💡 抗肥満薬の一言まとめ</h4>
+        <p>サクセンダ ➔ 食べる量を減らす</p>
+        <p>ウゴービ ➔ 食べる量を大幅に減らす</p>
+        <p>マンジャロ ➔ 食べる量を減らし、入ってきた栄養を効率よく処理する！</p>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-jp2">
+      <div class="med-card">
+        <h3>サクセンダ (リラグルチド)</h3>
+        <div><span class="badge-recom">脂肪 60〜65% : 筋肉 35〜40% 減少</span></div>
+        <img src="1.jpg" alt="サクセンダ" class="med-img">
+        <ul>
+          <li><strong>作用機序:</strong> 胃排泄速度の遅延 ➔ 満腹感を高め、食欲低下を誘導</li>
+          <li><strong>体組成データ:</strong> 10kg減量時、脂肪約6〜7kg、筋肉3〜4kgの減少</li>
+          <li><strong>筋肉減少リスク:</strong> 食事量が急激に減るため、筋肉が落ちやすい傾向があります</li>
+          <li><strong>運動アドバイス:</strong> 筋肉を死守するため、ウェイトトレーニングの並行が必須</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>ウゴービ (セマグルチド)</h3>
+        <div><span class="badge-blue">脂肪 60〜65% : 筋肉 35〜40% 減少</span></div>
+        <img src="2.jpg" alt="ウゴービ" class="med-img">
+        <ul>
+          <li><strong>作用機序:</strong> 強力かつ持続的なGLP-1刺激 ➔ 食べ物への執着や食欲を徹底排除</li>
+          <li><strong>体組成データ:</strong> 15kg減量時、脂肪約10〜11kg、筋肉4〜5kgの減少</li>
+          <li><strong>運動アドバイス:</strong> 骨格筋量を維持するため、高タンパク質な食事と筋トレが不可欠</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>マンジャロ (チルゼパチド)</h3>
+        <div><span class="badge-purple">脂肪 70〜75% : 筋肉 25〜30% 減少</span></div>
+        <img src="3.jpg" alt="マンジャロ" class="med-img">
+        <ul>
+          <li><strong>作用機序:</strong> GLP-1 + GIP の二重作用 ➔ 食欲抑制 ＋ インスリン感受性と脂質代謝の改善</li>
+          <li><strong>体組成データ:</strong> 20kg減量時、脂肪約15〜17kgに対し、筋肉の減少はわずか3〜4kg</li>
+          <li><strong>除脂肪組織の保護:</strong> 減量幅が一番大きいにもかかわらず、筋肉の減少割合が最も低い</li>
+          <li><strong>運動アドバイス:</strong> 筋トレを並行すると落ちる体重のほとんどが純脂肪になり、最高のボディメイクが実現</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-jp3">
+      <div class="med-card">
+        <h3>サクセンダ (Liraglutide)</h3>
+        <div><span class="badge-recom">GLP-1受容体単独作動薬 (GLP-1 RA)</span></div>
+        <img src="1.jpg" alt="サクセンダ" class="med-img">
+        <ul>
+          <li><strong>構造的特徴:</strong> ネイティブヒトGLP-1と97%の相同性(homologous)を持つ。</li>
+          <li><strong>薬物動態(PK):</strong> 半減期 約13時間 ➔ 1日1回の皮下投与(SC)が必要。</li>
+          <li><strong>細胞生理学的経路:</strong> 小腸L細胞分泌ホルモンを模倣 ➔ 視床下部弓状核(ARC)のPOMC/CARTニューロン活性化、NPY/AgRP抑制 ➔ 胃排泄遅延による機械的満腹感の持続。</li>
+          <li><strong>薬剤の役割 (比喩):</strong> 財務部の役割 ➔ 「支出（摂取）を減らせ！」という機序に限定。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>ウゴービ (Semaglutide)</h3>
+        <div><span class="badge-blue">長時間作用型 GLP-1受容体作動薬</span></div>
+        <img src="2.jpg" alt="ウゴービ" class="med-img">
+        <ul>
+          <li><strong>構造的特徴:</strong> アルブミン結合能の向上およびDPP-4酵素分解に対する高い抵抗性を獲得。</li>
+          <li><strong>薬物動態(PK):</strong> 半減期を約1週間（7日間）へ大幅延長 ➔ 週1回の皮下投与(SC)が可能。</li>
+          <li><strong>臨床体組成データ (STEP):</strong> 体重減少量のうち、脂肪減少が60〜65%、除脂肪組織減少が35〜40%。</li>
+          <li><strong>薬剤の役割 (比喩):</strong> 強化された財務部 ➔ 持続的かつ強力にコスト（食事量）の削減を主導。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>マンジャロ (Tirzepatide)</h3>
+        <div><span class="badge-purple">世界初のGIP/GLP-1受容体デュアル作動薬</span></div>
+        <img src="3.jpg" alt="マンジャロ" class="med-img">
+        <ul>
+          <li><strong>構造的特徴:</strong> 単一分子でGIP受容体とGLP-1受容体の双方を同時刺激する画期的な二重作動薬。</li>
+          <li><strong>薬物動態(PK):</strong> 半減期 約5日間 ➔ 週1回の皮下投与(SC)に最適化。</li>
+          <li><strong>GIP経路の固有メリット (十二指腸K細胞経路):</strong> 血糖依存的なインスリン分泌促進、末梢脂肪組織の代謝調節（単純貯蔵ではなくエネルギー分配の適正化）、骨格筋のインスリン感受性改善 ➔ 筋肉内グルコース利用亢進による筋肉保護。</li>
+          <li><strong>臨床体組成データ (SURMOUNT):</strong> 体重減少量の70〜75%が純脂肪 ➔ 除脂肪の減少を25〜30%に抑制。</li>
+          <li><strong>筋肉保持の3大要因:</strong> ①インスリン感受性改善による筋肉組織の保護 ②脂質酸化(Lipid Oxidation)亢進による脂肪の優先消費 ③総減量量に対する除脂肪減少割合自体の低下。</li>
+          <li><strong>薬剤の役割 (比喩):</strong> 財務部 ＋ 業務推進部 ➔ コスト（摂取）を抑えつつ、入ってきた資源（栄養）の代謝・分配効率を最適化。</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>🎯 結論および学術的パラダイムの転換</h4>
+        <p>肥満治療の本質は、単なる「食欲抑制（支出遮断）」から、</p>
+        <p>「インクレチンシステム全体の活用による代謝効率の改善（運用の最適化）」へと進化しています。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lang-content content-cn">
+    <input type="radio" id="cn-aud1" name="cn-aud-group" class="sub-radio" checked>
+    <input type="radio" id="cn-aud2" name="cn-aud-group" class="sub-radio">
+    <input type="radio" id="cn-aud3" name="cn-aud-group" class="sub-radio">
+    <div class="audience-tabs">
+      <label for="cn-aud1">📱 大众</label>
+      <label for="cn-aud2">🏃‍♂️ 减肥者</label>
+      <label for="cn-aud3">🥼 专家</label>
+    </div>
+
+    <div class="aud-panel panel-cn1">
+      <div class="med-card">
+        <h3>善纤达 (Saxenda®)</h3>
+        <div><span class="badge-recom">克制深夜暴食</span></div>
+        <img src="1.jpg" alt="善纤达" class="med-img">
+        <p><strong>“减少饥饿感的基础减重针”</strong></p>
+        <p>通过向大脑发送“我不饿”的信号，帮助你自然而然地减少食物摄入量。</p>
+        <ul>
+          <li><strong>使用周期：</strong> 每天需要注射 1 次</li>
+          <li><strong>减重效果：</strong> 平均体重减轻 5% ~ 10%</li>
+          <li><strong>一句话总结：</strong> 适合难以戒掉夜宵、食欲旺盛且自控力较差的人群。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>维高威 (Wegovy®)</h3>
+        <div><span class="badge-blue">整体饭量大幅缩减</span></div>
+        <img src="2.jpg" alt="维高威" class="med-img">
+        <p><strong>“善纤达的强效升级版”</strong></p>
+        <p>作用原理与善纤达类似，但在体内的作用时间更长、效果更强，可全方位控食。</p>
+        <ul>
+          <li><strong>使用周期：</strong> 每周仅需注射 1 次</li>
+          <li><strong>减重效果：</strong> 平均体重减轻达 15% 左右</li>
+          <li><strong>一句话总结：</strong> 让你胃口变小，深刻体会到对食物失去兴趣的感觉。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>替尔泊肽/穆罕扎罗 (Mounjaro®)</h3>
+        <div><span class="badge-purple">集中燃烧体脂肪</span></div>
+        <img src="3.jpg" alt="替尔泊肽" class="med-img">
+        <p><strong>“不仅强效控食，还能直接加速燃脂”</strong></p>
+        <p>不仅能阻断饥饿感，还可以从根本上提高身体处理和代谢营养物质的效率。</p>
+        <ul>
+          <li><strong>使用周期：</strong> 每周注射 1 次（目前减重效果最顶级的药物）</li>
+          <li><strong>减重效果：</strong> 带来平均 20% 以上的颠覆性减重表现</li>
+          <li><strong>一句话总结：</strong> 饥饿感彻底消失，在不牺牲体力的情况下精准精准减掉纯脂肪。</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>💡 减重药物一句话核心总结</h4>
+        <p>善纤达 ➔ 让你吃得少</p>
+        <p>维高威 ➔ 让你吃得明显更少</p>
+        <p>替尔泊肽 ➔ 让你吃得少，同时把吃进去的营养高效代谢掉！</p>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-cn2">
+      <div class="med-card">
+        <h3>善纤达 (利拉鲁肽)</h3>
+        <div><span class="badge-recom">脂肪减少 60~65% : 肌肉流失 35~40%</span></div>
+        <img src="1.jpg" alt="善纤达" class="med-img">
+        <ul>
+          <li><strong>作用机制：</strong> 延缓胃排空速度 ➔ 延长饱腹感并降低食欲。</li>
+          <li><strong>体成分变化数据：</strong> 每减重 10kg，脂肪减少约 6~7kg，肌肉流失 3-4kg。</li>
+          <li><strong>肌肉流失风险：</strong> 由于饮食量短期内骤减，整体肌肉流失的比例相对较高。</li>
+          <li><strong>运动建议：</strong> 必须配合抗阻力量训练，以防止肌肉大幅退化。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>维高威 (司美格鲁肽)</h3>
+        <div><span class="badge-blue">脂肪减少 60~65% : 肌肉流失 35~40%</span></div>
+        <img src="2.jpg" alt="维高威" class="med-img">
+        <ul>
+          <li><strong>作用机制：</strong> 强效且持续地刺激 GLP-1 ➔ 最大程度清除对食物的渴望与幻想。</li>
+          <li><strong>体成分变化数据：</strong> 每减重 15kg，脂肪减少约 10~11kg，肌肉流失 4-5kg。</li>
+          <li><strong>运动建议：</strong> 强烈建议实施高蛋白饮食，并进行高强度的抗阻训练。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>替尔泊肽 (Tirzepatide)</h3>
+        <div><span class="badge-purple">脂肪减少 70~75% : 肌肉流失 25~30%</span></div>
+        <img src="3.jpg" alt="替尔泊肽" class="med-img">
+        <ul>
+          <li><strong>作用机制：</strong> GLP-1 + GIP 双靶点协同 ➔ 控食 ＋ 改善胰岛素敏感性与脂肪大代谢。</li>
+          <li><strong>体成分变化数据：</strong> 即使大幅减重 20kg，脂肪减少高达 15~17kg，肌肉仅流失 3-4kg。</li>
+          <li><strong>去脂体重保护：</strong> 在减重幅度最大的前提下，实现了极低的肌肉流失率。</li>
+          <li><strong>运动建议：</strong> 配合力量训练能让减掉的几乎全为纯脂肪，身材线条的雕刻效果达到极致。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-cn3">
+      <div class="med-card">
+        <h3>善纤达 (Liraglutide)</h3>
+        <div><span class="badge-recom">单靶点 GLP-1 受体激动剂 (GLP-1 RA)</span></div>
+        <img src="1.jpg" alt="善纤达" class="med-img">
+        <ul>
+          <li><strong>结构特征：</strong> 与天然人源 GLP-1 具有 97% 的同源性 (Homologous)。</li>
+          <li><strong>药代动力学(PK)：</strong> 半衰期约为 13 小时 ➔ 每日须进行一次皮下注射 (SC)。</li>
+          <li><strong>细胞生理通路：</strong> 模拟小肠 L 细胞分泌的肠促胰素 ➔ 激活下丘脑弓状核 (ARC) 的 POMC/CART 神经元并抑制 NPY/AgRP 通路 ➔ 延缓胃排空以提供机械性饱腹感。</li>
+          <li><strong>作用特质（比喻）：</strong> 财务部的角色 ➔ 职能严格局限于“削减开支（控制摄入）”。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>维高威 (Semaglutide)</h3>
+        <div><span class="badge-blue">长效 GLP-1 受体激动剂</span></div>
+        <img src="2.jpg" alt="维高威" class="med-img">
+        <ul>
+          <li><strong>结构特征：</strong> 通过修饰增加了白蛋白结合能力，并对 DPP-4 酶的降解产生了极强的抵抗力。</li>
+          <li><strong>药代动力学(PK)：</strong> 半衰期大幅延长至约 7 天 ➔ 实现了每周仅需一次皮下注射 (SC)。</li>
+          <li><strong>临床体成分数据 (STEP)：</strong> 体重减轻总量中，脂肪减少占 60-65%，去脂体重减少占 35-40%。</li>
+          <li><strong>作用特质（比喻）：</strong> 强力财务部 ➔ 持续且强硬地推行成本（摄入量）削减计划。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>替尔泊肽 (Tirzepatide)</h3>
+        <div><span class="badge-purple">全球首个葡萄糖依赖性促胰岛素多肽 (GIP) 和 GLP-1 受体双重激动剂</span></div>
+        <img src="3.jpg" alt="替尔泊肽" class="med-img">
+        <ul>
+          <li><strong>结构特征：</strong> 单个肽链分子，能够同时且协同地激活 GIP 受体与 GLP-1 受体。</li>
+          <li><strong>药代动力学(PK)：</strong> 半衰期约为 5 天 ➔ 完美适配每周一次的皮下注射 (SC)。</li>
+          <li><strong>GIP 通路的独特优势（十二指肠 K 细胞通路）：</strong> 促进血糖依赖性胰岛素分泌；调控外周脂肪组织，使之从“单纯储存”转向“合理的能量分配”；增强骨骼肌的胰岛素敏感性 ➔ 提高肌肉对葡萄糖的利用率，从而保护肌肉结构。</li>
+          <li><strong>临床体成分数据 (SURMOUNT)：</strong> 总减重量中 70-75% 为纯脂肪，将去脂体重的流失率成功压低至 25-30%。</li>
+          <li><strong>肌肉保护三大核心要素：</strong> ① 改善胰岛素敏感性以保护肌肉组织 ② 提升脂质氧化 (Lipid Oxidation) 以优先消耗脂肪 ③ 降低总减重量中去脂体重的相对流失比例。</li>
+          <li><strong>作用特质（比喻）：</strong> 财务部 + 运营部 ➔ 大幅削减成本（控制摄入）的同时，全面优化资源配置（提高代谢效率）。</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>🎯 临床学术范式转移</h4>
+        <p>肥胖医学的范式已从单纯的“抑制食欲（切断支出）”</p>
+        <p>演变为“通过全面调动肠促胰素系统来提高代谢效率（优化运营）”。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="lang-content content-tw">
+    <input type="radio" id="tw-aud1" name="tw-aud-group" class="sub-radio" checked>
+    <input type="radio" id="tw-aud2" name="tw-aud-group" class="sub-radio">
+    <input type="radio" id="tw-aud3" name="tw-aud-group" class="sub-radio">
+    <div class="audience-tabs">
+      <label for="tw-aud1">📱 大眾</label>
+      <label for="tw-aud2">🏃‍♂️ 減重者</label>
+      <label for="tw-aud3">🥼 專家</label>
+    </div>
+
+    <div class="aud-panel panel-tw1">
+      <div class="med-card">
+        <h3>善纖達 (Saxenda®)</h3>
+        <div><span class="badge-recom">克制深夜暴食</span></div>
+        <img src="1.jpg" alt="善纖達" class="med-img">
+        <p><strong>「減少飢餓感的基础減重筆」</strong></p>
+        <p>透過向大腦發送「肚子不餓」的訊號，幫助您自然而然地減少食物攝取量。</p>
+        <ul>
+          <li><strong>施打週期：</strong> 天天施打（一天注射 1 次）</li>
+          <li><strong>減重效果：</strong> 平均體重減輕 5% ~ 10%</li>
+          <li><strong>一句話總結：</strong> 適合控制不住食慾、嘴饞且容易依賴宵夜的人群。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>威哥威 (Wegovy®)</h3>
+        <div><span class="badge-blue">整體食量大幅縮減</span></div>
+        <img src="2.jpg" alt="威哥威" class="med-img">
+        <p><strong>「善纖達的強效升級版」</strong></p>
+        <p>作用原理與善纖達類似，但在體內維持的時間更長、效果更強，能全方位控食。</p>
+        <ul>
+          <li><strong>施打週期：</strong> 週週施打（一週僅需注射 1 次）</li>
+          <li><strong>減重效果：</strong> 平均體重減輕達 15% 左右</li>
+          <li><strong>一句話總結：</strong> 讓您的胃口直接變小，深刻體會到對食物失去幻想與執著。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>蒙札羅/替爾泊肽 (Mounjaro®)</h3>
+        <div><span class="badge-purple">集中燃燒體脂肪</span></div>
+        <img src="3.jpg" alt="蒙札羅" class="med-img">
+        <p><strong>「不僅強效控食，還能直接加速燃脂」</strong></p>
+        <p>不只能阻斷飢餓感，還可以從根本上改變身體處理與代謝營養物質的效率。</p>
+        <ul>
+          <li><strong>施打週期：</strong> 一週注射 1 次（目前臨床減重效果最頂尖的藥物）</li>
+          <li><strong>減重效果：</strong> 帶來平均 20% 以上的顛覆性減重表現</li>
+          <li><strong>一句話總結：</strong> 飢餓感徹底消失，在不犧牲體力的情況下精準減掉純脂肪。</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>💡 減重藥物一句話核心總結</h4>
+        <p>善纖達 ➔ 讓你吃得少</p>
+        <p>威哥威 ➔ 讓你吃得明顯更少</p>
+        <p>蒙札羅 ➔ 讓你吃得少，同時把吃進去的營養高效代謝掉！</p>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-tw2">
+      <div class="med-card">
+        <h3>善纖達 (利拉魯肽)</h3>
+        <div><span class="badge-recom">脂肪減少 60~65% : 肌肉流失 35~40%</span></div>
+        <img src="1.jpg" alt="善纖達" class="med-img">
+        <ul>
+          <li><strong>機轉說明：</strong> 延緩胃排空速度 ➔ 延長飽足感並降低食慾。</li>
+          <li><strong>體組成變化數據：</strong> 每減重 10kg，脂肪減少約 6~7kg，肌肉流失 3-4kg。</li>
+          <li><strong>肌肉流失風險：</strong> 由於整體飲食量在短期內驟減，肌肉流失的比例相對較高。</li>
+          <li><strong>運動建議：</strong> 必須積極配合重量訓練，以防止肌肉大幅萎縮。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>威哥威 (司美格魯肽)</h3>
+        <div><span class="badge-blue">脂肪減少 60~65% : 肌肉流失 35~40%</span></div>
+        <img src="2.jpg" alt="威哥威" class="med-img">
+        <ul>
+          <li><strong>機轉說明：</strong> 強效且持續地刺激 GLP-1 ➔ 最大程度清除對食物的幻想與渴望。</li>
+          <li><strong>體組成變化數據：</strong> 每減重 15kg，脂肪減少約 10~11kg，肌肉流失 4-5kg。</li>
+          <li><strong>運動建議：</strong> 強烈建議實施高蛋白飲食，並進行足夠強度的阻力運動。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>蒙札羅 (Tirzepatide)</h3>
+        <div><span class="badge-purple">脂肪減少 70~75% : 肌肉流失 25~30%</span></div>
+        <img src="3.jpg" alt="蒙札羅" class="med-img">
+        <ul>
+          <li><strong>機轉說明：</strong> GLP-1 + GIP 雙機轉協同 ➔ 控食 ＋ 改善胰島素敏感度與脂肪代謝。</li>
+          <li><strong>體組成變化數據：</strong> 即使大幅減重 20kg，脂肪減少高達 15~17kg，肌肉僅流失 3-4kg。</li>
+          <li><strong>除脂肪體重保留：</strong> 在減重幅度最大的前提下，實現了極低的肌肉流失比例。</li>
+          <li><strong>運動建議：</strong> 配合重訓能讓減掉的體重幾乎清一色都是脂肪，身材線條（體態雕塑）效果最佳。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="aud-panel panel-tw3">
+      <div class="med-card">
+        <h3>善纖達 (Liraglutide)</h3>
+        <div><span class="badge-recom">單靶點 GLP-1 受體激动劑 (GLP-1 RA)</span></div>
+        <img src="1.jpg" alt="善纖達" class="med-img">
+        <ul>
+          <li><strong>結構特性：</strong> 與天然人類 GLP-1 具備 97% 的同源性 (Homologous)。</li>
+          <li><strong>藥動學(PK)：</strong> 半衰期約為 13 小時 ➔ 每日須進行一次皮下注射 (SC)。</li>
+          <li><strong>細胞生理途徑：</strong> 模擬小腸 L 細胞分泌的腸促胰素 ➔ 活化下丘腦弓狀核 (ARC) 的 POMC/CART 神經元並抑制 NPY/AgRP 路徑 ➔ 延緩胃排空速度以提供機械性飽足感。</li>
+          <li><strong>作用特質（比喻）：</strong> 財務部的角色 ➔ 職能嚴格局限於「削減開支（控制攝入）」。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>威哥威 (Semaglutide)</h3>
+        <div><span class="badge-blue">長效型 GLP-1 受體激动劑</span></div>
+        <img src="2.jpg" alt="威哥威" class="med-img">
+        <ul>
+          <li><strong>結構特性：</strong> 經由修飾增加了白蛋白結合能力，並對 DPP-4 酶的降解產生了極強的抵抗力。</li>
+          <li><strong>藥動學(PK)：</strong> 半衰期大幅延長至約 7 天 ➔ 實現了每週僅需一次皮下注射 (SC)。</li>
+          <li><strong>臨床體組成數據 (STEP)：</strong> 體重減輕總量中，脂肪減少佔 60-65%，除脂肪體重減少佔 35-40%。</li>
+          <li><strong>作用特質（比喻）：</strong> 強力財務部 ➔ 持續且強硬地推行成本（攝入量）削減計劃。</li>
+        </ul>
+      </div>
+      <div class="med-card">
+        <h3>蒙札羅 (Tirzepatide)</h3>
+        <div><span class="badge-purple">全球首創葡萄糖依賴性促胰島素多肽 (GIP) 與 GLP-1 受體雙重激动劑</span></div>
+        <img src="3.jpg" alt="蒙札羅" class="med-img">
+        <ul>
+          <li><strong>結構特性：</strong> 單一分子雙受體激动劑，能同時且協同地活化 GIP 受體與 GLP-1 受體。</li>
+          <li><strong>藥動學(PK)：</strong> 半衰期約為 5 天 ➔ 完美適配每週一次的皮下注射 (SC)。</li>
+          <li><strong>GIP 路徑的獨特優勢（十二指腸 K 細胞路徑）：</strong> 促進血糖依賴性胰島素分泌；調控外周脂肪組織，使其從「單純儲存」轉向「合理的能量分配」；增強骨骼肌的胰島素敏感度 ➔ 提高肌肉對外源葡萄糖的利用率，進而保留肌肉結構。</li>
+          <li><strong>臨床體組成數據 (SURMOUNT)：</strong> 總減重量中高達 70-75% 為純脂肪組織，將除脂肪體重的流失率成功壓低至 25-30%。</li>
+          <li><strong>瘦體組織保留三大核心要素：</strong> ① 改善胰島素敏感度以保護肌肉組織 ② 提升脂質氧化 (Lipid Oxidation) 以優先消耗脂肪 ③ 降低總減重量中除脂肪體重的相對流失比例。</li>
+          <li><strong>作用特質（比喻）：</strong> 財務部 + 營運部 ➔ 大幅削減成本（控制攝入）的同時，全面優化資源配置（提高代謝效率）。</li>
+        </ul>
+      </div>
+      <div class="paradigm-box">
+        <h4>🎯 臨床學術範式轉移</h4>
+        <p>肥胖醫學的範式已從單純的「抑制食慾（切斷支出）」</p>
+        <p>演變為「透過全面調動腸促胰素系統來提高代謝效率（優化營運）」。</p>
+      </div>
+    </div>
+  </div>
+</div>
