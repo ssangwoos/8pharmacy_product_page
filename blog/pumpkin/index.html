@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Korean Pharmacy Pumpkin Drinks Top 6 | EIGHT PHARMACY</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pumpkin:    #E8610A;
+      --pumpkin-lt: #F5A623;
+      --leaf:       #3A7D44;
+      --cream:      #FFF8EE;
+      --ink:        #1A1A1A;
+      --muted:      #6B5E4E;
+      --card-bg:    #FFFFFF;
+      --shadow:     0 4px 24px rgba(232,97,10,0.10);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: 'Noto Sans', 'Noto Sans JP', 'Noto Sans TC', 'Noto Sans SC', sans-serif;
+      line-height: 1.7;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--ink);
+      color: #fff;
+      text-align: center;
+      padding: 56px 24px 44px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 0%, rgba(232,97,10,0.35) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: var(--pumpkin);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 4px 16px;
+      border-radius: 99px;
+      margin-bottom: 18px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 5.5vw, 48px);
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .hero h1 em {
+      color: var(--pumpkin-lt);
+      font-style: normal;
+    }
+    .hero-sub {
+      margin-top: 12px;
+      font-size: 14px;
+      color: rgba(255,255,255,.55);
+    }
+
+    /* ── LANGUAGE TABS ── */
+    .lang-tabs {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 30px 20px 0;
+    }
+    .lang-tab {
+      padding: 9px 24px;
+      border-radius: 99px;
+      border: 2px solid var(--pumpkin);
+      background: transparent;
+      color: var(--pumpkin);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: inherit;
+    }
+    .lang-tab.active, .lang-tab:hover {
+      background: var(--pumpkin);
+      color: #fff;
+    }
+
+    /* ── SECTION ── */
+    .section {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 44px 20px 64px;
+      display: none;
+    }
+    .section.active { display: block; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: clamp(18px, 3.5vw, 26px);
+      font-weight: 900;
+      margin-bottom: 32px;
+      padding-bottom: 14px;
+      border-bottom: 3px solid var(--pumpkin);
+    }
+    .section-title .accent { color: var(--pumpkin); }
+
+    /* ── GRID ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+      gap: 22px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: transform .25s, box-shadow .25s;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 14px 40px rgba(232,97,10,0.18);
+    }
+    .card-img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: #f5ede0;
+      display: block;
+    }
+    .card-body {
+      padding: 18px 20px 22px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .card-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--leaf);
+      background: #e8f5e9;
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      align-self: flex-start;
+    }
+    .card-name {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--ink);
+    }
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 0 0 36px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(232,97,10,.22);
+    }
+    .divider span { font-size: 20px; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 28px 20px 44px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid rgba(0,0,0,.07);
+    }
+    footer strong { color: var(--pumpkin); }
+
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .card-body { padding: 12px 12px 16px; }
+      .card-name { font-size: 13px; }
+      .card-desc { font-size: 11.5px; }
+      .lang-tab { padding: 7px 16px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="hero">
+  <span class="hero-badge">EIGHT PHARMACY 에이트 약국</span>
+  <h1>Korean Pharmacy <em>Pumpkin Drinks</em> Top 6 🎃</h1>
+  <p class="hero-sub">EN · 日本語 · 简体中文 · 繁體中文</p>
+</header>
+
+<!-- ── TABS ── -->
+<div class="lang-tabs">
+  <button class="lang-tab active" onclick="switchLang('en', this)">English</button>
+  <button class="lang-tab"        onclick="switchLang('ja', this)">日本語</button>
+  <button class="lang-tab"        onclick="switchLang('zh', this)">简体中文</button>
+  <button class="lang-tab"        onclick="switchLang('tw', this)">繁體中文</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     ENGLISH
+══════════════════════════════════════ -->
+<main id="en" class="section active">
+  <h2 class="section-title"><span class="accent">Top 6 Pumpkin Drinks Sold at Korean Pharmacies</span> 🎃</h2>
+  <div class="divider"><span>🌿</span></div>
+  <div class="grid">
+
+    <div class="card">
+      <img class="card-img" src="1.jpg" alt="Young Farmer Pumpkin Juice" />
+      <div class="card-body">
+        <span class="card-tag">Pure Pumpkin</span>
+        <div class="card-name">Young Farmer Pumpkin Juice</div>
+        <p class="card-desc">Made with 99.5% Korean pumpkin — essentially pure pumpkin. Has a naturally sweet, porridge-like flavour. Perfect for those who prioritise taste☺</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="2.jpg" alt="Slim With Pumpkin" />
+      <div class="card-body">
+        <span class="card-tag">Anti-Bloating</span>
+        <div class="card-name">Slim With Pumpkin</div>
+        <p class="card-desc">Korean aged pumpkin blended with artichoke and Bromelain enzyme, specially formulated to reduce bloating. A pharmacy bestseller in a convenient 90 mL pouch.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="3.png" alt="Whole Pumpkin Extract" />
+      <div class="card-body">
+        <span class="card-tag">Skin-On Press</span>
+        <div class="card-name">Whole Pumpkin Extract</div>
+        <p class="card-desc">Korean pumpkin pressed with the skin on for a full, authentic flavour. Sweetened naturally with organic sugar and apple concentrate — smooth and easy to drink.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="4.png" alt="Gangwon Pumpkin Juice" />
+      <div class="card-body">
+        <span class="card-tag">No Additives</span>
+        <div class="card-name">Gangwon Pumpkin Juice</div>
+        <p class="card-desc">Whole Korean aged pumpkin — skin to seeds — cold-pressed with zero additives. The purest pumpkin taste in the lineup, and the lowest in sweetness.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="5.jpg" alt="Juice-Up! Pumpkin" />
+      <div class="card-body">
+        <span class="card-tag">Organic × Probiotics</span>
+        <div class="card-name">Juice-Up! Pumpkin</div>
+        <p class="card-desc">Made from German organic pumpkin with added probiotics. The lightest, most refreshing of the six — almost water-like. Great for first-timers.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="6.jpg" alt="LUV Tea Pumpkin Tea" />
+      <div class="card-body">
+        <span class="card-tag">Tea Bag Type</span>
+        <div class="card-name">LUV Tea Pumpkin Tea</div>
+        <p class="card-desc">100% Korean aged pumpkin — but in tea bag form, not juice. Just steep in 500 mL of hot water. Ideal for those who prefer a warm drink.</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════
+     日本語
+══════════════════════════════════════ -->
+<main id="ja" class="section">
+  <h2 class="section-title"><span class="accent">韓国薬局で売れているかぼちゃドリンク 6選</span> 🎃</h2>
+  <div class="divider"><span>🌿</span></div>
+  <div class="grid">
+
+    <div class="card">
+      <img class="card-img" src="1.jpg" alt="若い農家のかぼちゃ汁" />
+      <div class="card-body">
+        <span class="card-tag">純かぼちゃ</span>
+        <div class="card-name">若い農家のかぼちゃ汁</div>
+        <p class="card-desc">韓国産かぼちゃ 99.5% 使用で、ほぼかぼちゃそのまま。かぼちゃ粥のような優しい甘さ、味重視の方にはこれ☺</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="2.jpg" alt="スリムウィズかぼちゃ" />
+      <div class="card-body">
+        <span class="card-tag">むくみケア</span>
+        <div class="card-name">スリムウィズかぼちゃ</div>
+        <p class="card-desc">韓国産老かぼちゃにアーティチョークとブロメラインを配合したむくみケアを考えて作られた薬局専売のかぼちゃドリンク。持ち運びやすい 90 mL サイズ、むくみケアならこれ。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="3.png" alt="かぼちゃまるごと" />
+      <div class="card-body">
+        <span class="card-tag">皮ごと搾汁</span>
+        <div class="card-name">かぼちゃまるごと</div>
+        <p class="card-desc">韓国産かぼちゃを皮ごと搾ったかぼちゃ本来の風味が楽しめる一品。有機砂糖とりんご濃縮液を使用し自然な甘さで飲みやすい。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="4.png" alt="江原道かぼちゃ汁" />
+      <div class="card-body">
+        <span class="card-tag">無添加</span>
+        <div class="card-name">江原道かぼちゃ汁</div>
+        <p class="card-desc">韓国産老かぼちゃを皮から種まで丸ごと搾汁。添加物不使用で甘さ控えめ、かぼちゃ本来の味が楽しめる。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="5.jpg" alt="ジュースアップ！かぼちゃ" />
+      <div class="card-body">
+        <span class="card-tag">オーガニック × 乳酸菌</span>
+        <div class="card-name">ジュースアップ！かぼちゃ</div>
+        <p class="card-desc">ドイツ産オーガニックかぼちゃ使用・乳酸菌配合。6 商品の中で最も軽い飲み口で水のようにすっきり飲め、初心者にもおすすめ。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="6.jpg" alt="ラブティーかぼちゃ" />
+      <div class="card-body">
+        <span class="card-tag">ティーバッグタイプ</span>
+        <div class="card-name">ラブティーかぼちゃ</div>
+        <p class="card-desc">韓国産老かぼちゃ 100%。かぼちゃ汁ではなくティーバッグタイプのかぼちゃ茶。500 mL のお湯で手軽に体を温めながら飲みたい方におすすめ☺</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════
+     简体中文
+══════════════════════════════════════ -->
+<main id="zh" class="section">
+  <h2 class="section-title"><span class="accent">韩国药局热卖南瓜饮品 6 选</span> 🎃</h2>
+  <div class="divider"><span>🌿</span></div>
+  <div class="grid">
+
+    <div class="card">
+      <img class="card-img" src="1.jpg" alt="年轻农夫南瓜汁" />
+      <div class="card-body">
+        <span class="card-tag">纯南瓜</span>
+        <div class="card-name">年轻农夫南瓜汁</div>
+        <p class="card-desc">韩国产南瓜含量 99.5%，几乎就是纯南瓜制成。带有南瓜粥般自然香甜的口感，重视风味的人推荐这款☺</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="2.jpg" alt="Slim With 南瓜" />
+      <div class="card-body">
+        <span class="card-tag">消水肿</span>
+        <div class="card-name">Slim With 南瓜</div>
+        <p class="card-desc">韩国老南瓜搭配朝鲜蓟与菠萝蛋白酶（Bromelain），专为消水肿设计的南瓜饮，韩国药局人气商品。90 mL 小包装，方便携带，消水肿首选。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="3.png" alt="南瓜整颗榨取" />
+      <div class="card-body">
+        <span class="card-tag">连皮榨取</span>
+        <div class="card-name">南瓜整颗榨取</div>
+        <p class="card-desc">韩国产南瓜连皮榨取，保留完整南瓜风味。添加有机糖与苹果浓缩液，自然香甜、顺口好喝。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="4.png" alt="江原道南瓜汁" />
+      <div class="card-body">
+        <span class="card-tag">无添加物</span>
+        <div class="card-name">江原道南瓜汁</div>
+        <p class="card-desc">韩国老南瓜从外皮到种子整颗榨取制成，无额外添加物。能品尝到最纯粹的南瓜原味，甜度最低的一款。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="5.jpg" alt="Juice-Up! 南瓜" />
+      <div class="card-body">
+        <span class="card-tag">有机 × 乳酸菌</span>
+        <div class="card-name">Juice-Up! 南瓜</div>
+        <p class="card-desc">使用德国有机南瓜，并添加乳酸菌。6 款产品中南瓜浓度最低，口感最清爽、最轻盈，像喝水一样容易入口，初次尝试者也很适合。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="6.jpg" alt="LUV Tea 南瓜茶" />
+      <div class="card-body">
+        <span class="card-tag">茶包型</span>
+        <div class="card-name">LUV Tea 南瓜茶</div>
+        <p class="card-desc">韩国老南瓜 100%，非南瓜汁，而是茶包型南瓜茶。放入 500 mL 热水即可冲泡，适合喜欢热饮的人。</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════
+     繁體中文
+══════════════════════════════════════ -->
+<main id="tw" class="section">
+  <h2 class="section-title"><span class="accent">韓國藥局熱賣的南瓜飲品 6 選</span> 🎃</h2>
+  <div class="divider"><span>🌿</span></div>
+  <div class="grid">
+
+    <div class="card">
+      <img class="card-img" src="1.jpg" alt="年輕農夫南瓜汁" />
+      <div class="card-body">
+        <span class="card-tag">純南瓜</span>
+        <div class="card-name">年輕農夫南瓜汁</div>
+        <p class="card-desc">韓國產南瓜含量 99.5%，幾乎就是純南瓜製成。帶有南瓜粥般自然香甜的口感，重視風味的人推薦這款☺</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="2.jpg" alt="Slim With 南瓜" />
+      <div class="card-body">
+        <span class="card-tag">消水腫</span>
+        <div class="card-name">Slim With 南瓜</div>
+        <p class="card-desc">韓國老南瓜搭配洋薊與鳳梨酵素（Bromelain）加強消水腫概念設計的南瓜飲，韓國藥局人氣商品。90 mL 小包裝，方便攜帶，消水腫首選。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="3.png" alt="南瓜整顆榨取" />
+      <div class="card-body">
+        <span class="card-tag">連皮榨取</span>
+        <div class="card-name">南瓜整顆榨取</div>
+        <p class="card-desc">韓國產南瓜連皮榨取，保留完整南瓜風味。添加有機糖與蘋果濃縮液，自然香甜、順口好喝。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="4.png" alt="江原道南瓜汁" />
+      <div class="card-body">
+        <span class="card-tag">無添加物</span>
+        <div class="card-name">江原道南瓜汁</div>
+        <p class="card-desc">韓國老南瓜從外皮到種子整顆榨取製成，無額外添加物。能品嚐到最純粹的南瓜原味，甜度最低的一款。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="5.jpg" alt="Juice-Up! 南瓜" />
+      <div class="card-body">
+        <span class="card-tag">有機 × 乳酸菌</span>
+        <div class="card-name">Juice-Up! 南瓜</div>
+        <p class="card-desc">使用德國有機南瓜，並添加乳酸菌。6 款產品中南瓜濃度最低，口感最清爽、最輕盈，像喝水一樣容易入口，初次嘗試者也很適合。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <img class="card-img" src="6.jpg" alt="LUV Tea 南瓜茶" />
+      <div class="card-body">
+        <span class="card-tag">茶包型</span>
+        <div class="card-name">LUV Tea 南瓜茶</div>
+        <p class="card-desc">韓國老南瓜 100%，非南瓜汁，而是茶包型南瓜茶。放入 500 mL 熱水即可沖泡，適合喜歡熱飲的人。</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <p>© EIGHT PHARMACY <strong>에이트 약국</strong> — Korean Pharmacy Shopping Guide</p>
+</footer>
+
+<script>
+  function switchLang(lang, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(lang).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
