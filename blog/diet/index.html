@@ -1,5 +1,10 @@
-<div class="med-blog-container">
-  <style>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIGHT PHARMACY — Weight Loss Injectables Guide</title>
+    <style>
     .med-blog-container {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       color: #333333;
@@ -9,8 +14,6 @@
       padding: 10px;
       box-sizing: border-box;
     }
-    
-    /* 🌐 메인 언어 탭 (상단) */
     .lang-tabs {
       display: flex;
       flex-wrap: wrap;
@@ -35,8 +38,6 @@
       white-space: nowrap;
     }
     .main-radio { display: none; }
-
-    /* 📱 서브 대상자 탭 (중단) */
     .audience-tabs {
       display: flex;
       justify-content: center;
@@ -59,31 +60,38 @@
       border: none;
     }
     .sub-radio { display: none; }
-
-    /* 콘텐츠 탭 스위칭 제어 */
     .lang-content { display: none; }
     .aud-panel { display: none; }
 
-    /* 1단계 활성화: 언어 선택 */
     #lang-kr:checked ~ .lang-tabs label[for="lang-kr"],
     #lang-en:checked ~ .lang-tabs label[for="lang-en"],
     #lang-jp:checked ~ .lang-tabs label[for="lang-jp"],
     #lang-cn:checked ~ .lang-tabs label[for="lang-cn"],
     #lang-tw:checked ~ .lang-tabs label[for="lang-tw"] {
-      background: #1d3557;
-      color: #ffffff;
-      border-color: #1d3557;
+      background: #1d3557; color: #ffffff; border-color: #1d3557;
     }
-    #lang-kr:checked ~ .content-kr, #lang-en:checked ~ .content-en, #lang-jp:checked ~ .content-jp, #lang-cn:checked ~ .content-cn, #lang-tw:checked ~ .content-tw { display: block; }
+    #lang-kr:checked ~ .content-kr,
+    #lang-en:checked ~ .content-en,
+    #lang-jp:checked ~ .content-jp,
+    #lang-cn:checked ~ .content-cn,
+    #lang-tw:checked ~ .content-tw { display: block; }
 
-    /* 2단계 활성화: 대상자 선택 */
-    #kr-aud1:checked ~ .audience-tabs label[for="kr-aud1"], #kr-aud2:checked ~ .audience-tabs label[for="kr-aud2"], #kr-aud3:checked ~ .audience-tabs label[for="kr-aud3"],
-    #en-aud1:checked ~ .audience-tabs label[for="en-aud1"], #en-aud2:checked ~ .audience-tabs label[for="en-aud2"], #en-aud3:checked ~ .audience-tabs label[for="en-aud3"],
-    #jp-aud1:checked ~ .audience-tabs label[for="jp-aud1"], #jp-aud2:checked ~ .audience-tabs label[for="jp-aud2"], #jp-aud3:checked ~ .audience-tabs label[for="jp-aud3"],
-    #cn-aud1:checked ~ .audience-tabs label[for="cn-aud1"], #cn-aud2:checked ~ .audience-tabs label[for="cn-aud2"], #cn-aud3:checked ~ .audience-tabs label[for="cn-aud3"],
-    #tw-aud1:checked ~ .audience-tabs label[for="tw-aud1"], #tw-aud2:checked ~ .audience-tabs label[for="tw-aud2"], #tw-aud3:checked ~ .audience-tabs label[for="tw-aud3"] {
-      background: #457b9d;
-      color: #ffffff;
+    #kr-aud1:checked ~ .audience-tabs label[for="kr-aud1"],
+    #kr-aud2:checked ~ .audience-tabs label[for="kr-aud2"],
+    #kr-aud3:checked ~ .audience-tabs label[for="kr-aud3"],
+    #en-aud1:checked ~ .audience-tabs label[for="en-aud1"],
+    #en-aud2:checked ~ .audience-tabs label[for="en-aud2"],
+    #en-aud3:checked ~ .audience-tabs label[for="en-aud3"],
+    #jp-aud1:checked ~ .audience-tabs label[for="jp-aud1"],
+    #jp-aud2:checked ~ .audience-tabs label[for="jp-aud2"],
+    #jp-aud3:checked ~ .audience-tabs label[for="jp-aud3"],
+    #cn-aud1:checked ~ .audience-tabs label[for="cn-aud1"],
+    #cn-aud2:checked ~ .audience-tabs label[for="cn-aud2"],
+    #cn-aud3:checked ~ .audience-tabs label[for="cn-aud3"],
+    #tw-aud1:checked ~ .audience-tabs label[for="tw-aud1"],
+    #tw-aud2:checked ~ .audience-tabs label[for="tw-aud2"],
+    #tw-aud3:checked ~ .audience-tabs label[for="tw-aud3"] {
+      background: #457b9d; color: #ffffff;
     }
     #kr-aud1:checked ~ .panel-kr1, #kr-aud2:checked ~ .panel-kr2, #kr-aud3:checked ~ .panel-kr3,
     #en-aud1:checked ~ .panel-en1, #en-aud2:checked ~ .panel-en2, #en-aud3:checked ~ .panel-en3,
@@ -91,7 +99,6 @@
     #cn-aud1:checked ~ .panel-cn1, #cn-aud2:checked ~ .panel-cn2, #cn-aud3:checked ~ .panel-cn3,
     #tw-aud1:checked ~ .panel-tw1, #tw-aud2:checked ~ .panel-tw2, #tw-aud3:checked ~ .panel-tw3 { display: block; }
 
-    /* 🎯 센터링 전용 카드 레이아웃 (3가지 버전 공통 적용) */
     .med-card {
       background: #ffffff;
       border-top: 4px solid #457b9d;
@@ -104,63 +111,42 @@
       text-align: center;
       box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
-    .med-card h3 { 
-      margin-top: 0; 
-      color: #1d3557; 
-      font-size: 22px; 
-      margin-bottom: 5px;
-    }
-    .med-card p {
-      margin: 8px 0;
-      font-size: 15px;
-      color: #4a5568;
-    }
-    .med-card ul {
-      list-style: none;
-      padding: 0;
-      margin: 15px auto 0 auto;
-      max-width: 550px;
-      text-align: left; /* 리스트 내부 텍스트는 가독성을 위해 좌측정렬이나 카드는 가운데 배치 */
-    }
-    .med-card li {
-      margin-bottom: 10px;
-      font-size: 14.5px;
-      border-bottom: 1px dashed #edf2f7;
-      padding-bottom: 6px;
-    }
+    .med-card h3 { margin-top: 0; color: #1d3557; font-size: 22px; margin-bottom: 5px; }
+    .med-card p { margin: 8px 0; font-size: 15px; color: #4a5568; }
+    .med-card ul { list-style: none; padding: 0; margin: 15px auto 0 auto; max-width: 550px; text-align: left; }
+    .med-card li { margin-bottom: 10px; font-size: 14.5px; border-bottom: 1px dashed #edf2f7; padding-bottom: 6px; }
     .med-card li:last-child { border-bottom: none; }
-    
-    /* 📸 공통 이미지 규격 */
     .med-img {
-      display: block;
-      max-width: 100%;
-      height: auto;
-      max-height: 180px;
-      object-fit: contain;
-      border-radius: 6px;
-      margin: 18px auto;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      padding: 4px;
+      display: block; max-width: 100%; height: auto; max-height: 180px;
+      object-fit: contain; border-radius: 6px; margin: 18px auto;
+      background: #ffffff; border: 1px solid #e2e8f0; padding: 4px;
     }
-    
-    /* 💡 하단 결론 및 패러다임 전환 박스 */
     .paradigm-box {
-      background: #f0f7ff;
-      border: 1px dashed #2b6cb0;
-      padding: 20px;
-      border-radius: 8px;
-      margin-top: 25px;
-      text-align: center;
+      background: #f0f7ff; border: 1px dashed #2b6cb0;
+      padding: 20px; border-radius: 8px; margin-top: 25px; text-align: center;
     }
     .paradigm-box h4 { margin-top: 0; margin-bottom: 12px; color: #2b6cb0; font-size: 17px; }
     .paradigm-box p { margin: 6px 0; font-size: 15px; font-weight: bold; }
-
-    /* 🏷️ 배지 스타일 */
     .badge-recom { display: inline-block; background: #e63946; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
-    .badge-blue { display: inline-block; background: #3182ce; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
+    .badge-blue   { display: inline-block; background: #3182ce; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
     .badge-purple { display: inline-block; background: #805ad5; color: white; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
-  </style>
+
+    /* 뷰 카운터 */
+    .view-counter {
+      text-align: right;
+      font-size: 12px;
+      color: #aaa;
+      padding: 6px 4px 0;
+      margin-bottom: 4px;
+    }
+    </style>
+</head>
+<body>
+
+<div class="med-blog-container">
+
+  <!-- 조회수 표시 -->
+  <div class="view-counter" id="view-counter">👁 —</div>
 
   <input type="radio" id="lang-kr" name="lang-group" class="main-radio" checked>
   <input type="radio" id="lang-en" name="lang-group" class="main-radio">
@@ -176,6 +162,7 @@
     <label for="lang-tw">🇹🇼 TW</label>
   </div>
 
+  <!-- ══ 한국어 ══ -->
   <div class="lang-content content-kr">
     <input type="radio" id="kr-aud1" name="kr-aud-group" class="sub-radio" checked>
     <input type="radio" id="kr-aud2" name="kr-aud-group" class="sub-radio">
@@ -185,7 +172,6 @@
       <label for="kr-aud2">🏃‍♂️ 다이어터</label>
       <label for="kr-aud3">🥼 전문가</label>
     </div>
-
     <div class="aud-panel panel-kr1">
       <div class="med-card">
         <h3>삭센다 (Saxenda®)</h3>
@@ -230,7 +216,6 @@
         <p>마운자로 ➔ 덜 먹게 만들고, 들어온 영양도 효율적으로 처리한다!</p>
       </div>
     </div>
-
     <div class="aud-panel panel-kr2">
       <div class="med-card">
         <h3>삭센다 (리라글루타이드)</h3>
@@ -265,7 +250,6 @@
         </ul>
       </div>
     </div>
-
     <div class="aud-panel panel-kr3">
       <div class="med-card">
         <h3>삭센다 (Liraglutide)</h3>
@@ -310,6 +294,7 @@
     </div>
   </div>
 
+  <!-- ══ ENGLISH ══ -->
   <div class="lang-content content-en">
     <input type="radio" id="en-aud1" name="en-aud-group" class="sub-radio" checked>
     <input type="radio" id="en-aud2" name="en-aud-group" class="sub-radio">
@@ -319,7 +304,6 @@
       <label for="en-aud2">🏃‍♂️ Dieter</label>
       <label for="en-aud3">🥼 Pro</label>
     </div>
-
     <div class="aud-panel panel-en1">
       <div class="med-card">
         <h3>Saxenda (Liraglutide)</h3>
@@ -358,7 +342,6 @@
         </ul>
       </div>
     </div>
-
     <div class="aud-panel panel-en2">
       <div class="med-card">
         <h3>Saxenda</h3>
@@ -393,7 +376,6 @@
         </ul>
       </div>
     </div>
-
     <div class="aud-panel panel-en3">
       <div class="med-card">
         <h3>Saxenda (Liraglutide)</h3>
@@ -402,7 +384,7 @@
         <ul>
           <li><strong>Structure:</strong> 97% homologous to native human GLP-1.</li>
           <li><strong>Pharmacokinetics (PK):</strong> Half-life ~13 hours ➔ Mandates once-daily SC injection.</li>
-          <li><strong>Pathophysiology:</strong> Mimics L-cell incretin ➔ Activates ARC POMC/CART neurons and inhibits NPY/AgRP paths in the hypothalamus ➔ Mechanical satiety via delayed gastric emptying.</li>
+          <li><strong>Pathophysiology:</strong> Mimics L-cell incretin ➔ Activates ARC POMC/CART neurons and inhibits NPY/AgRP paths ➔ Mechanical satiety via delayed gastric emptying.</li>
           <li><strong>Metaphor:</strong> The Finance Team ➔ Strictly limited to "cutting expenses" (intake control).</li>
         </ul>
       </div>
@@ -438,16 +420,16 @@
     </div>
   </div>
 
+  <!-- ══ 日本語 ══ -->
   <div class="lang-content content-jp">
     <input type="radio" id="jp-aud1" name="jp-aud-group" class="sub-radio" checked>
     <input type="radio" id="jp-aud2" name="jp-aud-group" class="sub-radio">
     <input type="radio" id="jp-aud3" name="jp-aud-group" class="sub-radio">
     <div class="audience-tabs">
       <label for="jp-aud1">📱 一般</label>
-      <label for="jp-aud2">🏃‍♂️ ﾀﾞｲｴｯﾀｰ</label>
+      <label for="jp-aud2">🏃‍♂️ ダイエッター</label>
       <label for="jp-aud3">🥼 専門家</label>
     </div>
-
     <div class="aud-panel panel-jp1">
       <div class="med-card">
         <h3>サクセンダ (Saxenda®)</h3>
@@ -492,7 +474,6 @@
         <p>マンジャロ ➔ 食べる量を減らし、入ってきた栄養を効率よく処理する！</p>
       </div>
     </div>
-
     <div class="aud-panel panel-jp2">
       <div class="med-card">
         <h3>サクセンダ (リラグルチド)</h3>
@@ -527,7 +508,6 @@
         </ul>
       </div>
     </div>
-
     <div class="aud-panel panel-jp3">
       <div class="med-card">
         <h3>サクセンダ (Liraglutide)</h3>
@@ -558,9 +538,9 @@
         <ul>
           <li><strong>構造的特徴:</strong> 単一分子でGIP受容体とGLP-1受容体の双方を同時刺激する画期的な二重作動薬。</li>
           <li><strong>薬物動態(PK):</strong> 半減期 約5日間 ➔ 週1回の皮下投与(SC)に最適化。</li>
-          <li><strong>GIP経路の固有メリット (十二指腸K細胞経路):</strong> 血糖依存的なインスリン分泌促進、末梢脂肪組織の代謝調節（単純貯蔵ではなくエネルギー分配の適正化）、骨格筋のインスリン感受性改善 ➔ 筋肉内グルコース利用亢進による筋肉保護。</li>
+          <li><strong>GIP経路の固有メリット:</strong> 血糖依存的なインスリン分泌促進、末梢脂肪組織の代謝調節、骨格筋のインスリン感受性改善 ➔ 筋肉内グルコース利用亢進による筋肉保護。</li>
           <li><strong>臨床体組成データ (SURMOUNT):</strong> 体重減少量の70〜75%が純脂肪 ➔ 除脂肪の減少を25〜30%に抑制。</li>
-          <li><strong>筋肉保持の3大要因:</strong> ①インスリン感受性改善による筋肉組織の保護 ②脂質酸化(Lipid Oxidation)亢進による脂肪の優先消費 ③総減量量に対する除脂肪減少割合自体の低下。</li>
+          <li><strong>筋肉保持の3大要因:</strong> ①インスリン感受性改善による筋肉組織の保護 ②脂質酸化亢進による脂肪の優先消費 ③総減量量に対する除脂肪減少割合自体の低下。</li>
           <li><strong>薬剤の役割 (比喩):</strong> 財務部 ＋ 業務推進部 ➔ コスト（摂取）を抑えつつ、入ってきた資源（栄養）の代謝・分配効率を最適化。</li>
         </ul>
       </div>
@@ -572,6 +552,7 @@
     </div>
   </div>
 
+  <!-- ══ 简体中文 ══ -->
   <div class="lang-content content-cn">
     <input type="radio" id="cn-aud1" name="cn-aud-group" class="sub-radio" checked>
     <input type="radio" id="cn-aud2" name="cn-aud-group" class="sub-radio">
@@ -581,14 +562,13 @@
       <label for="cn-aud2">🏃‍♂️ 减肥者</label>
       <label for="cn-aud3">🥼 专家</label>
     </div>
-
     <div class="aud-panel panel-cn1">
       <div class="med-card">
         <h3>善纤达 (Saxenda®)</h3>
         <div><span class="badge-recom">克制深夜暴食</span></div>
         <img src="1.jpg" alt="善纤达" class="med-img">
-        <p><strong>“减少饥饿感的基础减重针”</strong></p>
-        <p>通过向大脑发送“我不饿”的信号，帮助你自然而然地减少食物摄入量。</p>
+        <p><strong>"减少饥饿感的基础减重针"</strong></p>
+        <p>通过向大脑发送"我不饿"的信号，帮助你自然而然地减少食物摄入量。</p>
         <ul>
           <li><strong>使用周期：</strong> 每天需要注射 1 次</li>
           <li><strong>减重效果：</strong> 平均体重减轻 5% ~ 10%</li>
@@ -599,7 +579,7 @@
         <h3>维高威 (Wegovy®)</h3>
         <div><span class="badge-blue">整体饭量大幅缩减</span></div>
         <img src="2.jpg" alt="维高威" class="med-img">
-        <p><strong>“善纤达的强效升级版”</strong></p>
+        <p><strong>"善纤达的强效升级版"</strong></p>
         <p>作用原理与善纤达类似，但在体内的作用时间更长、效果更强，可全方位控食。</p>
         <ul>
           <li><strong>使用周期：</strong> 每周仅需注射 1 次</li>
@@ -611,12 +591,12 @@
         <h3>替尔泊肽/穆罕扎罗 (Mounjaro®)</h3>
         <div><span class="badge-purple">集中燃烧体脂肪</span></div>
         <img src="3.jpg" alt="替尔泊肽" class="med-img">
-        <p><strong>“不仅强效控食，还能直接加速燃脂”</strong></p>
+        <p><strong>"不仅强效控食，还能直接加速燃脂"</strong></p>
         <p>不仅能阻断饥饿感，还可以从根本上提高身体处理和代谢营养物质的效率。</p>
         <ul>
           <li><strong>使用周期：</strong> 每周注射 1 次（目前减重效果最顶级的药物）</li>
           <li><strong>减重效果：</strong> 带来平均 20% 以上的颠覆性减重表现</li>
-          <li><strong>一句话总结：</strong> 饥饿感彻底消失，在不牺牲体力的情况下精准精准减掉纯脂肪。</li>
+          <li><strong>一句话总结：</strong> 饥饿感彻底消失，在不牺牲体力的情况下精准减掉纯脂肪。</li>
         </ul>
       </div>
       <div class="paradigm-box">
@@ -626,7 +606,6 @@
         <p>替尔泊肽 ➔ 让你吃得少，同时把吃进去的营养高效代谢掉！</p>
       </div>
     </div>
-
     <div class="aud-panel panel-cn2">
       <div class="med-card">
         <h3>善纤达 (利拉鲁肽)</h3>
@@ -654,14 +633,13 @@
         <div><span class="badge-purple">脂肪减少 70~75% : 肌肉流失 25~30%</span></div>
         <img src="3.jpg" alt="替尔泊肽" class="med-img">
         <ul>
-          <li><strong>作用机制：</strong> GLP-1 + GIP 双靶点协同 ➔ 控食 ＋ 改善胰岛素敏感性与脂肪大代谢。</li>
+          <li><strong>作用机制：</strong> GLP-1 + GIP 双靶点协同 ➔ 控食 ＋ 改善胰岛素敏感性与脂肪代谢。</li>
           <li><strong>体成分变化数据：</strong> 即使大幅减重 20kg，脂肪减少高达 15~17kg，肌肉仅流失 3-4kg。</li>
           <li><strong>去脂体重保护：</strong> 在减重幅度最大的前提下，实现了极低的肌肉流失率。</li>
           <li><strong>运动建议：</strong> 配合力量训练能让减掉的几乎全为纯脂肪，身材线条的雕刻效果达到极致。</li>
         </ul>
       </div>
     </div>
-
     <div class="aud-panel panel-cn3">
       <div class="med-card">
         <h3>善纤达 (Liraglutide)</h3>
@@ -671,7 +649,7 @@
           <li><strong>结构特征：</strong> 与天然人源 GLP-1 具有 97% 的同源性 (Homologous)。</li>
           <li><strong>药代动力学(PK)：</strong> 半衰期约为 13 小时 ➔ 每日须进行一次皮下注射 (SC)。</li>
           <li><strong>细胞生理通路：</strong> 模拟小肠 L 细胞分泌的肠促胰素 ➔ 激活下丘脑弓状核 (ARC) 的 POMC/CART 神经元并抑制 NPY/AgRP 通路 ➔ 延缓胃排空以提供机械性饱腹感。</li>
-          <li><strong>作用特质（比喻）：</strong> 财务部的角色 ➔ 职能严格局限于“削减开支（控制摄入）”。</li>
+          <li><strong>作用特质（比喻）：</strong> 财务部的角色 ➔ 职能严格局限于"削减开支（控制摄入）"。</li>
         </ul>
       </div>
       <div class="med-card">
@@ -687,25 +665,26 @@
       </div>
       <div class="med-card">
         <h3>替尔泊肽 (Tirzepatide)</h3>
-        <div><span class="badge-purple">全球首个葡萄糖依赖性促胰岛素多肽 (GIP) 和 GLP-1 受体双重激动剂</span></div>
+        <div><span class="badge-purple">全球首个 GIP/GLP-1 受体双重激动剂</span></div>
         <img src="3.jpg" alt="替尔泊肽" class="med-img">
         <ul>
           <li><strong>结构特征：</strong> 单个肽链分子，能够同时且协同地激活 GIP 受体与 GLP-1 受体。</li>
           <li><strong>药代动力学(PK)：</strong> 半衰期约为 5 天 ➔ 完美适配每周一次的皮下注射 (SC)。</li>
-          <li><strong>GIP 通路的独特优势（十二指肠 K 细胞通路）：</strong> 促进血糖依赖性胰岛素分泌；调控外周脂肪组织，使之从“单纯储存”转向“合理的能量分配”；增强骨骼肌的胰岛素敏感性 ➔ 提高肌肉对葡萄糖的利用率，从而保护肌肉结构。</li>
-          <li><strong>临床体成分数据 (SURMOUNT)：</strong> 总减重量中 70-75% 为纯脂肪，将去脂体重的流失率成功压低至 25-30%。</li>
-          <li><strong>肌肉保护三大核心要素：</strong> ① 改善胰岛素敏感性以保护肌肉组织 ② 提升脂质氧化 (Lipid Oxidation) 以优先消耗脂肪 ③ 降低总减重量中去脂体重的相对流失比例。</li>
-          <li><strong>作用特质（比喻）：</strong> 财务部 + 运营部 ➔ 大幅削减成本（控制摄入）的同时，全面优化资源配置（提高代谢效率）。</li>
+          <li><strong>GIP 通路的独特优势：</strong> 促进血糖依赖性胰岛素分泌；调控外周脂肪组织；增强骨骼肌的胰岛素敏感性 ➔ 保护肌肉结构。</li>
+          <li><strong>临床体成分数据 (SURMOUNT)：</strong> 总减重量中 70-75% 为纯脂肪，去脂体重流失率压低至 25-30%。</li>
+          <li><strong>肌肉保护三大核心要素：</strong> ① 改善胰岛素敏感性 ② 提升脂质氧化优先消耗脂肪 ③ 降低去脂体重相对流失比例。</li>
+          <li><strong>作用特质（比喻）：</strong> 财务部 + 运营部 ➔ 大幅削减成本的同时，全面优化代谢效率。</li>
         </ul>
       </div>
       <div class="paradigm-box">
         <h4>🎯 临床学术范式转移</h4>
-        <p>肥胖医学的范式已从单纯的“抑制食欲（切断支出）”</p>
-        <p>演变为“通过全面调动肠促胰素系统来提高代谢效率（优化运营）”。</p>
+        <p>肥胖医学的范式已从单纯的"抑制食欲（切断支出）"</p>
+        <p>演变为"通过全面调动肠促胰素系统来提高代谢效率（优化运营）"。</p>
       </div>
     </div>
   </div>
 
+  <!-- ══ 繁體中文 ══ -->
   <div class="lang-content content-tw">
     <input type="radio" id="tw-aud1" name="tw-aud-group" class="sub-radio" checked>
     <input type="radio" id="tw-aud2" name="tw-aud-group" class="sub-radio">
@@ -715,13 +694,12 @@
       <label for="tw-aud2">🏃‍♂️ 減重者</label>
       <label for="tw-aud3">🥼 專家</label>
     </div>
-
     <div class="aud-panel panel-tw1">
       <div class="med-card">
         <h3>善纖達 (Saxenda®)</h3>
         <div><span class="badge-recom">克制深夜暴食</span></div>
         <img src="1.jpg" alt="善纖達" class="med-img">
-        <p><strong>「減少飢餓感的基础減重筆」</strong></p>
+        <p><strong>「減少飢餓感的基礎減重筆」</strong></p>
         <p>透過向大腦發送「肚子不餓」的訊號，幫助您自然而然地減少食物攝取量。</p>
         <ul>
           <li><strong>施打週期：</strong> 天天施打（一天注射 1 次）</li>
@@ -760,7 +738,6 @@
         <p>蒙札羅 ➔ 讓你吃得少，同時把吃進去的營養高效代謝掉！</p>
       </div>
     </div>
-
     <div class="aud-panel panel-tw2">
       <div class="med-card">
         <h3>善纖達 (利拉魯肽)</h3>
@@ -791,15 +768,14 @@
           <li><strong>機轉說明：</strong> GLP-1 + GIP 雙機轉協同 ➔ 控食 ＋ 改善胰島素敏感度與脂肪代謝。</li>
           <li><strong>體組成變化數據：</strong> 即使大幅減重 20kg，脂肪減少高達 15~17kg，肌肉僅流失 3-4kg。</li>
           <li><strong>除脂肪體重保留：</strong> 在減重幅度最大的前提下，實現了極低的肌肉流失比例。</li>
-          <li><strong>運動建議：</strong> 配合重訓能讓減掉的體重幾乎清一色都是脂肪，身材線條（體態雕塑）效果最佳。</li>
+          <li><strong>運動建議：</strong> 配合重訓能讓減掉的體重幾乎清一色都是脂肪，體態雕塑效果最佳。</li>
         </ul>
       </div>
     </div>
-
     <div class="aud-panel panel-tw3">
       <div class="med-card">
         <h3>善纖達 (Liraglutide)</h3>
-        <div><span class="badge-recom">單靶點 GLP-1 受體激动劑 (GLP-1 RA)</span></div>
+        <div><span class="badge-recom">單靶點 GLP-1 受體激動劑 (GLP-1 RA)</span></div>
         <img src="1.jpg" alt="善纖達" class="med-img">
         <ul>
           <li><strong>結構特性：</strong> 與天然人類 GLP-1 具備 97% 的同源性 (Homologous)。</li>
@@ -810,7 +786,7 @@
       </div>
       <div class="med-card">
         <h3>威哥威 (Semaglutide)</h3>
-        <div><span class="badge-blue">長效型 GLP-1 受體激动劑</span></div>
+        <div><span class="badge-blue">長效型 GLP-1 受體激動劑</span></div>
         <img src="2.jpg" alt="威哥威" class="med-img">
         <ul>
           <li><strong>結構特性：</strong> 經由修飾增加了白蛋白結合能力，並對 DPP-4 酶的降解產生了極強的抵抗力。</li>
@@ -821,15 +797,15 @@
       </div>
       <div class="med-card">
         <h3>蒙札羅 (Tirzepatide)</h3>
-        <div><span class="badge-purple">全球首創葡萄糖依賴性促胰島素多肽 (GIP) 與 GLP-1 受體雙重激动劑</span></div>
+        <div><span class="badge-purple">全球首創 GIP/GLP-1 受體雙重激動劑</span></div>
         <img src="3.jpg" alt="蒙札羅" class="med-img">
         <ul>
-          <li><strong>結構特性：</strong> 單一分子雙受體激动劑，能同時且協同地活化 GIP 受體與 GLP-1 受體。</li>
+          <li><strong>結構特性：</strong> 單一分子雙受體激動劑，能同時且協同地活化 GIP 受體與 GLP-1 受體。</li>
           <li><strong>藥動學(PK)：</strong> 半衰期約為 5 天 ➔ 完美適配每週一次的皮下注射 (SC)。</li>
-          <li><strong>GIP 路徑的獨特優勢（十二指腸 K 細胞路徑）：</strong> 促進血糖依賴性胰島素分泌；調控外周脂肪組織，使其從「單純儲存」轉向「合理的能量分配」；增強骨骼肌的胰島素敏感度 ➔ 提高肌肉對外源葡萄糖的利用率，進而保留肌肉結構。</li>
-          <li><strong>臨床體組成數據 (SURMOUNT)：</strong> 總減重量中高達 70-75% 為純脂肪組織，將除脂肪體重的流失率成功壓低至 25-30%。</li>
-          <li><strong>瘦體組織保留三大核心要素：</strong> ① 改善胰島素敏感度以保護肌肉組織 ② 提升脂質氧化 (Lipid Oxidation) 以優先消耗脂肪 ③ 降低總減重量中除脂肪體重的相對流失比例。</li>
-          <li><strong>作用特質（比喻）：</strong> 財務部 + 營運部 ➔ 大幅削減成本（控制攝入）的同時，全面優化資源配置（提高代謝效率）。</li>
+          <li><strong>GIP 路徑的獨特優勢：</strong> 促進血糖依賴性胰島素分泌；調控外周脂肪組織；增強骨骼肌胰島素敏感度 ➔ 保留肌肉結構。</li>
+          <li><strong>臨床體組成數據 (SURMOUNT)：</strong> 總減重量中高達 70-75% 為純脂肪，除脂肪體重流失率壓低至 25-30%。</li>
+          <li><strong>瘦體組織保留三大核心要素：</strong> ① 改善胰島素敏感度保護肌肉 ② 提升脂質氧化優先消耗脂肪 ③ 降低除脂肪體重相對流失比例。</li>
+          <li><strong>作用特質（比喻）：</strong> 財務部 + 營運部 ➔ 大幅削減成本的同時，全面優化代謝效率。</li>
         </ul>
       </div>
       <div class="paradigm-box">
@@ -839,4 +815,43 @@
       </div>
     </div>
   </div>
-</div>
+
+</div><!-- /med-blog-container -->
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBq259CQRj2Fu59XQBJg3xGKqMyDNFIEvY",
+    authDomain: "pharmacy-ef935.firebaseapp.com",
+    projectId: "pharmacy-ef935",
+    storageBucket: "pharmacy-ef935.firebasestorage.app",
+    messagingSenderId: "99763164145",
+    appId: "1:99763164145:web:7ad57b826384b6d2a6aa50"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const PAGE_SLUG = 'diet';
+
+  db.collection('posts')
+    .where('slug', '==', PAGE_SLUG)
+    .get()
+    .then(snap => {
+      if (!snap.empty) {
+        const doc = snap.docs[0];
+        // 조회수 +1
+        doc.ref.update({
+          views: firebase.firestore.FieldValue.increment(1)
+        });
+        // 조회수 표시 (업데이트 전 값 + 1)
+        const currentViews = (doc.data().views || 0) + 1;
+        document.getElementById('view-counter').textContent = '👁 ' + currentViews.toLocaleString() + ' views';
+      }
+    })
+    .catch(err => console.log('View count error:', err));
+</script>
+
+</body>
+</html>
