@@ -258,6 +258,11 @@
           </div>
         </div>
 
+        <div class="field">
+          <label>Tags <span style="font-weight:400;color:var(--muted);font-size:10px;">콤마로 구분 (예: WeightLoss, GLP1, Saxenda)</span></label>
+          <input type="text" id="f-tags" placeholder="WeightLoss, GLP1, Saxenda, KoreanPharmacy" />
+        </div>
+
         <button class="btn btn-primary" id="save-btn" onclick="save()">Save Post</button>
       </div>
     </div>
@@ -280,12 +285,12 @@
 <script>
   /* ══ FIREBASE CONFIG ══ */
   const firebaseConfig = {
-    apiKey:            "YOUR_API_KEY",
-    authDomain:        "YOUR_PROJECT.firebaseapp.com",
-    projectId:         "YOUR_PROJECT_ID",
-    storageBucket:     "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId:             "YOUR_APP_ID"
+    apiKey: "AIzaSyBq259CQRj2Fu59XQBJg3xGKqMyDNFIEvY",
+    authDomain: "pharmacy-ef935.firebaseapp.com",
+    projectId: "pharmacy-ef935",
+    storageBucket: "pharmacy-ef935.firebasestorage.app",
+    messagingSenderId: "99763164145",
+    appId: "1:99763164145:web:7ad57b826384b6d2a6aa50"
   };
   /* ═══════════════════ */
 
@@ -328,37 +333,7 @@
     });
   }
 
-  /* ── AUTO TAG GENERATION via Claude API ── */
-  async function generateTags(title, cat) {
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 200,
-          messages: [{
-            role: 'user',
-            content: `You are a blog tag generator for a Korean pharmacy blog called EIGHT PHARMACY.
-Given this blog post info, generate exactly 5 short hashtag-style tags in English (no # symbol, just the word or phrase, no spaces — use CamelCase).
-The tags should be relevant keywords that visitors might search for.
 
-Title: "${title}"
-Category: "${cat}"
-
-Reply with ONLY a JSON array of 5 strings. Example: ["KoreanPharmacy","WeightLoss","GLP1","Saxenda","Injectables"]
-No explanation, no markdown, just the JSON array.`
-          }]
-        })
-      });
-      const data = await res.json();
-      const text = data.content?.[0]?.text?.trim() || '[]';
-      return JSON.parse(text);
-    } catch(e) {
-      console.warn('Tag generation failed:', e);
-      return [];
-    }
-  }
 
   /* ── SAVE / UPDATE ── */
   async function save() {
@@ -369,19 +344,18 @@ No explanation, no markdown, just the JSON array.`
 
     const cat = document.getElementById('f-cat').value.trim();
     const btn = document.getElementById('save-btn');
-    btn.disabled = true; btn.textContent = '🏷 태그 생성 중…';
+    btn.disabled = true; btn.textContent = 'Saving…';
 
-    // Claude API로 태그 자동 생성
-    const autoTags = await generateTags(title, cat);
-
-    btn.textContent = 'Saving…';
+    // 태그 입력 필드에서 읽기 (쉼표로 구분)
+    const tagInput = document.getElementById('f-tags').value.trim();
+    const autoTags = tagInput ? tagInput.split(',').map(t => t.trim()).filter(Boolean) : [];
 
     const data = {
       titles: { en: title },
       cat,
       img:    document.getElementById('f-img').value.trim(),
       url,
-      slug:   url.replace(/^\/blog\//,'').replace(/\//g,''),
+      slug:   url.replace(/\/+$/, '').split('/').filter(Boolean).pop() || '',
       tags:   autoTags,
     };
 
@@ -419,8 +393,9 @@ No explanation, no markdown, just the JSON array.`
   }
 
   function clearForm() {
-    ['f-title','f-img','f-url'].forEach(id => document.getElementById(id).value = '');
+    ['f-title','f-img','f-url','f-tags'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f-cat').value = '';
+    document.getElementById('f-tags').value = '';
     document.getElementById('prev').innerHTML = '<div class="thumb-empty">preview</div>';
   }
 
@@ -431,9 +406,11 @@ No explanation, no markdown, just the JSON array.`
     editingId = id;
     document.getElementById('f-title').value = p.titles?.en || '';
     document.getElementById('f-cat').value   = p.cat || '';
+    document.getElementById('f-tags').value  = (p.tags || []).join(', ');
     document.getElementById('f-url').value   = p.url || '/blog/' + p.slug;
     document.getElementById('f-img').value   = p.img || '';
     prevImg(p.img || '');
+    document.getElementById('f-tags').value = (p.tags || []).join(', ');
     document.getElementById('form-label').textContent  = '✏️ Edit Post';
     document.getElementById('form-head').classList.add('editing');
     document.getElementById('cancel-btn').style.display = 'inline-block';
@@ -550,7 +527,7 @@ No explanation, no markdown, just the JSON array.`
   /* ── IMG PREVIEW ── */
   function prevImg(url) {
     document.getElementById('prev').innerHTML = url
-      ? `<img class="thumb" src="${url}" onerror="this.parentElement.innerHTML='<div class=thumb-empty>not found</div>'" />`
+      ? `<img class="thumb" src="${url}" onerror="const p=this.parentElement;if(p)p.innerHTML='<div class=thumb-empty>not found</div>'" />`
       : '<div class="thumb-empty">preview</div>';
   }
 
