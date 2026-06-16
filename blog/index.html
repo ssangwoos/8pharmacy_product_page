@@ -296,10 +296,8 @@
       EIGHT PHARMACY
     </div>
     <nav class="footer-nav">
-      <a href="/diet">Weight Loss</a>
-      <a href="/darkcircle">Dark Circle</a>
-      <a href="/retinol">Retinol</a>
-      <a href="/pumpkin">Pumpkin Drinks</a>
+      <a href="/blog/privacy.html">Privacy Policy</a>
+      <a href="/blog/terms.html">Terms of Use</a>
     </nav>
     <p class="footer-copy">© EIGHT PHARMACY · Seoul, Korea<br/>Content is for informational purposes only and does not constitute medical advice.</p>
   </div>
@@ -568,9 +566,12 @@
   });
 
   // Firestore 실시간 연동
-  db.collection('posts').orderBy('order').onSnapshot(snap => {
-    allPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderHeroThumbs();  // views Top 3 히어로 업데이트
+  // orderBy를 JS 정렬로 변경 — order 필드 없는 문서도 안전하게 포함
+  db.collection('posts').onSnapshot(snap => {
+    allPosts = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.order || 99) - (b.order || 99));
+    renderHeroThumbs();
     renderAll();
   });
 </script>
