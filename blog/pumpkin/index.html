@@ -487,6 +487,8 @@
 <footer>
   <p>© EIGHT PHARMACY <strong>에이트 약국</strong> — Korean Pharmacy Shopping Guide</p>
 </footer>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
   function switchLang(lang, btn) {
@@ -495,6 +497,32 @@
     document.getElementById(lang).classList.add('active');
     btn.classList.add('active');
   }
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBq259CQRj2Fu59XQBJg3xGKqMyDNFIEvY",
+    authDomain: "pharmacy-ef935.firebaseapp.com",
+    projectId: "pharmacy-ef935",
+    storageBucket: "pharmacy-ef935.firebasestorage.app",
+    messagingSenderId: "99763164145",
+    appId: "1:99763164145:web:7ad57b826384b6d2a6aa50"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // 이 페이지 slug — 각 페이지마다 다르게
+  const PAGE_SLUG = 'pumpkin';
+
+  db.collection('posts')
+    .where('slug', '==', PAGE_SLUG)
+    .get()
+    .then(snap => {
+      if (!snap.empty) {
+        snap.docs[0].ref.update({
+          views: firebase.firestore.FieldValue.increment(1)
+        });
+      }
+    });
 </script>
 
 </body>

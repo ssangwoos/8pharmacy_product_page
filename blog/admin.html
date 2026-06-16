@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EIGHT PHARMACY — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700;900&display=swap" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <style>
+    :root {
+      --green: #1E4D35;
+      --cross: #3DAF6F;
+      --pale:  #F7F8F6;
+      --border:#DDE5E0;
+      --muted: #888;
+      --red:   #D94040;
+      --white: #fff;
+      --ink:   #1A1A1A;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans', sans-serif; background: var(--pale); color: var(--ink); font-size: 14px; min-height: 100vh; }
+
+    /* ── LOGIN ── */
+    #login {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--green);
+    }
+    .login-box {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 40px 36px;
+      width: 320px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .login-logo {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 900; letter-spacing: .1em;
+      color: var(--green); margin-bottom: 8px;
+    }
+    .login-logo svg { color: var(--cross); }
+
+    /* ── MAIN ── */
+    #main { display: none; }
+    .topbar {
+      background: var(--green);
+      border-bottom: 3px solid var(--cross);
+      padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 54px;
+    }
+    .topbar-logo { display: flex; align-items: center; gap: 8px; color: var(--white); font-size: 15px; font-weight: 900; letter-spacing: .1em; }
+    .topbar-logo svg { color: var(--cross); }
+
+    .wrap {
+      max-width: 800px;
+      margin: 36px auto;
+      padding: 0 20px 80px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+
+    /* ── ADD FORM ── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-head {
+      background: var(--green);
+      color: var(--white);
+      padding: 13px 20px;
+      font-size: 11px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase;
+    }
+    .card-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: var(--green); }
+
+    input[type=text], input[type=url], select {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 13px; font-family: inherit;
+      background: var(--pale);
+      outline: none; transition: border-color .15s;
+      width: 100%;
+    }
+    input:focus, select:focus { border-color: var(--cross); background: var(--white); }
+
+    /* image preview inline */
+    .img-row { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: start; }
+    .thumb {
+      width: 96px; height: 68px; border-radius: 6px;
+      border: 1px solid var(--border); background: #e8efeb;
+      object-fit: cover; display: block;
+    }
+    .thumb-empty {
+      width: 96px; height: 68px; border-radius: 6px;
+      border: 1px dashed var(--border); background: var(--pale);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: var(--muted);
+    }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .btn {
+      border: none; border-radius: 6px; padding: 12px 20px;
+      font-size: 13px; font-weight: 900; font-family: inherit;
+      cursor: pointer; transition: opacity .15s; letter-spacing: .04em;
+    }
+    .btn-primary { background: var(--green); color: var(--white); }
+    .btn-primary:hover { opacity: .85; }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-ghost { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 5px 12px; }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--ink); }
+
+    /* ── POST LIST ── */
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .post-row {
+      display: grid; grid-template-columns: 72px 1fr auto;
+      gap: 14px; align-items: center;
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px 14px; background: var(--white);
+      transition: border-color .15s;
+    }
+    .post-row:hover { border-color: var(--cross); }
+    .post-thumb { width: 72px; height: 50px; border-radius: 5px; object-fit: cover; background: #e8efeb; display: block; }
+    .post-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+    .post-sub { font-size: 11px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; }
+    .pill {
+      font-size: 10px; font-weight: 700; padding: 2px 7px;
+      border-radius: 3px; border: 1px solid var(--border); color: var(--muted);
+    }
+    .pill.feat { background: #FFF3E0; color: #B06000; border-color: #FFD080; }
+    .pill.cat  { background: #E8F2EC; color: var(--green); border-color: #C0DDD0; }
+
+    .row-actions { display: flex; gap: 6px; }
+    .act-btn {
+      font-size: 11px; font-weight: 700; padding: 5px 10px;
+      border-radius: 4px; border: 1px solid; cursor: pointer;
+      font-family: inherit; white-space: nowrap; transition: all .15s;
+    }
+    .act-del { border-color: #D9A0A0; color: var(--red); background: none; }
+    .act-del:hover { background: var(--red); color: var(--white); border-color: var(--red); }
+    .act-feat { border-color: var(--border); color: var(--muted); background: none; }
+    .act-feat:hover { border-color: #FFD080; color: #B06000; background: #FFF8E8; }
+    .act-feat.on { border-color: #FFD080; color: #B06000; background: #FFF3E0; }
+    .act-edit { border-color: var(--border); color: var(--muted); background: none; }
+    .act-edit:hover { border-color: var(--green); color: var(--green); background: #E8F2EC; }
+    .card-head.editing { background: #2D6A4F; }
+    .cancel-btn { font-size:11px; font-weight:700; padding:4px 10px; border-radius:4px; border:1px solid rgba(255,255,255,.3); color:rgba(255,255,255,.7); background:none; cursor:pointer; font-family:inherit; transition:all .15s; }
+    .cancel-btn:hover { border-color:var(--white); color:var(--white); }
+
+    /* category autocomplete */
+    .cat-wrap { position: relative; }
+    .cat-drop {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--white); border: 1px solid var(--cross);
+      border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      z-index: 50; overflow: hidden; display: none;
+    }
+    .cat-drop.open { display: block; }
+    .cat-opt {
+      padding: 9px 12px; font-size: 13px; cursor: pointer;
+      transition: background .12s;
+    }
+    .cat-opt:hover, .cat-opt.active { background: #E8F2EC; color: var(--green); }
+    .cat-opt .cat-new { font-size: 11px; color: var(--muted); margin-left: 6px; }
+
+    .empty { text-align: center; padding: 36px; color: var(--muted); font-size: 13px; }
+    .empty span { display: block; font-size: 28px; margin-bottom: 8px; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px);
+      background: var(--green); color: var(--white); font-size: 13px; font-weight: 700;
+      padding: 11px 22px; border-radius: 6px; border-left: 4px solid var(--cross);
+      opacity: 0; transition: all .25s; pointer-events: none; white-space: nowrap; z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.err  { background: #3a1010; border-left-color: var(--red); }
+
+    .logout-btn {
+      background: none; border: 1px solid rgba(255,255,255,.25); color: rgba(255,255,255,.6);
+      font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 4px;
+      cursor: pointer; font-family: inherit; transition: all .15s;
+    }
+    .logout-btn:hover { border-color: var(--white); color: var(--white); }
+
+    .err-msg { font-size: 12px; color: var(--red); text-align: center; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 2h6v6h6v6h-6v6H9v-6H3V8h6z"/></svg>
+      EIGHT PHARMACY
+    </div>
+    <input type="email"    id="em" placeholder="Email" />
+    <input type="password" id="pw" placeholder="Password" onkeydown="if(event.key==='Enter')login()" />
+    <button class="btn btn-primary" onclick="login()">Sign In</button>
+    <div class="err-msg" id="lerr"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 2h6v6h6v6h-6v6H9v-6H3V8h6z"/></svg>
+      EIGHT PHARMACY <span style="font-size:11px;opacity:.5;font-weight:400;margin-left:6px;">Admin</span>
+    </div>
+    <button class="logout-btn" onclick="auth.signOut()">Sign Out</button>
+  </div>
+
+  <div class="wrap">
+
+    <!-- ADD FORM -->
+    <div class="card">
+      <div class="card-head" id="form-head" style="display:flex;align-items:center;justify-content:space-between;">
+        <span id="form-label">➕ Add New Post</span>
+        <button class="cancel-btn" id="cancel-btn" style="display:none" onclick="cancelEdit()">✕ Cancel</button>
+      </div>
+      <div class="card-body">
+
+        <div class="field">
+          <label>Title</label>
+          <input type="text" id="f-title" placeholder="e.g. Top 6 Pumpkin Drinks at Korean Pharmacies" />
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label>Category</label>
+            <div class="cat-wrap">
+              <input type="text" id="f-cat" placeholder="e.g. Skincare" autocomplete="off"
+                     oninput="catInput(this.value)" onfocus="catInput(this.value)"
+                     onblur="setTimeout(closeDrop,150)" />
+              <div class="cat-drop" id="cat-drop"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Page URL</label>
+            <input type="text" id="f-url" placeholder="/blog/pumpkin" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Thumbnail Image URL</label>
+          <div class="img-row">
+            <input type="url" id="f-img" placeholder="https://8pharmacy.kr/blog/pumpkin/1.jpg" oninput="prevImg(this.value)" />
+            <div id="prev"><div class="thumb-empty">preview</div></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="save-btn" onclick="save()">Save Post</button>
+      </div>
+    </div>
+
+    <!-- POST LIST -->
+    <div class="card">
+      <div class="card-head">📋 Posts (<span id="cnt">0</span>)</div>
+      <div class="card-body" style="padding:16px;">
+        <div class="list" id="list">
+          <div class="empty"><span>📭</span>No posts yet</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  /* ══ FIREBASE CONFIG ══ */
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+  /* ═══════════════════ */
+
+  const CONFIGURED = firebaseConfig.apiKey !== "YOUR_API_KEY";
+  let db, auth, posts = [], editingId = null;
+
+  if (CONFIGURED) {
+    firebase.initializeApp(firebaseConfig);
+    db   = firebase.firestore();
+    auth = firebase.auth();
+    auth.onAuthStateChanged(u => {
+      document.getElementById('login').style.display = u ? 'none' : 'flex';
+      document.getElementById('main').style.display  = u ? 'block' : 'none';
+      if (u) listenPosts();
+    });
+  } else {
+    // preview mode without Firebase
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('main').style.display  = 'block';
+  }
+
+  /* ── AUTH ── */
+  async function login() {
+    if (!CONFIGURED) { toast('Firebase not configured yet', true); return; }
+    try {
+      await auth.signInWithEmailAndPassword(
+        document.getElementById('em').value,
+        document.getElementById('pw').value
+      );
+    } catch(e) {
+      document.getElementById('lerr').textContent = e.message;
+    }
+  }
+
+  /* ── FIRESTORE ── */
+  function listenPosts() {
+    db.collection('posts').orderBy('order').onSnapshot(snap => {
+      posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      render();
+    });
+  }
+
+  /* ── AUTO TAG GENERATION via Claude API ── */
+  async function generateTags(title, cat) {
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 200,
+          messages: [{
+            role: 'user',
+            content: `You are a blog tag generator for a Korean pharmacy blog called EIGHT PHARMACY.
+Given this blog post info, generate exactly 5 short hashtag-style tags in English (no # symbol, just the word or phrase, no spaces — use CamelCase).
+The tags should be relevant keywords that visitors might search for.
+
+Title: "${title}"
+Category: "${cat}"
+
+Reply with ONLY a JSON array of 5 strings. Example: ["KoreanPharmacy","WeightLoss","GLP1","Saxenda","Injectables"]
+No explanation, no markdown, just the JSON array.`
+          }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text?.trim() || '[]';
+      return JSON.parse(text);
+    } catch(e) {
+      console.warn('Tag generation failed:', e);
+      return [];
+    }
+  }
+
+  /* ── SAVE / UPDATE ── */
+  async function save() {
+    const title = document.getElementById('f-title').value.trim();
+    const url   = document.getElementById('f-url').value.trim();
+    if (!title) { toast('Title is required', true); return; }
+    if (!url)   { toast('Page URL is required', true); return; }
+
+    const cat = document.getElementById('f-cat').value.trim();
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true; btn.textContent = '🏷 태그 생성 중…';
+
+    // Claude API로 태그 자동 생성
+    const autoTags = await generateTags(title, cat);
+
+    btn.textContent = 'Saving…';
+
+    const data = {
+      titles: { en: title },
+      cat,
+      img:    document.getElementById('f-img').value.trim(),
+      url,
+      slug:   url.replace(/^\/blog\//,'').replace(/\//g,''),
+      tags:   autoTags,
+    };
+
+    try {
+      if (editingId) {
+        // UPDATE
+        if (CONFIGURED) {
+          await db.collection('posts').doc(editingId).update(data);
+        } else {
+          const p = posts.find(x => x.id === editingId);
+          if (p) Object.assign(p, data);
+          render();
+        }
+        toast('✓ Updated');
+        cancelEdit();
+      } else {
+        // CREATE
+        const newData = { ...data, featured: 'false', order: posts.length + 1, createdAt: new Date().toISOString() };
+        if (CONFIGURED) {
+          await db.collection('posts').add(newData);
+          toast('✓ Post added — live instantly');
+        } else {
+          posts.push({ id: 'demo_' + Date.now(), ...newData });
+          render();
+          toast('✓ Saved (demo — Firebase not connected)');
+        }
+        clearForm();
+      }
+    } catch(e) {
+      toast(e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = editingId ? 'Update Post' : 'Save Post';
+    }
+  }
+
+  function clearForm() {
+    ['f-title','f-img','f-url'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-cat').value = '';
+    document.getElementById('prev').innerHTML = '<div class="thumb-empty">preview</div>';
+  }
+
+  /* ── EDIT ── */
+  function startEdit(id) {
+    const p = posts.find(x => x.id === id);
+    if (!p) return;
+    editingId = id;
+    document.getElementById('f-title').value = p.titles?.en || '';
+    document.getElementById('f-cat').value   = p.cat || '';
+    document.getElementById('f-url').value   = p.url || '/blog/' + p.slug;
+    document.getElementById('f-img').value   = p.img || '';
+    prevImg(p.img || '');
+    document.getElementById('form-label').textContent  = '✏️ Edit Post';
+    document.getElementById('form-head').classList.add('editing');
+    document.getElementById('cancel-btn').style.display = 'inline-block';
+    document.getElementById('save-btn').textContent     = 'Update Post';
+    document.getElementById('form-head').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    clearForm();
+    document.getElementById('form-label').textContent   = '➕ Add New Post';
+    document.getElementById('form-head').classList.remove('editing');
+    document.getElementById('cancel-btn').style.display = 'none';
+    document.getElementById('save-btn').textContent     = 'Save Post';
+  }
+
+  /* ── DELETE ── */
+  async function del(id) {
+    if (!confirm('Delete this post?')) return;
+    if (CONFIGURED) {
+      await db.collection('posts').doc(id).delete();
+    } else {
+      posts = posts.filter(p => p.id !== id);
+      render();
+    }
+    toast('Deleted');
+  }
+
+  /* ── TOGGLE FEATURED ── */
+  async function toggleFeat(id) {
+    const p = posts.find(x => x.id === id);
+    if (!p) return;
+    const next = p.featured === 'true' ? 'false' : 'true';
+    if (CONFIGURED) {
+      await db.collection('posts').doc(id).update({ featured: next });
+    } else {
+      p.featured = next; render();
+    }
+  }
+
+  /* ── RENDER LIST ── */
+  /* ── CATEGORY AUTOCOMPLETE ── */
+  function getUsedCats() {
+    // collect unique categories from existing posts, preserve insertion order
+    return [...new Set(posts.map(p => p.cat).filter(Boolean))];
+  }
+
+  function catInput(val) {
+    const drop = document.getElementById('cat-drop');
+    const used = getUsedCats();
+    const q = val.trim().toLowerCase();
+    const matches = q
+      ? used.filter(c => c.toLowerCase().includes(q))
+      : used;
+
+    let html = matches.map(c => `
+      <div class="cat-opt" onmousedown="pickCat('${c}')">${c}</div>`).join('');
+
+    // show "add new" option if typed value isn't already in list
+    if (q && !used.map(c=>c.toLowerCase()).includes(q)) {
+      html += `<div class="cat-opt" onmousedown="pickCat('${val.trim()}')">
+        ＋ "${val.trim()}" <span class="cat-new">new category</span>
+      </div>`;
+    }
+
+    if (html) {
+      drop.innerHTML = html;
+      drop.classList.add('open');
+    } else {
+      drop.classList.remove('open');
+    }
+  }
+
+  function pickCat(val) {
+    document.getElementById('f-cat').value = val;
+    closeDrop();
+  }
+
+  function closeDrop() {
+    document.getElementById('cat-drop').classList.remove('open');
+  }
+
+  function render() {
+    document.getElementById('cnt').textContent = posts.length;
+    const el = document.getElementById('list');
+    if (!posts.length) {
+      el.innerHTML = '<div class="empty"><span>📭</span>No posts yet</div>';
+      return;
+    }
+    el.innerHTML = posts.map(p => `
+      <div class="post-row">
+        <img class="post-thumb" src="${p.img||''}" alt=""
+             onerror="this.style.background='#ddd';this.removeAttribute('src')" />
+        <div>
+          <div class="post-title">${p.titles?.en || p.slug || '—'}</div>
+          <div class="post-sub">
+            <span class="pill cat">${p.cat||'—'}</span>
+            ${(p.tags||[]).map(t=>`<span class="pill">#${t}</span>`).join('')}
+            ${p.featured==='true' ? '<span class="pill feat">⭐ Featured</span>' : ''}
+            <span class="pill">${p.url||'/blog/'+p.slug}</span>
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="act-btn act-feat ${p.featured==='true'?'on':''}"
+                  onclick="toggleFeat('${p.id}')" title="Toggle featured">
+            ${p.featured==='true' ? '⭐' : '☆'}
+          </button>
+          <button class="act-btn act-edit" onclick="startEdit('${p.id}')">Edit</button>
+          <button class="act-btn act-del"  onclick="del('${p.id}')">Delete</button>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── IMG PREVIEW ── */
+  function prevImg(url) {
+    document.getElementById('prev').innerHTML = url
+      ? `<img class="thumb" src="${url}" onerror="this.parentElement.innerHTML='<div class=thumb-empty>not found</div>'" />`
+      : '<div class="thumb-empty">preview</div>';
+  }
+
+  /* ── TOAST ── */
+  let tt;
+  function toast(msg, err=false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show' + (err ? ' err' : '');
+    clearTimeout(tt);
+    tt = setTimeout(() => el.className = '', 3000);
+  }
+</script>
+</body>
+</html>
