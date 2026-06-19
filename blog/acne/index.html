@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8pharmacy – Acne Ingredient Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── TOKENS ───────────────────────────────── */
+        :root {
+            --bg:           #F9F7F5;
+            --card:         #FFFFFF;
+            --border:       #E8E3DE;
+            --text:         #1C1917;
+            --muted:        #78716C;
+            --accent:       #C2410C;   /* terracotta – acne theme */
+            --accent-light: #FEF3EE;
+            --shadow-sm:    0 2px 8px rgba(0,0,0,.04);
+            --shadow-md:    0 8px 28px rgba(0,0,0,.07);
+            --radius:       14px;
+            --transition:   all .35s cubic-bezier(.25,.46,.45,.94);
+
+            /* ingredient palette */
+            --c1: #DC2626; /* inflammatory – red */
+            --c2: #16A34A; /* comedonal    – green */
+            --c3: #D97706; /* PIH          – amber */
+            --c4: #2563EB; /* recurring    – blue */
+            --c5: #7C3AED; /* sebum        – violet */
+            --c6: #0D9488; /* cleanse      – teal */
+        }
+
+        /* ── RESET ─────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', 'Noto Sans JP', 'Noto Sans TC', 'Noto Sans SC', sans-serif;
+            line-height: 1.75;
+            -webkit-font-smoothing: antialiased;
+        }
+        img { display: block; max-width: 100%; }
+        a { color: inherit; text-decoration: none; }
+
+        /* ── LANGUAGE VISIBILITY ───────────────────── */
+        .lang-en .ja, .lang-en .cn, .lang-en .tw { display: none !important; }
+        .lang-ja .en, .lang-ja .cn, .lang-ja .tw { display: none !important; }
+        .lang-cn .en, .lang-cn .ja, .lang-cn .tw { display: none !important; }
+        .lang-tw .en, .lang-tw .ja, .lang-tw .cn { display: none !important; }
+
+        /* ── HEADER ────────────────────────────────── */
+        .site-header {
+            position: sticky; top: 0; z-index: 200;
+            background: rgba(249,247,245,.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            max-width: 1100px; margin: 0 auto;
+            padding: .9rem 1.5rem;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem;
+        }
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.35rem; font-weight: 600;
+            letter-spacing: .12em; color: var(--text);
+        }
+        .logo span { color: var(--accent); }
+
+        /* lang switcher – pill style matching retinol page */
+        .lang-switcher {
+            display: flex; gap: .25rem;
+            background: var(--border); border-radius: 999px; padding: .2rem;
+        }
+        .lang-btn {
+            border: none; background: none; cursor: pointer;
+            padding: .35rem .9rem; border-radius: 999px;
+            font-size: .78rem; font-weight: 600; letter-spacing: .04em;
+            color: var(--muted); transition: var(--transition);
+        }
+        .lang-btn.active {
+            background: var(--card); color: var(--accent);
+            box-shadow: 0 1px 6px rgba(0,0,0,.08);
+        }
+
+        /* ── LAYOUT ────────────────────────────────── */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
+
+        /* ── HERO ──────────────────────────────────── */
+        .hero {
+            padding: 5rem 1.5rem 4rem;
+            max-width: 960px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;
+        }
+        .hero-text .eyebrow {
+            display: inline-block;
+            font-size: .72rem; font-weight: 700; letter-spacing: .16em;
+            text-transform: uppercase; color: var(--accent);
+            background: var(--accent-light); border-radius: 4px;
+            padding: .25rem .7rem; margin-bottom: 1.2rem;
+        }
+        .hero-text h1 {
+            font-size: 2.5rem; font-weight: 700;
+            line-height: 1.2; margin-bottom: 1.2rem;
+        }
+        .hero-text h1 em {
+            font-style: normal; color: var(--accent);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem; font-weight: 600;
+        }
+        .hero-text p { font-size: 1rem; color: var(--muted); max-width: 440px; }
+
+        .hero-visual {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem;
+        }
+        .hero-chip {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 10px; padding: .6rem .8rem;
+            display: flex; align-items: center; gap: .5rem;
+            font-size: .75rem; font-weight: 500; white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+        }
+        .hero-chip .dot {
+            width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+        }
+
+
+        @media (max-width: 700px) {
+            .hero { grid-template-columns: 1fr; gap: 2rem; padding: 3rem 1.5rem 2.5rem; }
+            .hero-text h1 { font-size: 2rem; }
+            .hero-text h1 em { font-size: 2.4rem; }
+        }
+
+        /* ── DIVIDER ───────────────────────────────── */
+        .divider {
+            max-width: 960px; margin: 0 auto 3.5rem; padding: 0 1.5rem;
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+        .divider-label {
+            font-size: .75rem; font-weight: 700; letter-spacing: .14em;
+            text-transform: uppercase; color: var(--muted); white-space: nowrap;
+        }
+
+        /* ── PRINCIPLE BANNER ──────────────────────── */
+        .principle {
+            max-width: 960px; margin: 0 auto 4rem; padding: 0 1.5rem;
+        }
+        .principle-inner {
+            background: var(--accent); border-radius: var(--radius);
+            padding: 1.6rem 2rem; display: flex; align-items: center; gap: 1.2rem;
+        }
+        .principle-icon { font-size: 1.8rem; flex-shrink: 0; }
+        .principle-text { color: #fff; }
+        .principle-text strong { display: block; font-size: 1.05rem; margin-bottom: .3rem; }
+        .principle-text p { font-size: .9rem; opacity: .88; }
+
+        /* ── INGREDIENT GRID ───────────────────────── */
+        .section { max-width: 960px; margin: 0 auto 5rem; padding: 0 1.5rem; }
+        .section-header {
+            display: flex; align-items: baseline; gap: .8rem; margin-bottom: 2rem;
+        }
+        .section-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem; line-height: 1; color: var(--border);
+            font-weight: 400; flex-shrink: 0;
+        }
+        .section-title-block h2 {
+            font-size: 1.3rem; font-weight: 700; line-height: 1.2;
+        }
+        .section-title-block p { font-size: .88rem; color: var(--muted); margin-top: .2rem; }
+
+        .ing-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem;
+        }
+        @media (max-width: 560px) { .ing-grid { grid-template-columns: 1fr; } }
+
+        /* ── INGREDIENT CARD ───────────────────────── */
+        .ing-card {
+            background: var(--card); border-radius: var(--radius);
+            border: 1px solid var(--border); overflow: hidden;
+            box-shadow: var(--shadow-sm); transition: var(--transition);
+            display: flex; flex-direction: column;
+        }
+        .ing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+        .ing-card-stripe { height: 5px; }
+        .ing-card-head {
+            padding: 1.4rem 1.5rem .9rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .ing-label {
+            display: inline-flex; align-items: center; gap: .4rem;
+            font-size: .7rem; font-weight: 700; letter-spacing: .1em;
+            text-transform: uppercase; padding: .2rem .65rem;
+            border-radius: 999px; margin-bottom: .7rem; color: #fff;
+        }
+        .ing-card-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem; font-style: italic; color: var(--muted);
+            line-height: 1; margin-bottom: .2rem;
+        }
+        .ing-card-name { font-size: 1.2rem; font-weight: 700; }
+        .ing-card-sub { font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+
+        .ing-card-body { padding: 1.3rem 1.5rem; flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+        .ing-card-desc { font-size: .9rem; color: var(--muted); line-height: 1.8; }
+        .ing-card-uses { list-style: none; display: flex; flex-direction: column; gap: .35rem; }
+        .ing-card-uses li {
+            display: flex; align-items: flex-start; gap: .55rem;
+            font-size: .85rem; color: var(--text);
+        }
+        .ing-card-uses li .check { font-size: .8rem; font-weight: 800; flex-shrink: 0; }
+
+        .ing-card-verdict {
+            margin-top: auto; border-radius: 8px;
+            padding: .75rem 1rem; font-size: .88rem; font-weight: 600;
+            color: #fff; text-align: center;
+        }
+
+
+
+        /* product image inside card */
+        .prod-img-box {
+            background: #FAF9F8;
+            width: 100%; aspect-ratio: 3/4;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; padding: 0;
+        }
+        .prod-img-box img {
+            width: 100%; height: 100%;
+            object-fit: cover; object-position: center;
+            transition: var(--transition);
+        }
+        .ing-card:hover .prod-img-box img { transform: scale(1.04); }
+
+        /* ── PRODUCT GRID (6 photos) ───────────────── */
+        .prod-section {
+            max-width: 960px; margin: 0 auto 5rem; padding: 0 1.5rem;
+        }
+        .prod-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;
+        }
+        @media (max-width: 680px) { .prod-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 420px) { .prod-grid { grid-template-columns: 1fr; } }
+
+        .prod-card {
+            background: var(--card); border-radius: var(--radius);
+            border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+            overflow: hidden; transition: var(--transition);
+        }
+        .prod-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .prod-card-img {
+            background: #FAF9F8; height: 180px;
+            display: flex; align-items: center; justify-content: center; padding: 1.2rem;
+            overflow: hidden;
+        }
+        .prod-card-img img { max-height: 100%; object-fit: contain; transition: var(--transition); }
+        .prod-card:hover .prod-card-img img { transform: scale(1.06); }
+        .prod-card-body { padding: 1rem 1.2rem 1.3rem; }
+        .prod-card-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem; font-style: italic; color: var(--border);
+            line-height: 1; margin-bottom: .2rem;
+        }
+        .prod-card-name { font-size: 1rem; font-weight: 700; margin-bottom: .3rem; }
+        .prod-card-type {
+            display: inline-flex; align-items: center; gap: .3rem;
+            font-size: .72rem; font-weight: 700; color: #fff;
+            padding: .18rem .55rem; border-radius: 999px; margin-bottom: .6rem;
+        }
+        .prod-card-desc { font-size: .82rem; color: var(--muted); line-height: 1.7; }
+
+        /* ── PHARMACIST PICK ───────────────────────── */
+        .pick-section {
+            max-width: 960px; margin: 0 auto 5rem; padding: 0 1.5rem;
+        }
+        .pick-box {
+            background: var(--card); border: 1px dashed #D1C0B8;
+            border-radius: var(--radius); padding: 2.5rem 2rem;
+        }
+        .pick-header {
+            display: flex; align-items: center; gap: .7rem;
+            margin-bottom: 2rem;
+        }
+        .pick-header h2 { font-size: 1.2rem; font-weight: 700; }
+        .pick-badge {
+            background: var(--accent-light); color: var(--accent);
+            font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+            text-transform: uppercase; padding: .25rem .7rem; border-radius: 4px;
+        }
+        .pick-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem;
+        }
+        @media (max-width: 640px) { .pick-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 420px) { .pick-grid { grid-template-columns: 1fr; } }
+
+        .pick-item {
+            background: var(--bg); border-radius: 10px;
+            border: 1px solid var(--border); padding: 1rem 1.1rem;
+        }
+        .pick-concern {
+            font-size: .75rem; color: var(--muted); margin-bottom: .25rem;
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .pick-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .pick-ing { font-size: .92rem; font-weight: 700; }
+        .pick-ing-sub { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+
+        /* ── FOOTER ────────────────────────────────── */
+        .site-footer {
+            border-top: 1px solid var(--border); padding: 3.5rem 1.5rem;
+            text-align: center; background: var(--card);
+        }
+        .footer-cta {
+            font-size: 1.05rem; font-weight: 600; margin-bottom: 1.4rem; color: var(--text);
+        }
+        .hashtag-block {
+            font-size: .78rem; color: var(--muted); line-height: 2.2;
+            max-width: 700px; margin: 0 auto;
+        }
+        .footer-brand {
+            margin-top: 2.5rem; font-size: .78rem; color: #B8B0A8;
+            font-family: 'Cormorant Garamond', serif; letter-spacing: .1em;
+        }
+    </style>
+</head>
+<body class="lang-en">
+
+<!-- ─────────────────────────────── HEADER -->
+<header class="site-header">
+    <div class="header-inner">
+        <div class="logo">8<span>PHARMACY</span></div>
+        <nav class="lang-switcher">
+            <button class="lang-btn active" id="btn-en" onclick="switchLang('en')">EN</button>
+            <button class="lang-btn"        id="btn-ja" onclick="switchLang('ja')">日本語</button>
+            <button class="lang-btn"        id="btn-cn" onclick="switchLang('cn')">简体</button>
+            <button class="lang-btn"        id="btn-tw" onclick="switchLang('tw')">繁體</button>
+        </nav>
+    </div>
+</header>
+
+<!-- ─────────────────────────────── HERO -->
+<section class="hero">
+    <div class="hero-text">
+        <span class="eyebrow en">Pharmacist Acne Guide</span>
+        <span class="eyebrow ja">薬剤師によるニキビ成分ガイド</span>
+        <span class="eyebrow cn">药剂师痘痘成分指南</span>
+        <span class="eyebrow tw">藥劑師痘痘成分指南</span>
+
+        <h1 class="en">Your acne needs<br><em>the right</em><br>ingredient.</h1>
+        <h1 class="ja">あなたのニキビに<br><em>合う</em><br>成分はどれ？</h1>
+        <h1 class="cn">你的痘痘，<br>需要<em>正确的</em><br>成分。</h1>
+        <h1 class="tw">你的痘痘，<br>需要<em>正確的</em><br>成分。</h1>
+
+        <p class="en">Not all acne is the same. A Korean pharmacist breaks down exactly which ingredient to reach for — by type.</p>
+        <p class="ja">ニキビはすべて同じではありません。韓国薬剤師が、タイプ別に本当に合う成分を解説します。</p>
+        <p class="cn">痘痘并不都是一样的。韩国药剂师按类型分析，告诉你该选哪种成分。</p>
+        <p class="tw">痘痘並不都是一樣的。韓國藥劑師按類型分析，告訴你該選哪種成分。</p>
+    </div>
+
+    <div class="hero-visual">
+        <div class="hero-chip"><span class="dot" style="background:var(--c1)"></span><span class="en">Inflammatory</span><span class="ja">炎症性</span><span class="cn">炎症性</span><span class="tw">炎症性</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c2)"></span><span class="en">Comedonal</span><span class="ja">面皰性</span><span class="cn">粉刺型</span><span class="tw">粉刺型</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c3)"></span><span class="en">Post-Acne Marks</span><span class="ja">ニキビ跡</span><span class="cn">痘印</span><span class="tw">痘印</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c4)"></span><span class="en">Recurring</span><span class="ja">繰り返す</span><span class="cn">反复型</span><span class="tw">反覆型</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c5)"></span><span class="en">Excess Sebum</span><span class="ja">皮脂過多</span><span class="cn">皮脂过多</span><span class="tw">皮脂過多</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c6)"></span><span class="en">Cleansing</span><span class="ja">洗顔</span><span class="cn">洁面</span><span class="tw">潔臉</span></div>
+    </div>
+</section>
+
+<!-- ─────────────────────────────── PRINCIPLE BANNER -->
+<div class="principle">
+    <div class="principle-inner">
+        <div class="principle-icon">🧑‍⚕️</div>
+        <div class="principle-text">
+            <strong class="en">Pharmacist's Core Message</strong>
+            <strong class="ja">薬剤師からの核心メッセージ</strong>
+            <strong class="cn">药剂师核心寄语</strong>
+            <strong class="tw">藥劑師核心提醒</strong>
+            <p class="en">Don't chase the most famous ingredient. Find the one that actually matches <em>your</em> acne type — that's the fastest route to clearer skin.</p>
+            <p class="ja">一番有名な成分を追いかけるのではなく、自分のニキビタイプに合う成分を見つけることが、最短ルートです。</p>
+            <p class="cn">不要追最有名的成分，而是找到真正适合你痘痘类型的成分——这才是通向清透肌肤的最快路径。</p>
+            <p class="tw">不要追最有名的成分，而是找到真正適合你痘痘類型的成分——這才是通向清透肌膚的最快路徑。</p>
+        </div>
+    </div>
+</div>
+
+<!-- ─────────────────────────────── INGREDIENTS -->
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">01–06</span>
+        <div class="section-title-block">
+            <h2 class="en">Ingredient Deep Dive by Acne Type</h2>
+            <h2 class="ja">タイプ別・成分徹底解説</h2>
+            <h2 class="cn">依痘痘类型拆解成分</h2>
+            <h2 class="tw">依痘痘類型拆解成分</h2>
+            <p class="en">6 types · 6 ingredients · clinical-grade reasoning</p>
+            <p class="ja">6タイプ · 6成分 · 薬剤師の視点</p>
+            <p class="cn">6种类型 · 6种成分 · 药剂师视角</p>
+            <p class="tw">6種類型 · 6種成分 · 藥劑師視角</p>
+        </div>
+    </div>
+
+    <div class="ing-grid">
+
+        <!-- ░░ 01 Ibuprofen Piconol ░░ -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c1)"></div>
+            <div class="prod-img-box"><img src="1.jpg" alt="Ibuprofen Piconol product"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c1)">
+                    <span class="en">01 · Inflammatory Acne</span>
+                    <span class="ja">01 · 炎症性ニキビ</span>
+                    <span class="cn">01 · 炎症性痘痘</span>
+                    <span class="tw">01 · 炎症性痘痘</span>
+                </span>
+                <div class="ing-card-name">Ibuprofen Piconol</div>
+                <div class="ing-card-sub">
+                    <span class="en">OTC Anti-inflammatory · Japan &amp; Korea</span>
+                    <span class="ja">OTC 抗炎症成分（日本・韓国）</span>
+                    <span class="cn">OTC 抗炎成分（日本・韩国）</span>
+                    <span class="tw">OTC 抗炎成分（日本・韓國）</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">When acne turns red and painful, an inflammatory reaction is occurring inside the pore. Ibuprofen Piconol directly targets inflammatory mediators to reduce redness and swelling — making it the go-to choice the moment a blemish flares.</p>
+                <p class="ing-card-desc ja">ニキビが赤く腫れて痛む原因は、毛穴内部の炎症反応です。イブプロフェンピコノールは炎症メディエーターに直接作用し、赤みと腫れをしっかり抑えます。</p>
+                <p class="ing-card-desc cn">痘痘发红疼痛，是因为毛孔内部发生了炎症反应。布洛芬吡可酯直接作用于炎症介质，有效缓解红肿，是痘痘爆发时的首选。</p>
+                <p class="ing-card-desc tw">痘痘發紅疼痛，是因為毛孔內部發生了炎症反應。布洛芬吡可酯直接作用於炎症介質，有效緩解紅腫，是痘痘爆發時的首選。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c1)">✓</span><span class="en">Suddenly inflamed, red blemishes</span><span class="ja">急に赤く盛り上がったニキビ</span><span class="cn">突然红肿的痘痘</span><span class="tw">突然紅腫的痘痘</span></li>
+                    <li><span class="check" style="color:var(--c1)">✓</span><span class="en">Painful when pressed</span><span class="ja">押すと痛いニキビ</span><span class="cn">按压时疼痛的痘痘</span><span class="tw">按壓時疼痛的痘痘</span></li>
+                    <li><span class="check" style="color:var(--c1)">✓</span><span class="en">Early-stage pustular acne</span><span class="ja">化膿しはじめたニキビ</span><span class="cn">开始化脓的痘痘</span><span class="tw">開始化膿的痘痘</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c1)">
+                    <span class="en">"For acne that's flaring up right now"</span>
+                    <span class="ja">「今まさに出ているニキビ」に</span>
+                    <span class="cn">「正在爆发中的痘痘」首选</span>
+                    <span class="tw">「正在爆發中的痘痘」首選</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ░░ 02 Salicylic Acid ░░ -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c2)"></div>
+            <div class="prod-img-box"><img src="2.jpg" alt="Salicylic Acid product"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c2)">
+                    <span class="en">02 · Comedonal Acne</span>
+                    <span class="ja">02 · 面皰性ニキビ</span>
+                    <span class="cn">02 · 粉刺型痘痘</span>
+                    <span class="tw">02 · 粉刺型痘痘</span>
+                </span>
+                <div class="ing-card-name">Salicylic Acid (BHA)</div>
+                <div class="ing-card-sub">
+                    <span class="en">Oil-soluble keratolytic · Pore-clearing</span>
+                    <span class="ja">脂溶性 BHA · 毛穴詰まりを解消</span>
+                    <span class="cn">脂溶性 BHA · 疏通毛孔</span>
+                    <span class="tw">脂溶性 BHA · 疏通毛孔</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">As a lipophilic BHA, salicylic acid is uniquely able to penetrate into sebum — dissolving the keratin plug that blocks pores. It reduces comedone formation before blemishes even appear.</p>
+                <p class="ing-card-desc ja">BHA（ベータヒドロキシ酸）は脂溶性のため、皮脂の中まで浸透できます。毛穴を塞ぐ角栓を溶かし、ニキビが発生する前に面皰形成を防ぎます。</p>
+                <p class="ing-card-desc cn">作为脂溶性BHA，水杨酸能深入皮脂，溶解堵塞毛孔的角栓，在痘痘形成前阻止粉刺的产生。</p>
+                <p class="ing-card-desc tw">作為脂溶性BHA，水楊酸能深入皮脂，溶解堵塞毛孔的角栓，在痘痘形成前阻止粉刺的產生。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c2)">✓</span><span class="en">Whiteheads &amp; blackheads</span><span class="ja">白ニキビ・黒ニキビ</span><span class="cn">白头与黑头粉刺</span><span class="tw">白頭與黑頭粉刺</span></li>
+                    <li><span class="check" style="color:var(--c2)">✓</span><span class="en">Sebum buildup around the nose</span><span class="ja">鼻周りの皮脂詰まり</span><span class="cn">鼻周皮脂堆积</span><span class="tw">鼻周皮脂堆積</span></li>
+                    <li><span class="check" style="color:var(--c2)">✓</span><span class="en">Chronically clogged pores</span><span class="ja">繰り返す毛穴詰まり</span><span class="cn">反复堵塞的毛孔</span><span class="tw">反覆堵塞的毛孔</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c2)">
+                    <span class="en">"For when pores are starting to clog"</span>
+                    <span class="ja">「毛穴が詰まり始めたとき」に</span>
+                    <span class="cn">「毛孔开始堵塞时」首选</span>
+                    <span class="tw">「毛孔開始堵塞時」首選</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ░░ 03 Azelaic Acid ░░ -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c3)"></div>
+            <div class="prod-img-box"><img src="3.jpg" alt="Azelaic Acid product"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c3)">
+                    <span class="en">03 · Acne + Post-Acne Marks</span>
+                    <span class="ja">03 · ニキビ＋ニキビ跡</span>
+                    <span class="cn">03 · 痘痘＋痘印</span>
+                    <span class="tw">03 · 痘痘＋痘印</span>
+                </span>
+                <div class="ing-card-name">Azelaic Acid</div>
+                <div class="ing-card-sub">
+                    <span class="en">Anti-inflammatory · Antibacterial · PIH control</span>
+                    <span class="ja">抗炎症・抗菌・色素沈着ケア</span>
+                    <span class="cn">抗炎・抗菌・色沉管理</span>
+                    <span class="tw">抗炎・抗菌・色沉管理</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">Azelaic acid is arguably the most versatile acne ingredient — it fights active blemishes while simultaneously preventing the dark marks (PIH) they leave behind, via tyrosinase inhibition.</p>
+                <p class="ing-card-desc ja">アゼライン酸は最も多機能なニキビ成分のひとつ。現在のニキビを改善しながら、チロシナーゼ阻害によって色素沈着（PIH）の予防も同時にできます。</p>
+                <p class="ing-card-desc cn">壬二酸是最多效的痘痘成分之一，既能改善现有痘痘，又能通过抑制酪氨酸酶阻止痘印（PIH）的形成。</p>
+                <p class="ing-card-desc tw">壬二酸是最多效的痘痘成分之一，既能改善現有痘痘，又能透過抑制酪胺酸酶阻止痘印（PIH）的形成。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c3)">✓</span><span class="en">Habit of squeezing blemishes</span><span class="ja">ニキビをよく潰す方</span><span class="cn">有挤痘习惯的人</span><span class="tw">有擠痘習慣的人</span></li>
+                    <li><span class="check" style="color:var(--c3)">✓</span><span class="en">Marks that take months to fade</span><span class="ja">跡が長く残る方</span><span class="cn">痘印久久不退</span><span class="tw">痘印久久不退</span></li>
+                    <li><span class="check" style="color:var(--c3)">✓</span><span class="en">Want to address acne + skin tone together</span><span class="ja">ニキビと肌トーンを同時ケアしたい</span><span class="cn">同时改善痘痘和肤色</span><span class="tw">同時改善痘痘和膚色</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c3)">
+                    <span class="en">"For when you're already thinking about the scar"</span>
+                    <span class="ja">「ニキビ跡まで考えるとき」に</span>
+                    <span class="cn">「连痘印都想一起解决时」</span>
+                    <span class="tw">「連痘印都想一起解決時」</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ░░ 04 Benzoyl Peroxide ░░ -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c4)"></div>
+            <div class="prod-img-box"><img src="4.jpg" alt="Benzoyl Peroxide product"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c4)">
+                    <span class="en">04 · Recurring Acne</span>
+                    <span class="ja">04 · 繰り返すニキビ</span>
+                    <span class="cn">04 · 反复性痘痘</span>
+                    <span class="tw">04 · 反覆性痘痘</span>
+                </span>
+                <div class="ing-card-name">Benzoyl Peroxide (BPO)</div>
+                <div class="ing-card-sub">
+                    <span class="en">Antibacterial · No resistance risk · AAD recommended</span>
+                    <span class="ja">抗菌 · 耐性なし · AAD推奨</span>
+                    <span class="cn">抗菌 · 无抗药性 · AAD推荐</span>
+                    <span class="tw">抗菌 · 無抗藥性 · AAD推薦</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">BPO releases oxygen inside the pore, creating an anaerobic environment where <em>Cutibacterium acnes</em> cannot survive. Unlike antibiotics, resistance is virtually never an issue — and the AAD names it a cornerstone acne treatment.</p>
+                <p class="ing-card-desc ja">BPOは毛穴内に酸素を放出し、Cutibacterium acnesが生存できない嫌気性環境を作ります。抗生物質と違い耐性がほぼ生じず、AADもコア成分として推奨しています。</p>
+                <p class="ing-card-desc cn">过氧化苯甲酰在毛孔内释放氧气，创造出痤疮丙酸杆菌无法存活的缺氧环境。与抗生素不同，几乎不产生耐药性，也是AAD推荐的核心治痘成分。</p>
+                <p class="ing-card-desc tw">過氧化苯甲醯在毛孔內釋放氧氣，創造出痤瘡丙酸桿菌無法存活的缺氧環境。與抗生素不同，幾乎不產生抗藥性，也是AAD推薦的核心治痘成分。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c4)">✓</span><span class="en">Acne always returns to the same spot</span><span class="ja">常に同じ場所に出るニキビ</span><span class="cn">总在相同部位长痘</span><span class="tw">總在相同部位長痘</span></li>
+                    <li><span class="check" style="color:var(--c4)">✓</span><span class="en">Chronic inflammatory acne</span><span class="ja">繰り返す炎症性ニキビ</span><span class="cn">慢性炎症性痘痘</span><span class="tw">慢性炎症性痘痘</span></li>
+                    <li><span class="check" style="color:var(--c4)">✓</span><span class="en">Reducing reliance on antibiotics</span><span class="ja">抗生物質を減らしたい</span><span class="cn">希望减少抗生素依赖</span><span class="tw">希望減少抗生素依賴</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c4)">
+                    <span class="en">"For that acne that just keeps coming back"</span>
+                    <span class="ja">「またそこに出た」ニキビのために</span>
+                    <span class="cn">「又长在同一个地方」专用</span>
+                    <span class="tw">「又長在同一個地方」專用</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ░░ 05 Niacinamide ░░ -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c5)"></div>
+            <div class="prod-img-box"><img src="5.jpg" alt="Niacinamide product"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c5)">
+                    <span class="en">05 · Excess Sebum / Oily Acne</span>
+                    <span class="ja">05 · 皮脂過多型ニキビ</span>
+                    <span class="cn">05 · 皮脂过多型痘痘</span>
+                    <span class="tw">05 · 皮脂過多型痘痘</span>
+                </span>
+                <div class="ing-card-name">Niacinamide (Vitamin B3)</div>
+                <div class="ing-card-sub">
+                    <span class="en">Sebum control · Barrier repair · Brightening</span>
+                    <span class="ja">皮脂コントロール · バリア強化 · 美白</span>
+                    <span class="cn">控油 · 修护屏障 · 提亮</span>
+                    <span class="tw">控油 · 修護屏障 · 提亮</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">A Vitamin B3 derivative that regulates sebum production and strengthens the skin barrier. Multiple clinical studies confirm meaningful sebum reduction in oily skin — with the bonus of brightening and anti-inflammatory effects.</p>
+                <p class="ing-card-desc ja">ビタミンB3誘導体で、皮脂分泌を調節し肌バリアを強化します。複数の臨床研究で脂性肌の皮脂減少効果が確認されており、美白・抗炎症効果も期待できます。</p>
+                <p class="ing-card-desc cn">维生素B3衍生物，可调节皮脂分泌并强化皮肤屏障。多项临床研究证实对油性肌肤有明显控油效果，同时兼具美白和抗炎功效。</p>
+                <p class="ing-card-desc tw">維生素B3衍生物，可調節皮脂分泌並強化皮膚屏障。多項臨床研究證實對油性肌膚有明顯控油效果，同時兼具美白和抗炎功效。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c5)">✓</span><span class="en">Shiny T-zone &amp; chin throughout the day</span><span class="ja">Tゾーン・あごのテカリ</span><span class="cn">T区及下巴出油</span><span class="tw">T字部位及下巴出油</span></li>
+                    <li><span class="check" style="color:var(--c5)">✓</span><span class="en">Mask-induced acne</span><span class="ja">マスクニキビ</span><span class="cn">口罩痘</span><span class="tw">口罩痘</span></li>
+                    <li><span class="check" style="color:var(--c5)">✓</span><span class="en">Visibly oily skin type</span><span class="ja">明らかな脂性肌</span><span class="cn">明显油性皮肤</span><span class="tw">明顯油性皮膚</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c5)">
+                    <span class="en">"For oily, sebum-driven acne"</span>
+                    <span class="ja">「皮脂性ニキビ」をコントロールする成分</span>
+                    <span class="cn">「油脂型痘痘」管理首选</span>
+                    <span class="tw">「油脂型痘痘」管理首選</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ░░ 06 Cleansing ░░ -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c6)"></div>
+            <div class="prod-img-box"><img src="6.jpg" alt="Cleanser product"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c6)">
+                    <span class="en">06 · Daily Foundation</span>
+                    <span class="ja">06 · 毎日のベースケア</span>
+                    <span class="cn">06 · 日常基础护理</span>
+                    <span class="tw">06 · 日常基礎護理</span>
+                </span>
+                <div class="ing-card-name">
+                    <span class="en">Proper Cleansing</span>
+                    <span class="ja">正しい洗顔</span>
+                    <span class="cn">正确洁面</span>
+                    <span class="tw">正確潔臉</span>
+                </div>
+                <div class="ing-card-sub">
+                    <span class="en">Barrier-safe · Daily routine</span>
+                    <span class="ja">バリア維持 · デイリーケア</span>
+                    <span class="cn">屏障保护 · 日常护理</span>
+                    <span class="tw">屏障保護 · 日常護理</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">Even the best active ingredients underperform without proper cleansing. But over-cleansing is equally harmful — it strips the barrier and paradoxically worsens acne. The ideal acne cleanser removes excess sebum and debris while preserving barrier integrity.</p>
+                <p class="ing-card-desc ja">どんなに優れた成分も、洗顔が正しくなければ力を発揮できません。一方、過剰な洗顔は肌バリアを破壊し、かえってニキビを悪化させます。ニキビ肌用クレンザーは「皮脂除去」と「バリア維持」のバランスが命です。</p>
+                <p class="ing-card-desc cn">再好的成分，洁面不到位效果也会大打折扣。但过度清洁同样有害，会破坏皮肤屏障，反而使痘痘加重。理想的痘痘肌洁面产品需在「去除多余皮脂」与「维持皮肤屏障」之间取得平衡。</p>
+                <p class="ing-card-desc tw">再好的成分，潔臉不到位效果也會大打折扣。但過度清潔同樣有害，會破壞皮膚屏障，反而使痘痘加重。理想的痘痘肌潔臉品需在「去除多餘皮脂」與「維持皮膚屏障」之間取得平衡。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c6)">✓</span><span class="en">Max twice daily — no more</span><span class="ja">1日2回まで</span><span class="cn">每日最多2次</span><span class="tw">每日最多2次</span></li>
+                    <li><span class="check" style="color:var(--c6)">✓</span><span class="en">Never scrub or rub aggressively</span><span class="ja">強くこすらない</span><span class="cn">切勿用力摩擦</span><span class="tw">切勿用力摩擦</span></li>
+                    <li><span class="check" style="color:var(--c6)">✓</span><span class="en">Choose low-irritation, pH-balanced formulas</span><span class="ja">低刺激・pH バランス処方を選ぶ</span><span class="cn">选择低刺激、pH平衡配方</span><span class="tw">選擇低刺激、pH平衡配方</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c6)">
+                    <span class="en">Clean skin = the starting line of every acne routine</span>
+                    <span class="ja">きれいな肌 ＝ すべてのニキビケアのスタートライン</span>
+                    <span class="cn">干净的皮肤 ＝ 所有痘痘护理的起点</span>
+                    <span class="tw">乾淨的皮膚 ＝ 所有痘痘護理的起點</span>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /ing-grid -->
+</section>
+
+<!-- ─────────────────────────────── PHARMACIST PICK -->
+<section class="pick-section">
+    <div class="pick-box">
+        <div class="pick-header">
+            <h2 class="en">Korean Pharmacist's Personal Picks</h2>
+            <h2 class="ja">韓国薬剤師の個人的なおすすめ</h2>
+            <h2 class="cn">韩国药剂师个人推荐</h2>
+            <h2 class="tw">韓國藥劑師個人推薦</h2>
+            <span class="pick-badge en">Quick Reference</span>
+            <span class="pick-badge ja">早見表</span>
+            <span class="pick-badge cn">速查表</span>
+            <span class="pick-badge tw">速查表</span>
+        </div>
+
+        <div class="pick-grid">
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c1)"></span>
+                    <span class="en">Red, painful acne right now</span>
+                    <span class="ja">今すぐ出ているニキビ</span>
+                    <span class="cn">正在爆发的红肿痘痘</span>
+                    <span class="tw">正在爆發的紅腫痘痘</span>
+                </div>
+                <div class="pick-ing">→ Ibuprofen Piconol</div>
+                <div class="pick-ing-sub en">Anti-inflammatory action</div>
+                <div class="pick-ing-sub ja">イブプロフェンピコノール</div>
+                <div class="pick-ing-sub cn">布洛芬吡可酯</div>
+                <div class="pick-ing-sub tw">布洛芬吡可酯</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c2)"></span>
+                    <span class="en">Whiteheads &amp; blackheads</span>
+                    <span class="ja">白ニキビ・黒ニキビ</span>
+                    <span class="cn">白头与黑头粉刺</span>
+                    <span class="tw">白頭與黑頭粉刺</span>
+                </div>
+                <div class="pick-ing">→ Salicylic Acid</div>
+                <div class="pick-ing-sub en">BHA · oil-soluble</div>
+                <div class="pick-ing-sub ja">サリチル酸 BHA</div>
+                <div class="pick-ing-sub cn">水杨酸 BHA</div>
+                <div class="pick-ing-sub tw">水楊酸 BHA</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c3)"></span>
+                    <span class="en">Acne + fading the scar</span>
+                    <span class="ja">ニキビ跡まで気になる</span>
+                    <span class="cn">痘痘＋痘印一起改善</span>
+                    <span class="tw">痘痘＋痘印一起改善</span>
+                </div>
+                <div class="pick-ing">→ Azelaic Acid</div>
+                <div class="pick-ing-sub en">Multi-action + PIH</div>
+                <div class="pick-ing-sub ja">アゼライン酸</div>
+                <div class="pick-ing-sub cn">壬二酸</div>
+                <div class="pick-ing-sub tw">壬二酸</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c4)"></span>
+                    <span class="en">Same spot, again and again</span>
+                    <span class="ja">また同じ場所に出た</span>
+                    <span class="cn">又长在同一个地方</span>
+                    <span class="tw">又長在同一個地方</span>
+                </div>
+                <div class="pick-ing">→ Benzoyl Peroxide</div>
+                <div class="pick-ing-sub en">No antibiotic resistance</div>
+                <div class="pick-ing-sub ja">過酸化ベンゾイル</div>
+                <div class="pick-ing-sub cn">过氧化苯甲酰</div>
+                <div class="pick-ing-sub tw">過氧化苯甲醯</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c5)"></span>
+                    <span class="en">Oily T-zone &amp; chin acne</span>
+                    <span class="ja">Tゾーン・あごの皮脂</span>
+                    <span class="cn">T区和下巴油腻</span>
+                    <span class="tw">T字部位和下巴油膩</span>
+                </div>
+                <div class="pick-ing">→ Niacinamide</div>
+                <div class="pick-ing-sub en">Sebum control + barrier</div>
+                <div class="pick-ing-sub ja">ナイアシンアミド</div>
+                <div class="pick-ing-sub cn">烟酰胺</div>
+                <div class="pick-ing-sub tw">菸鹼醯胺</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c6)"></span>
+                    <span class="en">Foundation for every skin type</span>
+                    <span class="ja">すべての肌の基本</span>
+                    <span class="cn">所有肤质的基础</span>
+                    <span class="tw">所有膚質的基礎</span>
+                </div>
+                <div class="pick-ing">
+                    <span class="en">→ Proper Cleansing</span>
+                    <span class="ja">→ 正しい洗顔</span>
+                    <span class="cn">→ 正确洁面</span>
+                    <span class="tw">→ 正確潔臉</span>
+                </div>
+                <div class="pick-ing-sub en">Barrier-safe cleanser</div>
+                <div class="pick-ing-sub ja">低刺激クレンザー</div>
+                <div class="pick-ing-sub cn">低刺激洁面品</div>
+                <div class="pick-ing-sub tw">低刺激潔臉品</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────────────────── FOOTER -->
+<footer class="site-footer">
+    <p class="footer-cta en">Which ingredient does your acne need? Drop a comment below 👇</p>
+    <p class="footer-cta ja">あなたのニキビにはどの成分が合いそうですか？コメントで教えてください 👇</p>
+    <p class="footer-cta cn">你的痘痘需要哪种成分？在评论区告诉我们 👇</p>
+    <p class="footer-cta tw">你的痘痘需要哪種成分？在留言區告訴我們 👇</p>
+
+    <div class="hashtag-block">
+        <div class="en">#Acne #AcneCare #SalicylicAcid #AzelaicAcid #BenzoylPeroxide #Niacinamide #KoreanPharmacy #KoreanPharmacist #Kbeauty #SkincareScience</div>
+        <div class="ja">#ニキビ #ニキビケア #サリチル酸 #アゼライン酸 #ナイアシンアミド #過酸化ベンゾイル #韓国薬局 #韓国薬剤師 #韓国コスメ</div>
+        <div class="cn">#痘痘 #痘痘护理 #水杨酸 #壬二酸 #烟酰胺 #过氧化苯甲酰 #韩国药局 #韩国药剂师 #韩国护肤</div>
+        <div class="tw">#痘痘 #痘痘護理 #水楊酸 #壬二酸 #菸鹼醯胺 #過氧化苯甲醯 #韓國藥局 #韓國藥師 #韓國保養</div>
+    </div>
+
+    <div class="footer-brand">EIGHT PHARMACY · Seoul, Korea</div>
+</footer>
+
+<script>
+    function switchLang(lang) {
+        document.body.className = 'lang-' + lang;
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + lang).classList.add('active');
+    }
+</script>
+</body>
+</html>
