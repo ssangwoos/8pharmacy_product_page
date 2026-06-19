@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>지점 관리 · 관리자</title>
+<link rel="stylesheet" href="marketer.css" />
+</head>
+<body>
+
+<!-- 로그인 게이트 -->
+<div id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <div class="eyebrow">ADMIN · BRANCHES</div>
+    <h1 class="auth-title">지점 관리</h1>
+    <p class="auth-sub">관리자 계정으로 로그인하세요.</p>
+    <label class="field">
+      <span class="field-label">이메일</span>
+      <input class="input" id="authEmail" type="email" autocomplete="username" placeholder="admin@example.com" />
+    </label>
+    <label class="field">
+      <span class="field-label">비밀번호</span>
+      <input class="input" id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+    </label>
+    <div class="auth-error" id="authError"></div>
+    <button class="btn-primary auth-btn" id="loginBtn">로그인</button>
+  </div>
+</div>
+
+<!-- 권한 없음 안내 -->
+<div id="noPerm" class="auth-gate hidden">
+  <div class="auth-card">
+    <h1 class="auth-title">접근 권한 없음</h1>
+    <p class="auth-sub">이 페이지는 관리자만 사용할 수 있습니다.<br>관리자 계정으로 로그인했는지 확인하세요.</p>
+    <div class="auth-hint">admins 컬렉션에 본인 UID 문서가 있어야 관리자로 인정됩니다.</div>
+    <button class="btn-ghost" id="noPermLogout">로그아웃</button>
+  </div>
+</div>
+
+<!-- 메인 -->
+<div id="app" class="wrap hidden">
+  <header>
+    <div>
+      <div class="eyebrow">ADMIN · BRANCHES</div>
+      <h1>지점 관리</h1>
+    </div>
+    <div class="header-actions">
+      <span class="user-tag" id="userTag"></span>
+      <span class="admin-badge">관리자</span>
+      <a class="btn-ghost" href="marketer.html">← 등록 페이지</a>
+      <button class="btn-ghost" id="logoutBtn">로그아웃</button>
+    </div>
+  </header>
+
+  <section class="form-card">
+    <div class="form-grid form-grid-branch">
+      <label class="field field-wide">
+        <span class="field-label">새 지점 이름</span>
+        <input class="input" id="branchName" placeholder="예: <서초에이트> 또는 1호점" />
+      </label>
+      <div class="field form-submit">
+        <span class="field-label">&nbsp;</span>
+        <button class="btn-primary" id="addBranchBtn">지점 추가</button>
+      </div>
+    </div>
+    <div class="form-msg" id="formMsg"></div>
+    <div class="branch-hint">마케터 등록 페이지의 업체명 드롭다운에 여기서 추가한 지점이 나타납니다. 순서는 이름순으로 정렬됩니다.</div>
+  </section>
+
+  <section>
+    <div class="list-head">
+      <h2 class="list-title">등록된 지점</h2>
+      <span class="count-tag" id="countTag">0개</span>
+    </div>
+    <div id="branchList"></div>
+  </section>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script src="firebase-config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

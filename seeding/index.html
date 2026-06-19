@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>인플루언서 시딩 보드 · 관리자</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- 로그인 게이트 -->
+<div id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <div class="eyebrow">SEEDING OPS · ADMIN</div>
+    <h1 class="auth-title">시딩 보드 로그인</h1>
+    <p class="auth-sub">관리자 계정으로 로그인하세요.</p>
+    <label class="field">
+      <span class="field-label">이메일</span>
+      <input class="input" id="authEmail" type="email" autocomplete="username" placeholder="admin@example.com" />
+    </label>
+    <label class="field">
+      <span class="field-label">비밀번호</span>
+      <input class="input" id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+    </label>
+    <div class="auth-error" id="authError"></div>
+    <button class="btn-primary auth-btn" id="loginBtn">로그인</button>
+    <div class="auth-hint">계정이 없으면 Firebase 콘솔 → Authentication에서 사용자를 추가하세요.</div>
+  </div>
+</div>
+
+<!-- 메인 앱 -->
+<div id="app" class="wrap hidden">
+  <header>
+    <div>
+      <div class="eyebrow">SEEDING OPS</div>
+      <h1>인플루언서 시딩 보드</h1>
+    </div>
+    <div class="header-actions">
+      <span class="save-tag" id="saveTag">불러오는 중…</span>
+      <span class="user-tag" id="userTag"></span>
+      <button class="btn-ghost" id="exportBtn">CSV 내보내기</button>
+      <button class="btn-primary" id="addBtn">+ 인플루언서 추가</button>
+      <button class="btn-ghost" id="logoutBtn">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-view="board">보드</button>
+    <button class="tab" data-view="list">리스트 조회</button>
+  </div>
+
+  <section class="stat-strip" id="statStrip"></section>
+
+  <!-- BOARD -->
+  <div id="boardView">
+    <section class="funnel" id="funnel"></section>
+    <section class="controls">
+      <input class="search" id="search" placeholder="이름·핸들·제품·키워드 검색" />
+      <select class="select" id="platformFilter"><option value="전체">모든 플랫폼</option></select>
+      <select class="select" id="sortBy">
+        <option value="order">정렬순서(order)</option>
+        <option value="createdAt">최신순</option>
+        <option value="name">이름순</option>
+        <option value="followers">팔로워순</option>
+        <option value="views">조회수순</option>
+        <option value="roi">ROI순</option>
+        <option value="recruitDate">모집일순</option>
+        <option value="uploadDate">업로드일순</option>
+      </select>
+    </section>
+    <section class="keyword-row" id="keywordRow"></section>
+    <section class="section" id="cardArea"></section>
+  </div>
+
+  <!-- LIST -->
+  <div id="listView" class="hidden">
+    <section class="controls">
+      <input class="search" id="searchList" placeholder="이름·핸들·제품·키워드 검색" />
+      <select class="select" id="platformFilterList"><option value="전체">모든 플랫폼</option></select>
+      <select class="select" id="statusFilterList">
+        <option value="전체">모든 상태</option>
+        <option value="대기">대기</option>
+        <option value="보냄">보냄</option>
+        <option value="도착">도착</option>
+        <option value="수령">수령</option>
+      </select>
+      <div class="date-filter">
+        <span class="date-filter-label">모집일</span>
+        <input class="select date-input" id="dateFromList" type="date" />
+        <span class="date-tilde">~</span>
+        <input class="select date-input" id="dateToList" type="date" />
+        <button class="date-clear" id="dateClearList" title="날짜 필터 초기화">✕</button>
+      </div>
+    </section>
+    <section class="section">
+      <div class="table-scroll" id="tableArea"></div>
+    </section>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<!-- Firebase SDK (compat 버전: 모듈 번들 없이 바로 사용) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- 앱 설정 & 로직 -->
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>체험단 방문 등록 · 마케터</title>
+<link rel="stylesheet" href="marketer.css" />
+</head>
+<body>
+
+<!-- 로그인 게이트 -->
+<div id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <div class="eyebrow">VISIT CAMPAIGN</div>
+    <h1 class="auth-title">체험단 방문 등록</h1>
+    <p class="auth-sub">마케터 계정으로 로그인하세요.</p>
+    <label class="field">
+      <span class="field-label">이메일</span>
+      <input class="input" id="authEmail" type="email" autocomplete="username" placeholder="marketer@example.com" />
+    </label>
+    <label class="field">
+      <span class="field-label">비밀번호</span>
+      <input class="input" id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••" />
+    </label>
+    <div class="auth-error" id="authError"></div>
+    <button class="btn-primary auth-btn" id="loginBtn">로그인</button>
+    <div class="auth-hint">계정이 없으면 관리자에게 요청하세요.</div>
+  </div>
+</div>
+
+<!-- 메인 -->
+<div id="app" class="wrap hidden">
+  <header>
+    <div>
+      <div class="eyebrow">VISIT CAMPAIGN</div>
+      <h1>체험단 방문 등록</h1>
+    </div>
+    <div class="header-actions">
+      <span class="user-tag" id="userTag"></span>
+      <span class="admin-badge hidden" id="adminBadge">관리자</span>
+      <a class="btn-ghost hidden" id="adminLink" href="admin.html">지점 관리</a>
+      <button class="btn-ghost" id="logoutBtn">로그아웃</button>
+    </div>
+  </header>
+
+  <!-- 등록 폼 -->
+  <section class="form-card">
+    <div class="form-grid">
+      <label class="field">
+        <span class="field-label">업체명 (호점/지점)</span>
+        <select class="input" id="fIdName">
+          <option value="">지점 선택…</option>
+        </select>
+      </label>
+      <label class="field field-wide">
+        <span class="field-label">인플루언서 SNS 링크</span>
+        <input class="input" id="fSns" placeholder="https://www.instagram.com/..." />
+      </label>
+      <label class="field">
+        <span class="field-label">방문 예정일</span>
+        <input class="input" id="fDate" type="date" />
+      </label>
+      <label class="field">
+        <span class="field-label">방문 시간</span>
+        <input class="input" id="fTime" type="time" />
+      </label>
+      <label class="field field-wide">
+        <span class="field-label">마스크팩 (제품) 선택</span>
+        <input class="input" id="fGift" placeholder="예: Cosroma Collagen 마스크팩" />
+      </label>
+      <label class="field check-field">
+        <span class="field-label">디에스 (제품에 추가)</span>
+        <button type="button" class="ds-toggle on" id="fGiftDs">✓ 디에스 포함</button>
+      </label>
+      <label class="field field-wide">
+        <span class="field-label">비고 / 기타 내역</span>
+        <input class="input" id="fOthers" placeholder="예: 오후 6시쯤 / 약사님 출연 필요" />
+      </label>
+      <div class="field form-submit">
+        <span class="field-label">&nbsp;</span>
+        <button class="btn-primary" id="submitBtn">등록</button>
+      </div>
+    </div>
+    <div class="form-msg" id="formMsg"></div>
+  </section>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <button class="tab active" data-view="cards">카드 보기</button>
+    <button class="tab" data-view="list">리스트 조회</button>
+  </div>
+
+  <!-- 카드 목록 -->
+  <section id="cardsView">
+    <div class="list-head">
+      <h2 class="list-title" id="listTitle">내 등록 목록</h2>
+      <div class="list-controls">
+        <input class="search" id="search" placeholder="업체명·SNS·제품 검색" />
+        <span class="count-tag" id="countTag">0건</span>
+      </div>
+    </div>
+    <div id="listArea"></div>
+  </section>
+
+  <!-- 리스트 조회 (표) -->
+  <section id="listView" class="hidden">
+    <div class="list-controls list-controls-row">
+      <input class="search" id="searchTable" placeholder="업체명·SNS·제품 검색" />
+      <div class="date-filter">
+        <span class="date-filter-label">방문일</span>
+        <input class="date-input" id="dateFrom" type="date" />
+        <span class="date-tilde">~</span>
+        <input class="date-input" id="dateTo" type="date" />
+        <button class="date-clear" id="dateClear" title="날짜 필터 초기화">✕</button>
+      </div>
+      <span class="count-tag" id="countTagTable">0건</span>
+    </div>
+    <div class="table-scroll" id="tableArea"></div>
+  </section>
+</div>
+
+<div id="modalRoot"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script src="firebase-config.js"></script>
+<script src="marketer.js"></script>
+</body>
+</html>

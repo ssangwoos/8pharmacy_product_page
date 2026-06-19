@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// ===========================================================================
+// Firestore 보안 규칙
+// - visitors : 누구나 읽기 가능 (공개 방문형 페이지에서 사용). 쓰기는 막음.
+// - seeding  : 로그인한 사용자만 읽기/쓰기 가능 (관리자용).
+// - 그 외 모든 컬렉션 : 기본 차단.
+//
+// Firebase 콘솔 → Firestore Database → 규칙 탭에 붙여넣고 [게시] 하세요.
+// ===========================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 공개 방문형 체험단 — 읽기만 허용
+    // (만약 다른 공개 페이지에서 visitors에 글을 써야 한다면 write도 풀어야 하지만,
+    //  보통 방문형은 운영자가 콘솔/관리도구로만 입력하므로 읽기만 허용하는 게 안전합니다.)
+    match /visitors/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 관리자용 배송형 시딩 — 로그인 필수
+    match /seeding/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 기존 tasks 등 다른 컬렉션이 있다면 여기에 별도 규칙을 추가하세요.
+    // 아래는 명시되지 않은 모든 경로를 차단하는 기본값입니다.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
