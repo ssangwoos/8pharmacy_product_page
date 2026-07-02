@@ -79,6 +79,18 @@
         .log-time { color: #888; margin-right: 10px; }
         .log-action { color: #4caf50; font-weight: bold; } 
         .log-product { color: #fff; }
+        /* 미디어 섹션 */
+        .media-hint { font-size: 0.8rem; color: #888; margin: 2px 0 6px 0; font-weight: normal; }
+        .paste-zone { border: 2px dashed #6366f1; background: #f8f8ff; border-radius: 8px; padding: 20px; text-align: center; color: #6366f1; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
+        .paste-zone:hover, .paste-zone.dragover { background: #eef; border-color: #4f46e5; }
+        .gallery-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+        .gallery-thumb { position: relative; width: 90px; height: 90px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd; background: #fafafa; }
+        .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .gallery-thumb .del { position: absolute; top: 2px; right: 2px; background: rgba(211,47,47,0.9); color: #fff; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; cursor: pointer; font-weight: bold; line-height: 1; }
+        .gallery-thumb .badge-src { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.65rem; text-align: center; padding: 1px 0; }
+        .url-add-row { display: flex; gap: 6px; margin-top: 8px; }
+        .url-add-row input { flex: 1; }
+        .url-add-row button { background: #6366f1; color: #fff; border: none; border-radius: 5px; padding: 0 15px; font-weight: bold; cursor: pointer; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -176,11 +188,50 @@
         <div class="section-header">🤖 번역 결과</div>
         <div class="lang-section"><div class="lang-title">🇺🇸 영어</div><textarea id="desc_en"></textarea></div>
         <div class="lang-section"><div class="lang-title">🇯🇵 일본어</div><textarea id="desc_jp"></textarea></div>
-        <div class="lang-section"><div class="lang-title">🇨🇳 중국어</div><textarea id="desc_cn"></textarea></div>
+        <div class="lang-section"><div class="lang-title">🇨🇳 중국어 (간체)</div><textarea id="desc_cn"></textarea></div>
+        <div class="lang-section"><div class="lang-title">🇹🇼 대만어 (번체)</div><textarea id="desc_tw"></textarea></div>
         <div class="lang-section"><div class="lang-title">🇹🇭 태국어</div><textarea id="desc_th"></textarea></div>
         <div class="lang-section"><div class="lang-title">🇻🇳 베트남어</div><textarea id="desc_vn"></textarea></div>
         <div class="lang-section"><div class="lang-title">🇮🇩 인도네시아어</div><textarea id="desc_id"></textarea></div>
         <div class="lang-section"><div class="lang-title">🇲🇳 몽골어</div><textarea id="desc_mn"></textarea></div>
+
+        <div class="section-header">🎬 미디어 (영상 / SNS / 갤러리)</div>
+        <div class="input-group">
+            <label>▶️ 유튜브 URL</label>
+            <div class="media-hint">일반 영상·쇼츠 모두 가능. 여러 개면 줄바꿈(엔터)으로 구분하세요.</div>
+            <textarea id="media_youtube" placeholder="https://youtu.be/xxxx&#10;https://www.youtube.com/shorts/yyyy"></textarea>
+        </div>
+        <div class="input-group">
+            <label>🎥 자체 영상 mp4 URL</label>
+            <div class="media-hint">mp4 파일 주소. 여러 개면 줄바꿈으로 구분.</div>
+            <textarea id="media_mp4" placeholder="https://.../video1.mp4"></textarea>
+        </div>
+        <div class="input-group">
+            <label>📱 SNS 임베드 코드 (인스타 등)</label>
+            <div class="media-hint">인스타그램 게시물 → ... → 「퍼가기」에서 복사한 HTML 코드를 붙여넣으세요. 여러 개면 줄바꿈으로 구분.</div>
+            <textarea id="media_sns" placeholder="&lt;blockquote class=&quot;instagram-media&quot; ...&gt;...&lt;/blockquote&gt;" style="height:100px;"></textarea>
+        </div>
+        <div class="input-group">
+            <label>🖼️ 상세 이미지 갤러리</label>
+            <div class="media-hint">아래 3가지 방법으로 추가할 수 있습니다. 순서대로 info 페이지에 세로로 표시됩니다.</div>
+
+            <!-- 방법1: 파일 선택 -->
+            <input type="file" id="galleryFileInput" accept="image/*" multiple>
+
+            <!-- 방법2: URL 붙여넣기 -->
+            <div class="url-add-row">
+                <input type="text" id="galleryUrlInput" placeholder="이미지 URL 붙여넣고 [추가] 클릭">
+                <button type="button" onclick="addGalleryUrl()">추가</button>
+            </div>
+
+            <!-- 방법3: 클립보드 붙여넣기 -->
+            <div id="galleryPasteZone" class="paste-zone" tabindex="0">
+                📋 여기를 클릭한 뒤 <b>Ctrl+V</b> 로 캡처/복사한 이미지를 붙여넣거나,<br>이미지를 이곳에 드래그해서 놓으세요.
+            </div>
+
+            <!-- 미리보기 -->
+            <div id="galleryPreview" class="gallery-preview"></div>
+        </div>
 
         <div class="input-group qr-section">
             <label style="color:#1D5C36;">📷 QR 코드</label>

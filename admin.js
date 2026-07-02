@@ -21,6 +21,8 @@ const storage = getStorage(app);
 let allProducts = []; 
 let allLogs = [];
 let currentRelatedIds = []; // 현재 선택된 연관상품 ID들을 담을 그릇
+// 갤러리 항목 관리: {type:'url', url:'...'} 또는 {type:'file', file:File, dataUrl:'...(미리보기용)'}
+let currentGallery = [];
 const DEFAULT_LAYOUT = { 
     prod_x: 100, prod_y: 200, prod_w: 1000, prod_h: 850, prod_scale: 1.0,
     qr_x: 1511, qr_y: 220, qr_size: 400, 
@@ -114,14 +116,15 @@ window.translateContent = async function() {
 
         const prompt = `
             Role: Professional Medical Translator.
-            Task: Translate Korean text to English, Chinese(Simplified), Japanese, Thai, Vietnamese, Indonesian, Mongolian.
+            Task: Translate Korean text to English, Simplified Chinese, Traditional Chinese(Taiwan), Japanese, Thai, Vietnamese, Indonesian, Mongolian.
             
             IMPORTANT: 
             - Use friendly and professional pharmacy tone.
             - Handle special characters (quotes, brackets) correctly in JSON.
             - Output MUST be valid JSON.
+            - "cn" is Simplified Chinese (Mainland China). "tw" is Traditional Chinese (Taiwan). They MUST be different scripts.
             
-            JSON keys: en, cn, jp, th, vn, id, mn.
+            JSON keys: en, cn, tw, jp, th, vn, id, mn.
             
             Source Text: "${krDesc}"
         `;
@@ -150,7 +153,7 @@ window.translateContent = async function() {
         // JSON 모드를 쓰면 마크다운 기호 없이 순수 JSON만 줍니다.
         const content = JSON.parse(data.choices[0].message.content);
 
-        ['en','cn','jp','th','vn','id','mn'].forEach(lang => {
+        ['en','cn','tw','jp','th','vn','id','mn'].forEach(lang => {
             document.getElementById('desc_' + lang).value = content[lang] || "";
         });
 
@@ -174,6 +177,15 @@ window.resetForm = function(force = false) {
     currentRelatedIds = []; // 초기화
     document.getElementById('relatedTagsContainer').innerHTML = ''; // 태그 비우기
     document.getElementById('relatedSearchInput').value = '';
+
+    // ✨ 미디어 초기화
+    currentGallery = [];
+    const gy = document.getElementById('media_youtube'); if(gy) gy.value = '';
+    const gm = document.getElementById('media_mp4'); if(gm) gm.value = '';
+    const gs = document.getElementById('media_sns'); if(gs) gs.value = '';
+    const gu = document.getElementById('galleryUrlInput'); if(gu) gu.value = '';
+    const gf = document.getElementById('galleryFileInput'); if(gf) gf.value = '';
+    if(typeof renderGallery === 'function') renderGallery();
 
     document.getElementById('name').value = ''; document.getElementById('price').value = '';
     document.querySelectorAll('textarea').forEach(t => t.value = '');
@@ -216,8 +228,20 @@ window.saveProduct = async function() {
         if (document.getElementById('qrPreview').style.display === 'none') { try { qrImageUrl = await generateAndUploadQR(id); } catch(e){} }
         
         const data = { name, price: Number(document.getElementById('price').value), updatedAt: new Date(),related_products: currentRelatedIds };
-        ['kr','en','cn','jp','th','vn','id','mn'].forEach(l => data['desc_'+l] = document.getElementById('desc_'+l).value);
+        ['kr','en','cn','tw','jp','th','vn','id','mn'].forEach(l => data['desc_'+l] = document.getElementById('desc_'+l).value);
         if(imageUrl) data.image = imageUrl; if(qrImageUrl) data.qrImage = qrImageUrl;
+
+        // ✨ 미디어 필드 저장 (영상/SNS/갤러리)
+        data.youtube = linesToArray(document.getElementById('media_youtube').value);
+        data.video_mp4 = linesToArray(document.getElementById('media_mp4').value);
+        data.sns_embed = linesToArray(document.getElementById('media_sns').value);
+        try {
+            data.gallery = await uploadGalleryAndGetUrls(id);
+        } catch(e) {
+            console.error("갤러리 업로드 실패:", e);
+            data.gallery = currentGallery.filter(g => g.type === 'url').map(g => g.url); // 최소한 URL이라도 저장
+        }
+
         await setDoc(doc(db, "products", id), data, { merge: true });
 
         // ✨ [신규 추가] 반대편 상품에도 '나'를 자동으로 등록하기 (쌍방향 연결)
@@ -330,11 +354,11 @@ window.loadDashboard = async function() {
         allLogs = logs; // 엑셀용 데이터 저장
 
         const productCounts = {};
-        const langCounts = {kr:0, en:0, jp:0, cn:0, th:0, vn:0, id:0, mn:0};
+        const langCounts = {kr:0, en:0, jp:0, cn:0, tw:0, th:0, vn:0, id:0, mn:0};
         const hourCounts = new Array(24).fill(0); 
         let cartAdds = 0;
 
-        const actionMap = { 'kr': 'KR한국어', 'en': 'US영어', 'jp': 'JP일본어', 'cn': 'CN중국어', 'th': 'TH태국어', 'vn': 'VN베트남', 'id': 'ID인니', 'mn': 'MN몽골', 'cart_add': '🛒장바구니' };
+        const actionMap = { 'kr': 'KR한국어', 'en': 'US영어', 'jp': 'JP일본어', 'cn': 'CN중국어', 'tw': 'TW대만어', 'th': 'TH태국어', 'vn': 'VN베트남', 'id': 'ID인니', 'mn': 'MN몽골', 'cart_add': '🛒장바구니' };
 
         let logHtml = "";
         logs.forEach(log => {
@@ -407,9 +431,9 @@ window.loadDashboard = async function() {
         });
 
         // 차트 2: 언어별 (도넛) - 기존 유지
-        const langs = ['kr', 'en','jp','cn','th','vn','id','mn'];
-        const langLabels = {'kr':'한국어', 'en':'영어', 'jp':'일어', 'cn':'중국어', 'th':'태국어', 'vn':'베트남', 'id':'인니', 'mn':'몽골'};
-        const colors = ['#1D5C36', '#3498db', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
+        const langs = ['kr', 'en','jp','cn','tw','th','vn','id','mn'];
+        const langLabels = {'kr':'한국어', 'en':'영어', 'jp':'일어', 'cn':'중국어', 'tw':'대만어', 'th':'태국어', 'vn':'베트남', 'id':'인니', 'mn':'몽골'};
+        const colors = ['#1D5C36', '#3498db', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#795548'];
         const langChartData = langs.map(l => langCounts[l]);
         const totalLangChart = langChartData.reduce((a,b)=>a+b,0);
 
@@ -588,7 +612,7 @@ window.editProduct = async function(id) {
         document.getElementById('name').value = data.name; 
         document.getElementById('price').value = data.price;
         
-        ['kr','en','cn','jp','th','vn','id','mn'].forEach(l => document.getElementById('desc_'+l).value = data['desc_'+l] || '');
+        ['kr','en','cn','tw','jp','th','vn','id','mn'].forEach(l => document.getElementById('desc_'+l).value = data['desc_'+l] || '');
         
         if(data.image) { 
             document.getElementById('preview').src = data.image; 
@@ -612,6 +636,15 @@ window.editProduct = async function(id) {
             currentRelatedIds = [];
         }
         renderRelatedTags(); // 화면에 태그 그리기
+
+        // ✨ 미디어 필드 불러오기
+        const arrToLines = (v) => Array.isArray(v) ? v.join('\n') : (v || '');
+        document.getElementById('media_youtube').value = arrToLines(data.youtube);
+        document.getElementById('media_mp4').value = arrToLines(data.video_mp4);
+        document.getElementById('media_sns').value = arrToLines(data.sns_embed);
+        // 갤러리: 저장된 URL들을 url 타입으로 복원
+        currentGallery = Array.isArray(data.gallery) ? data.gallery.map(u => ({ type: 'url', url: u })) : [];
+        renderGallery();
 
         document.getElementById('saveBtn').innerText = "수정 저장하기"; 
         window.scrollTo(0,0);
@@ -703,4 +736,122 @@ window.renderRelatedTags = function() {
         `;
         container.appendChild(tag);
     });
+}
+
+// ============================================================
+// ✨ 미디어 (영상 / SNS / 갤러리) 관리
+// ============================================================
+
+// 갤러리 미리보기 다시 그리기
+window.renderGallery = function() {
+    const box = document.getElementById('galleryPreview');
+    if (!box) return;
+    box.innerHTML = '';
+    currentGallery.forEach((item, idx) => {
+        const src = item.type === 'url' ? item.url : item.dataUrl;
+        const label = item.type === 'url' ? 'URL' : (item.type === 'clipboard' ? '붙여넣기' : '파일');
+        const thumb = document.createElement('div');
+        thumb.className = 'gallery-thumb';
+        thumb.innerHTML = `
+            <img src="${src}" alt="">
+            <span class="del" onclick="removeGalleryItem(${idx})">&times;</span>
+            <span class="badge-src">${label}</span>
+        `;
+        box.appendChild(thumb);
+    });
+}
+
+window.removeGalleryItem = function(idx) {
+    currentGallery.splice(idx, 1);
+    renderGallery();
+}
+
+// URL로 갤러리 추가
+window.addGalleryUrl = function() {
+    const input = document.getElementById('galleryUrlInput');
+    const url = input.value.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) { alert("http(s):// 로 시작하는 이미지 주소를 넣어주세요."); return; }
+    currentGallery.push({ type: 'url', url: url });
+    input.value = '';
+    renderGallery();
+}
+
+// 파일(File 객체)을 갤러리에 추가 (미리보기용 dataUrl 생성)
+function addGalleryFile(file, sourceType) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            currentGallery.push({ type: sourceType || 'file', file: file, dataUrl: e.target.result });
+            renderGallery();
+            resolve();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// 파일 선택 input
+(function initGalleryInputs(){
+    const fileInput = document.getElementById('galleryFileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+            for (const f of e.target.files) { await addGalleryFile(f, 'file'); }
+            fileInput.value = ''; // 같은 파일 다시 선택 가능하도록
+        });
+    }
+
+    const pasteZone = document.getElementById('galleryPasteZone');
+    if (pasteZone) {
+        // 클립보드 붙여넣기 (Ctrl+V)
+        pasteZone.addEventListener('paste', async (e) => {
+            const items = e.clipboardData?.items || [];
+            let handled = false;
+            for (const it of items) {
+                if (it.type && it.type.startsWith('image/')) {
+                    const blob = it.getAsFile();
+                    if (blob) { await addGalleryFile(blob, 'clipboard'); handled = true; }
+                }
+            }
+            if (handled) e.preventDefault();
+        });
+        // 포커스 시 안내
+        pasteZone.addEventListener('click', () => pasteZone.focus());
+
+        // 드래그 앤 드롭
+        pasteZone.addEventListener('dragover', (e) => { e.preventDefault(); pasteZone.classList.add('dragover'); });
+        pasteZone.addEventListener('dragleave', () => pasteZone.classList.remove('dragover'));
+        pasteZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            pasteZone.classList.remove('dragover');
+            const files = e.dataTransfer?.files || [];
+            for (const f of files) { if (f.type.startsWith('image/')) await addGalleryFile(f, 'file'); }
+        });
+    }
+})();
+
+// 텍스트영역 값을 배열로 (줄바꿈 구분, 빈 줄 제거)
+function linesToArray(text) {
+    return (text || '').split('\n').map(s => s.trim()).filter(s => s.length > 0);
+}
+
+// 저장 시 갤러리의 File들을 Storage에 업로드하고 최종 URL 배열 반환
+async function uploadGalleryAndGetUrls(productId) {
+    const urls = [];
+    let fileIndex = 0;
+    for (const item of currentGallery) {
+        if (item.type === 'url') {
+            urls.push(item.url);
+        } else {
+            // file / clipboard → Storage 업로드
+            let file = item.file;
+            try { file = await imageCompression(file, { maxSizeMB: 1.5, maxWidthOrHeight: 2000 }); } catch(e) {}
+            const ext = 'jpg';
+            const path = `products/${productId}_gallery_${Date.now()}_${fileIndex}.${ext}`;
+            const refG = ref(storage, path);
+            await uploadBytes(refG, file);
+            urls.push(await getDownloadURL(refG));
+            fileIndex++;
+        }
+    }
+    return urls;
 }
