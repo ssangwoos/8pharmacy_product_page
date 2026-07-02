@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="EIGHT PHARMACY">
+    <meta property="og:title" content="EIGHT PHARMACY Product Info">
+    <meta property="og:description" content="Pharmacist-curated K-Beauty & essential product information.">
+    <meta property="og:image" content="https://8pharmacy.kr/images/og-image.png">
+
+    <title>Eight Pharmacy Product Info</title>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2477376929711409" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans KR', 'Noto Sans SC', sans-serif;
+            background-color: #f9f9f9; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 30px;
+        }
+        header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #eee; position: sticky; top:0; z-index:100; height: 60px;}
+        header h1 { font-size: 1.2rem; color: #1D5C36; font-weight: 800; cursor: pointer; margin: 0; }
+
+        /* 메인 이미지 */
+        .product-img-box { width: 100%; height: 350px; background-color: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .product-img-box img { width: 100%; height: 100%; object-fit: contain; }
+
+        .product-info { padding: 20px; background: #fff; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .product-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 5px; line-height: 1.3; }
+
+        /* 언어탭 (한글 제거, 7개) */
+        .lang-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #fff; padding: 15px 10px; margin-bottom: 2px; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100; }
+        .lang-btn { border: 1px solid transparent; background: #f8f8f8; border-radius: 8px; cursor: pointer; opacity: 0.6; transition: all 0.2s; padding: 8px 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .lang-btn:hover { background: #eee; }
+        .lang-btn.active { opacity: 1; background: #e8f5e9; border: 1px solid #1D5C36; transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .flag-icon { width: 28px; height: auto; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .lang-label { font-size: 0.75rem; color: #555; font-weight: bold; }
+
+        .description-container { background: #fff; min-height: 200px; padding: 20px; }        .desc-content { display: none; }
+        .desc-content.active { display: block; animation: fadeIn 0.3s; }
+        .desc-text { font-size: 1rem; line-height: 1.7; color: #444; white-space: pre-line; font-family: 'Noto Sans KR', 'Noto Sans SC', sans-serif; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #loading { text-align: center; padding: 50px; font-weight: bold; color: #666; display: none; }
+
+        /* ===== 미디어 섹션 ===== */
+        .media-section { background: #fff; margin-top: 10px; padding: 20px; }
+        /* 애드센스 광고 컨테이너 */
+        .ad-container { background: #fff; margin-top: 10px; padding: 12px 20px; text-align: center; overflow: hidden; }
+        .ad-container .ad-label { font-size: 0.7rem; color: #bbb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .media-title { font-size: 1.1rem; font-weight: bold; color: #333; margin-bottom: 15px; }
+
+        /* 영상 (YouTube / mp4 / 임베드) - 16:9 반응형 */
+        .video-wrap { position: relative; width: 100%; padding-top: 56.25%; margin-bottom: 15px; background: #000; border-radius: 8px; overflow: hidden; }
+        .video-wrap iframe, .video-wrap video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+        /* Instagram / 숏폼 임베드는 세로형이 많아 별도 컨테이너 */
+        .embed-wrap { display: flex; justify-content: center; margin-bottom: 15px; }
+
+        /* 이미지 갤러리 (세로 스택 - 상세페이지 스타일) */
+        .gallery img { width: 100%; display: block; margin-bottom: 10px; border-radius: 6px; }
+
+        /* ===== 연관상품 ===== */
+        .related-section { margin-top: 10px; padding: 20px 0; background: #fff; border-top: 10px solid #f4f4f4; }
+        .related-title { padding: 0 20px 10px 20px; font-size: 1.1rem; font-weight: bold; color: #333; }
+        .related-scroll-box { display: flex; overflow-x: auto; gap: 15px; padding: 0 20px 20px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .related-scroll-box::-webkit-scrollbar { display: none; }
+        .related-card { flex: 0 0 40%; scroll-snap-align: start; background: white; border: 1px solid #eee; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s; }
+        .related-card:active { transform: scale(0.98); }
+        .related-img { width: 100%; height: 100px; object-fit: contain; background: #f9f9f9; }
+        .related-info { padding: 10px; }
+        .related-name { font-size: 0.9rem; font-weight: bold; color: #333; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; height: 2.6em; }
+    </style>
+</head>
+<body>
+    <header><h1 onclick="location.href='list.html'">EIGHT PHARMACY</h1></header>
+    <div id="loading">Loading product info...</div>
+    <div id="content" style="display:none;">
+        <div class="product-img-box"><img src="" alt="Product Image" id="mainImage"></div>
+        <div class="product-info">
+            <div class="product-name" id="pName"></div>
+        </div>
+
+        <!-- 언어탭: 한글(KR) 제거, 영어 기본 -->
+        <div class="lang-tabs">
+            <button class="lang-btn active" onclick="changeLang('en')"><img src="./images/flag-en.png" class="flag-icon"><span class="lang-label">ENG</span></button>
+            <button class="lang-btn" onclick="changeLang('jp')"><img src="./images/flag-jp.png" class="flag-icon"><span class="lang-label">JPN</span></button>
+            <button class="lang-btn" onclick="changeLang('cn')"><img src="./images/flag-cn.png" class="flag-icon"><span class="lang-label">CHN</span></button>
+            <button class="lang-btn" onclick="changeLang('tw')"><img src="./images/flag-tw.png" class="flag-icon"><span class="lang-label">TWN</span></button>
+            <button class="lang-btn" onclick="changeLang('th')"><img src="./images/flag-th.png" class="flag-icon"><span class="lang-label">THA</span></button>
+            <button class="lang-btn" onclick="changeLang('vn')"><img src="./images/flag-vn.png" class="flag-icon"><span class="lang-label">VNM</span></button>
+            <button class="lang-btn" onclick="changeLang('id')"><img src="./images/flag-id.png" class="flag-icon"><span class="lang-label">IDN</span></button>
+            <button class="lang-btn" onclick="changeLang('mn')"><img src="./images/flag-mn.png" class="flag-icon"><span class="lang-label">MNG</span></button>
+        </div>
+        <div class="description-container">
+            <div id="desc-en" class="desc-content active"><h3>Description</h3><p class="desc-text"></p></div>
+            <div id="desc-jp" class="desc-content"><h3>詳細情報</h3><p class="desc-text"></p></div>
+            <div id="desc-cn" class="desc-content"><h3>详细信息</h3><p class="desc-text"></p></div>
+            <div id="desc-tw" class="desc-content"><h3>詳細資訊</h3><p class="desc-text"></p></div>
+            <div id="desc-th" class="desc-content"><h3>รายละเอียด</h3><p class="desc-text"></p></div>
+            <div id="desc-vn" class="desc-content"><h3>Chi tiết</h3><p class="desc-text"></p></div>
+            <div id="desc-id" class="desc-content"><h3>Detail</h3><p class="desc-text"></p></div>
+            <div id="desc-mn" class="desc-content"><h3>Дэлгэрэнгүй</h3><p class="desc-text"></p></div>
+        </div>
+
+        <!-- 광고 A: 설명 아래 -->
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-2477376929711409"
+                 data-ad-slot="SLOT_A_REPLACE_ME"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+
+        <!-- 영상 섹션 -->
+        <div id="videoSection" class="media-section" style="display:none;">
+            <div class="media-title">🎬 Video</div>
+            <div id="videoContainer"></div>
+        </div>
+
+        <!-- SNS / 숏폼 임베드 섹션 -->
+        <div id="snsSection" class="media-section" style="display:none;">
+            <div class="media-title">📱 Social</div>
+            <div id="snsContainer"></div>
+        </div>
+
+        <!-- 이미지 갤러리 (상세페이지) -->
+        <div id="gallerySection" class="media-section" style="display:none;">
+            <div class="media-title">🖼️ Details</div>
+            <div id="galleryContainer" class="gallery"></div>
+        </div>
+
+        <!-- 광고 B: 갤러리 아래 -->
+        <div class="ad-container">
+            <div class="ad-label">Advertisement</div>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-2477376929711409"
+                 data-ad-slot="SLOT_B_REPLACE_ME"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+
+        <!-- 연관상품 -->
+        <div id="relatedSection" class="related-section" style="display:none;">
+            <div id="relatedTitle" class="related-title">💡 Frequently Bought Together</div>
+            <div id="relatedList" class="related-scroll-box"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCygpc_WS2_35_8eYgdTEJwZCtNGJjHvY4",
+            authDomain: "pharmacy-productlist.firebaseapp.com",
+            projectId: "pharmacy-productlist",
+            storageBucket: "pharmacy-productlist.firebasestorage.app",
+            messagingSenderId: "409677826366",
+            appId: "1:409677826366:web:dc825470ef673194e2446f"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        let currentProductData = null;
+
+        async function logScanEvent(prodId, prodName, lang) {
+            try { await addDoc(collection(db, "scan_logs"), { productId: prodId, productName: prodName, language: lang, source: "public", timestamp: serverTimestamp() }); } catch(e) {}
+        }
+
+        // YouTube URL/ID를 embed URL로 정규화
+        function toYoutubeEmbed(v) {
+            if (!v) return null;
+            if (v.includes("youtube.com/embed/")) return v;
+            let id = "";
+            const m1 = v.match(/[?&]v=([^&]+)/);
+            const m2 = v.match(/youtu\.be\/([^?&]+)/);
+            const m3 = v.match(/shorts\/([^?&]+)/);
+            if (m1) id = m1[1];
+            else if (m2) id = m2[1];
+            else if (m3) id = m3[1];
+            else if (/^[a-zA-Z0-9_-]{6,}$/.test(v)) id = v; // 순수 ID
+            return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+
+        // SNS URL을 임베드 HTML로 변환 (인스타/유튜브/틱톡 지원)
+        function snsUrlToEmbed(url) {
+            const u = url.trim();
+
+            // 유튜브 (일반/쇼츠)
+            const yt = toYoutubeEmbed(u);
+            if (yt && (u.includes("youtube.com") || u.includes("youtu.be"))) {
+                return { type: "youtube", html: `<div class="video-wrap"><iframe src="${yt}" allowfullscreen loading="lazy"></iframe></div>` };
+            }
+
+            // 인스타그램 (게시물 p / 릴스 reel / TV)
+            const ig = u.match(/instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
+            if (ig) {
+                const kind = ig[1] === 'reels' ? 'reel' : ig[1];
+                const permalink = `https://www.instagram.com/${kind}/${ig[2]}/`;
+                const html = `<blockquote class="instagram-media" data-instgrm-permalink="${permalink}" data-instgrm-version="14" style="max-width:500px; width:100%; margin:0 auto;"><a href="${permalink}"></a></blockquote>`;
+                return { type: "instagram", html };
+            }
+
+            // 틱톡
+            const tt = u.match(/tiktok\.com\/.*\/video\/(\d+)/);
+            if (tt) {
+                const html = `<blockquote class="tiktok-embed" cite="${u}" data-video-id="${tt[1]}" style="max-width:325px; min-width:280px; margin:0 auto;"><a href="${u}"></a></blockquote><script async src="https://www.tiktok.com/embed.js"><\/script>`;
+                return { type: "tiktok", html };
+            }
+
+            // 어느 플랫폼도 아니면: 클릭 가능한 링크로 표시 (최소한 작동은 하게)
+            const safe = u.replace(/"/g, "&quot;");
+            return { type: "link", html: `<a href="${safe}" target="_blank" rel="noopener" style="color:#1D5C36; word-break:break-all;">${safe}</a>` };
+        }
+
+        function renderMedia(data) {
+            // --- 영상 ---
+            const videoSection = document.getElementById('videoSection');
+            const videoContainer = document.getElementById('videoContainer');
+            let videoHtml = "";
+
+            // YouTube (문자열 또는 배열)
+            const ytList = Array.isArray(data.youtube) ? data.youtube : (data.youtube ? [data.youtube] : []);
+            ytList.forEach(v => {
+                const embed = toYoutubeEmbed(v);
+                if (embed) videoHtml += `<div class="video-wrap"><iframe src="${embed}" allowfullscreen loading="lazy"></iframe></div>`;
+            });
+
+            // 자체 mp4 (문자열 또는 배열)
+            const mp4List = Array.isArray(data.video_mp4) ? data.video_mp4 : (data.video_mp4 ? [data.video_mp4] : []);
+            mp4List.forEach(url => {
+                videoHtml += `<div class="video-wrap"><video src="${url}" controls preload="metadata"></video></div>`;
+            });
+
+            if (videoHtml) { videoContainer.innerHTML = videoHtml; videoSection.style.display = 'block'; }
+
+            // --- SNS / 숏폼 (URL이면 자동 임베드, HTML 코드면 그대로 사용) ---
+            const snsSection = document.getElementById('snsSection');
+            const snsContainer = document.getElementById('snsContainer');
+            const snsList = Array.isArray(data.sns_embed) ? data.sns_embed : (data.sns_embed ? [data.sns_embed] : []);
+            if (snsList.length > 0) {
+                let needInstagramScript = false;
+                const htmlParts = snsList.map(raw => {
+                    const val = (raw || "").trim();
+                    if (!val) return "";
+                    // 이미 HTML 임베드 코드인 경우 (< 로 시작) → 그대로 사용
+                    if (val.startsWith("<")) {
+                        if (val.includes("instagram-media")) needInstagramScript = true;
+                        return `<div class="embed-wrap">${val}</div>`;
+                    }
+                    // URL인 경우 → 플랫폼 판별 후 임베드 생성
+                    const embed = snsUrlToEmbed(val);
+                    if (embed.type === "instagram") needInstagramScript = true;
+                    return `<div class="embed-wrap">${embed.html}</div>`;
+                });
+                snsContainer.innerHTML = htmlParts.join("");
+                snsSection.style.display = 'block';
+
+                // Instagram embed 스크립트 (blockquote 렌더링용)
+                if (needInstagramScript) {
+                    const s = document.createElement('script');
+                    s.src = "https://www.instagram.com/embed.js";
+                    s.async = true;
+                    document.body.appendChild(s);
+                } else if (window.instgrm) {
+                    // 이미 로드돼 있으면 재처리
+                    try { window.instgrm.Embeds.process(); } catch(e) {}
+                }
+            }
+
+            // --- 이미지 갤러리 ---
+            const gallerySection = document.getElementById('gallerySection');
+            const galleryContainer = document.getElementById('galleryContainer');
+            const gList = Array.isArray(data.gallery) ? data.gallery : (data.gallery ? [data.gallery] : []);
+            if (gList.length > 0) {
+                galleryContainer.innerHTML = gList.map(url => `<img src="${url}" loading="lazy">`).join("");
+                gallerySection.style.display = 'block';
+            }
+        }
+
+        async function loadProduct() {
+            const loading = document.getElementById('loading');
+            const content = document.getElementById('content');
+            if (!productId) { loading.innerText = "Invalid access."; loading.style.display = 'block'; return; }
+            loading.style.display = 'block';
+
+            try {
+                const docRef = doc(db, "products", productId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+
+                    // 특정 상품만 숨기려면 is_public: false 지정 (없으면 공개)
+                    if (data.is_public === false) {
+                        loading.innerText = "This product is not available.";
+                        return;
+                    }
+
+                    currentProductData = data;
+
+                    if (data.related_products && data.related_products.length > 0) {
+                        fetchRelatedProducts(data.related_products);
+                    }
+
+                    // 상품명: 영문명 우선, 없으면 한글명 사용(표시상 불가피)
+                    document.getElementById('pName').innerText = data.name_en || data.name || "";
+                    document.getElementById('mainImage').src = data.image ? data.image : "./images/sample-product.jpg";
+
+                    // 한글(kr) 제외한 언어만 세팅
+                    setDesc('en', data.desc_en); setDesc('jp', data.desc_jp);
+                    setDesc('cn', data.desc_cn); setDesc('tw', data.desc_tw); setDesc('th', data.desc_th);
+                    setDesc('vn', data.desc_vn); setDesc('id', data.desc_id);
+                    setDesc('mn', data.desc_mn);
+
+                    renderMedia(data);
+
+                    updateDoc(docRef, { views_public: increment(1) }).catch(err => {});
+                    logScanEvent(productId, data.name_en || data.name, 'en');
+
+                    loading.style.display = 'none'; content.style.display = 'block';
+                } else { loading.innerText = "Product not found."; }
+            } catch (error) { loading.innerText = "Error: " + error.message; }
+        }
+
+        async function fetchRelatedProducts(ids) {
+            const listContainer = document.getElementById('relatedList');
+            const section = document.getElementById('relatedSection');
+            if(!ids || ids.length === 0) return;
+            listContainer.innerHTML = '';
+            try {
+                const promises = ids.map(id => getDoc(doc(db, "products", id)));
+                const snapshots = await Promise.all(promises);
+                let hasItem = false;
+                snapshots.forEach(snap => {
+                    if (snap.exists()) {
+                        const p = snap.data();
+                        // 숨김 처리된 상품(is_public: false)은 연관상품에서도 제외
+                        if (p.is_public === false) return;
+                        hasItem = true;
+                        const pId = snap.id;
+                        const card = document.createElement('div');
+                        card.className = 'related-card';
+                        card.onclick = () => location.href = `info.html?id=${pId}`;
+                        card.innerHTML = `
+                            <img src="${p.image || 'https://via.placeholder.com/80'}" class="related-img">
+                            <div class="related-info">
+                                <div class="related-name">${p.name_en || p.name}</div>
+                            </div>
+                        `;
+                        listContainer.appendChild(card);
+                    }
+                });
+                if (hasItem) section.style.display = 'block';
+            } catch (e) { console.error("Related load failed:", e); }
+        }
+
+        function setDesc(lang, text) {
+            const el = document.querySelector(`#desc-${lang} .desc-text`);
+            if(el) el.innerText = text || "No description.";
+        }
+
+        window.changeLang = function(lang) {
+            document.querySelectorAll('.desc-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+
+            const descEl = document.getElementById('desc-' + lang);
+            if(descEl) descEl.classList.add('active');
+
+            const btns = document.querySelectorAll('.lang-btn');
+            // 한글 제거로 인덱스 재배치
+            const langMap = {'en':0, 'jp':1, 'cn':2, 'tw':3, 'th':4, 'vn':5, 'id':6, 'mn':7};
+            if(btns[langMap[lang]]) btns[langMap[lang]].classList.add('active');
+
+            if(productId) {
+                const docRef = doc(db, "products", productId);
+                updateDoc(docRef, { [`views_${lang}`]: increment(1) }).catch(e=>{});
+            }
+            if(currentProductData) logScanEvent(productId, currentProductData.name_en || currentProductData.name, lang);
+
+            // 연관상품 제목 번역
+            const relatedText = {
+                'en': "💡 Frequently Bought Together",
+                'cn': "💡 推荐搭配购买",
+                'tw': "💡 推薦搭配購買",
+                'jp': "💡 よく一緒に購入されている商品",
+                'th': "💡 สินค้าที่มักซื้อด้วยกัน",
+                'vn': "💡 Sản phẩm thường mua cùng",
+                'id': "💡 Produk yang sering dibeli bersama",
+                'mn': "💡 Хамт худалдан авахад тохиромжтой"
+            };
+            const titleEl = document.getElementById('relatedTitle');
+            if(titleEl) titleEl.innerText = relatedText[lang] || relatedText['en'];
+        }
+
+        loadProduct();
+    </script>
+</body>
+</html>

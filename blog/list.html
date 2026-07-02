@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eight Pharmacy - Products</title>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2477376929711409" crossorigin="anonymous"></script>
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="EIGHT PHARMACY">
+    <meta property="og:title" content="EIGHT PHARMACY Products">
+    <meta property="og:description" content="Pharmacist-curated K-Beauty & essential product information.">
+    <meta property="og:image" content="https://8pharmacy.kr/images/og-image.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { box-sizing: border-box; font-family: 'Noto Sans KR', sans-serif; }
+        body { background-color: #f4f6f8; margin: 0; padding: 0; }
+
+        .top-bar {
+            background: #1D5C36; color: white; padding: 15px;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .app-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
+        .search-box { width: 100%; position: relative; }
+        .search-input {
+            width: 100%; padding: 12px 15px; border-radius: 8px; border: none; font-size: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); outline: none;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+        .product-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px;
+        }
+
+        .card {
+            background: white; border-radius: 10px; overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer;
+            transition: transform 0.2s; border: 1px solid #eee;
+            position: relative;
+        }
+        .card:active { transform: scale(0.98); }
+        .card-img-box {
+            width: 100%; height: 160px; background: #fff; display: flex; align-items: center; justify-content: center;
+        }
+        .card-img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+
+        .card-info { padding: 12px; }
+        .card-name { font-size: 0.95rem; font-weight: bold; color: #333; margin-bottom: 5px; line-height: 1.3; height: 2.6em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+
+        .empty-msg { text-align: center; color: #888; margin-top: 50px; grid-column: 1 / -1; }
+        .loading { text-align: center; padding: 20px; color: #666; grid-column: 1 / -1; }
+
+        .btn-link {
+            display: block; width: 100%; text-align: center; padding: 8px;
+            background: #f1f1f1; color: #555; font-size: 0.8rem;
+            text-decoration: none; font-weight: bold; border-top: 1px solid #eee;
+        }
+        .btn-link:hover { background: #e0e0e0; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="app-title">💊 EIGHT PHARMACY</div>
+        <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search products..." onkeyup="filterProducts()">
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="productGrid" class="product-grid">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCygpc_WS2_35_8eYgdTEJwZCtNGJjHvY4",
+            authDomain: "pharmacy-productlist.firebaseapp.com",
+            projectId: "pharmacy-productlist",
+            storageBucket: "pharmacy-productlist.firebasestorage.app",
+            messagingSenderId: "409677826366",
+            appId: "1:409677826366:web:dc825470ef673194e2446f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allProducts = [];
+
+        async function loadProducts() {
+            const grid = document.getElementById('productGrid');
+            try {
+                const q = query(collection(db, "products"), orderBy("name"));
+                const snapshot = await getDocs(q);
+
+                allProducts = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // 전 상품 공개. 특정 상품만 숨기려면 is_public: false 지정 (없으면 노출)
+                    if (data.is_public === false) return;
+                    allProducts.push({ id: doc.id, ...data });
+                });
+
+                renderProducts(allProducts);
+            } catch (e) {
+                console.error(e);
+                grid.innerHTML = '<div class="empty-msg">Failed to load.</div>';
+            }
+        }
+
+        window.renderProducts = function(list) {
+            const grid = document.getElementById('productGrid');
+            if(list.length === 0) {
+                grid.innerHTML = '<div class="empty-msg">No results found.</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            list.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'card';
+
+                // 공개 상세페이지(info.html)로 연결. 가격 표시 없음.
+                div.onclick = (e) => {
+                    if(!e.target.classList.contains('btn-link')) {
+                        window.open(`info.html?id=${p.id}`, '_blank');
+                    }
+                };
+
+                // 표시 이름: 영문명(name_en)이 있으면 우선, 없으면 name
+                const displayName = p.name_en || p.name || "";
+
+                div.innerHTML = `
+                    <div class="card-img-box">
+                        <img src="${p.image || './images/sample-product.jpg'}" class="card-img" loading="lazy">
+                    </div>
+                    <div class="card-info">
+                        <div class="card-name">${displayName}</div>
+                    </div>
+                    <a href="info.html?id=${p.id}" class="btn-link" target="_blank">View Details ↗</a>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        window.filterProducts = function() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allProducts.filter(p => {
+                const n = (p.name_en || p.name || "").toLowerCase();
+                return n.includes(keyword);
+            });
+            renderProducts(filtered);
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>
