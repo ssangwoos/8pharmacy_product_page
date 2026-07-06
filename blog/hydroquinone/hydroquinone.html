@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8pharmacy – Hydroquinone Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── TOKENS ───────────────────────────────── */
+        :root {
+            --bg:           #F7F6F9;
+            --card:         #FFFFFF;
+            --border:       #E6E2EC;
+            --text:         #1B1725;
+            --muted:        #6E6880;
+            --accent:       #6D28D9;   /* violet – pigment / melanin theme */
+            --accent-light: #F3EEFC;
+            --shadow-sm:    0 2px 8px rgba(30,20,60,.05);
+            --shadow-md:    0 8px 28px rgba(30,20,60,.09);
+            --radius:       14px;
+            --transition:   all .35s cubic-bezier(.25,.46,.45,.94);
+
+            /* product / role palette */
+            --c1: #7C3AED; /* HQ 2%      – entry violet   */
+            --c2: #DB2777; /* HQ 4%      – potent magenta */
+            --c3: #DC2626; /* triple Rx  – red           */
+            --c4: #D97706; /* retinal    – amber         */
+            --c5: #0D9488; /* barrier    – teal          */
+            --c6: #2563EB; /* soothing Rx– blue          */
+        }
+
+        /* ── RESET ─────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', 'Noto Sans JP', 'Noto Sans TC', 'Noto Sans SC', sans-serif;
+            line-height: 1.75;
+            -webkit-font-smoothing: antialiased;
+        }
+        img { display: block; max-width: 100%; }
+        a { color: inherit; text-decoration: none; }
+
+        /* ── LANGUAGE VISIBILITY ───────────────────── */
+        .lang-en .ja, .lang-en .cn, .lang-en .tw { display: none !important; }
+        .lang-ja .en, .lang-ja .cn, .lang-ja .tw { display: none !important; }
+        .lang-cn .en, .lang-cn .ja, .lang-cn .tw { display: none !important; }
+        .lang-tw .en, .lang-tw .ja, .lang-tw .cn { display: none !important; }
+
+        /* ── HEADER ────────────────────────────────── */
+        .site-header {
+            position: sticky; top: 0; z-index: 200;
+            background: rgba(247,246,249,.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            max-width: 1100px; margin: 0 auto;
+            padding: .9rem 1.5rem;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 1rem;
+        }
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.35rem; font-weight: 600;
+            letter-spacing: .12em; color: var(--text);
+        }
+        .logo span { color: var(--accent); }
+
+        .lang-switcher {
+            display: flex; gap: .25rem;
+            background: var(--border); border-radius: 999px; padding: .2rem;
+        }
+        .lang-btn {
+            border: none; background: none; cursor: pointer;
+            padding: .35rem .9rem; border-radius: 999px;
+            font-size: .78rem; font-weight: 600; letter-spacing: .04em;
+            color: var(--muted); transition: var(--transition);
+        }
+        .lang-btn.active {
+            background: var(--card); color: var(--accent);
+            box-shadow: 0 1px 6px rgba(0,0,0,.08);
+        }
+        .lang-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        /* ── LAYOUT ────────────────────────────────── */
+        .container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
+
+        /* ── HERO ──────────────────────────────────── */
+        .hero {
+            padding: 5rem 1.5rem 4rem;
+            max-width: 960px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;
+        }
+        .hero-text .eyebrow {
+            display: inline-block;
+            font-size: .72rem; font-weight: 700; letter-spacing: .16em;
+            text-transform: uppercase; color: var(--accent);
+            background: var(--accent-light); border-radius: 4px;
+            padding: .25rem .7rem; margin-bottom: 1.2rem;
+        }
+        .hero-text h1 {
+            font-size: 2.5rem; font-weight: 700;
+            line-height: 1.2; margin-bottom: 1.2rem;
+        }
+        .hero-text h1 em {
+            font-style: normal; color: var(--accent);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem; font-weight: 600;
+        }
+        .hero-text p { font-size: 1rem; color: var(--muted); max-width: 440px; }
+
+        .hero-visual {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: .7rem;
+        }
+        .hero-chip {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 10px; padding: .6rem .8rem;
+            display: flex; align-items: center; gap: .5rem;
+            font-size: .75rem; font-weight: 500; white-space: nowrap;
+            box-shadow: var(--shadow-sm);
+        }
+        .hero-chip .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+        @media (max-width: 700px) {
+            .hero { grid-template-columns: 1fr; gap: 2rem; padding: 3rem 1.5rem 2.5rem; }
+            .hero-text h1 { font-size: 2rem; }
+            .hero-text h1 em { font-size: 2.4rem; }
+        }
+
+        /* ── PRINCIPLE BANNER ──────────────────────── */
+        .principle { max-width: 960px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+        .principle-inner {
+            background: var(--accent); border-radius: var(--radius);
+            padding: 1.6rem 2rem; display: flex; align-items: center; gap: 1.2rem;
+        }
+        .principle-icon { font-size: 1.8rem; flex-shrink: 0; }
+        .principle-text { color: #fff; }
+        .principle-text strong { display: block; font-size: 1.05rem; margin-bottom: .3rem; }
+        .principle-text p { font-size: .9rem; opacity: .9; }
+
+        /* ── RX CALLOUT ────────────────────────────── */
+        .rxnote { max-width: 960px; margin: 0 auto 4rem; padding: 0 1.5rem; }
+        .rxnote-inner {
+            background: #FFF7ED; border: 1px solid #FED7AA;
+            border-left: 4px solid #EA580C;
+            border-radius: 10px; padding: 1.2rem 1.4rem;
+            display: flex; gap: .9rem; align-items: flex-start;
+        }
+        .rxnote-icon { font-size: 1.3rem; flex-shrink: 0; line-height: 1.4; }
+        .rxnote-text { font-size: .86rem; color: #7C2D12; }
+        .rxnote-text strong { display: block; margin-bottom: .25rem; font-size: .92rem; }
+
+        /* ── SECTION ───────────────────────────────── */
+        .section { max-width: 960px; margin: 0 auto 5rem; padding: 0 1.5rem; }
+        .section-header {
+            display: flex; align-items: baseline; gap: .8rem; margin-bottom: 2rem;
+        }
+        .section-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem; line-height: 1; color: var(--border);
+            font-weight: 400; flex-shrink: 0;
+        }
+        .section-title-block h2 { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }
+        .section-title-block p { font-size: .88rem; color: var(--muted); margin-top: .2rem; }
+
+        /* ── MECHANISM STEPS ───────────────────────── */
+        .mech {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+        }
+        @media (max-width: 760px) { .mech { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 420px) { .mech { grid-template-columns: 1fr; } }
+        .mech-step {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.3rem 1.2rem;
+            box-shadow: var(--shadow-sm); position: relative;
+        }
+        .mech-step .n {
+            font-family: 'Cormorant Garamond', serif; font-style: italic;
+            font-size: 1.6rem; color: var(--accent); line-height: 1; margin-bottom: .5rem;
+        }
+        .mech-step h3 { font-size: .95rem; font-weight: 700; margin-bottom: .4rem; }
+        .mech-step p { font-size: .8rem; color: var(--muted); line-height: 1.65; }
+
+        /* ── FACT ROWS ─────────────────────────────── */
+        .facts { display: flex; flex-direction: column; gap: 1.1rem; }
+        .fact {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 1.5rem 1.7rem;
+            box-shadow: var(--shadow-sm);
+            display: grid; grid-template-columns: auto 1fr; gap: 1.2rem; align-items: start;
+        }
+        .fact-badge {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; flex-shrink: 0;
+            background: var(--accent-light);
+        }
+        .fact h3 { font-size: 1.02rem; font-weight: 700; margin-bottom: .4rem; }
+        .fact p { font-size: .9rem; color: var(--muted); line-height: 1.8; }
+        .fact p + p { margin-top: .6rem; }
+        .fact .tag {
+            display: inline-block; margin-top: .7rem;
+            font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+            color: var(--accent); background: var(--accent-light);
+            padding: .2rem .6rem; border-radius: 999px;
+        }
+        @media (max-width: 480px) {
+            .fact { grid-template-columns: 1fr; gap: .8rem; padding: 1.3rem 1.3rem; }
+        }
+
+        /* ── INGREDIENT / PRODUCT GRID ─────────────── */
+        .ing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
+        @media (max-width: 560px) { .ing-grid { grid-template-columns: 1fr; } }
+
+        .ing-card {
+            background: var(--card); border-radius: var(--radius);
+            border: 1px solid var(--border); overflow: hidden;
+            box-shadow: var(--shadow-sm); transition: var(--transition);
+            display: flex; flex-direction: column;
+        }
+        .ing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .ing-card-stripe { height: 5px; }
+
+        .prod-img-box {
+            background: #FAF9FC;
+            width: 100%; aspect-ratio: 3/4;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .prod-img-box img {
+            width: 100%; height: 100%;
+            object-fit: cover; object-position: center;
+            transition: var(--transition);
+        }
+        .ing-card:hover .prod-img-box img { transform: scale(1.04); }
+
+        .ing-card-head { padding: 1.4rem 1.5rem .9rem; border-bottom: 1px solid var(--border); }
+        .ing-label {
+            display: inline-flex; align-items: center; gap: .4rem;
+            font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+            text-transform: uppercase; padding: .2rem .65rem;
+            border-radius: 999px; margin-bottom: .7rem; color: #fff;
+        }
+        .ing-card-name { font-size: 1.18rem; font-weight: 700; line-height: 1.25; }
+        .ing-card-sub { font-size: .8rem; color: var(--muted); margin-top: .3rem; }
+        .conc-pill {
+            display: inline-block; margin-top: .5rem;
+            font-size: .72rem; font-weight: 700; letter-spacing: .03em;
+            padding: .15rem .55rem; border-radius: 6px;
+            background: var(--accent-light); color: var(--accent);
+        }
+
+        .ing-card-body { padding: 1.3rem 1.5rem; flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+        .ing-card-desc { font-size: .9rem; color: var(--muted); line-height: 1.8; }
+        .ing-card-uses { list-style: none; display: flex; flex-direction: column; gap: .35rem; }
+        .ing-card-uses li {
+            display: flex; align-items: flex-start; gap: .55rem;
+            font-size: .85rem; color: var(--text);
+        }
+        .ing-card-uses li .check { font-size: .8rem; font-weight: 800; flex-shrink: 0; }
+        .ing-card-verdict {
+            margin-top: auto; border-radius: 8px;
+            padding: .75rem 1rem; font-size: .88rem; font-weight: 600;
+            color: #fff; text-align: center;
+        }
+
+        /* ── QUICK REFERENCE ───────────────────────── */
+        .pick-section { max-width: 960px; margin: 0 auto 5rem; padding: 0 1.5rem; }
+        .pick-box {
+            background: var(--card); border: 1px dashed #C9BEE0;
+            border-radius: var(--radius); padding: 2.5rem 2rem;
+        }
+        .pick-header { display: flex; align-items: center; gap: .7rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .pick-header h2 { font-size: 1.2rem; font-weight: 700; }
+        .pick-badge {
+            background: var(--accent-light); color: var(--accent);
+            font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+            text-transform: uppercase; padding: .25rem .7rem; border-radius: 4px;
+        }
+        .pick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem; }
+        @media (max-width: 640px) { .pick-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 420px) { .pick-grid { grid-template-columns: 1fr; } }
+        .pick-item {
+            background: var(--bg); border-radius: 10px;
+            border: 1px solid var(--border); padding: 1rem 1.1rem;
+        }
+        .pick-concern {
+            font-size: .75rem; color: var(--muted); margin-bottom: .25rem;
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .pick-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .pick-ing { font-size: .92rem; font-weight: 700; }
+        .pick-ing-sub { font-size: .75rem; color: var(--muted); margin-top: .1rem; }
+
+        /* ── FOOTER ────────────────────────────────── */
+        .site-footer {
+            border-top: 1px solid var(--border); padding: 3.5rem 1.5rem;
+            text-align: center; background: var(--card);
+        }
+        .footer-cta { font-size: 1.05rem; font-weight: 600; margin-bottom: 1.4rem; color: var(--text); }
+        .footer-disclaimer {
+            max-width: 640px; margin: 0 auto 2rem;
+            font-size: .78rem; color: var(--muted); line-height: 1.8;
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: 10px; padding: 1rem 1.3rem;
+        }
+        .hashtag-block { font-size: .78rem; color: var(--muted); line-height: 2.2; max-width: 700px; margin: 0 auto; }
+        .footer-brand {
+            margin-top: 2.5rem; font-size: .78rem; color: #A79FC0;
+            font-family: 'Cormorant Garamond', serif; letter-spacing: .1em;
+        }
+    </style>
+</head>
+<body class="lang-en">
+
+<!-- ─────────────────────────────── HEADER -->
+<header class="site-header">
+    <div class="header-inner">
+        <div class="logo">8<span>PHARMACY</span></div>
+        <nav class="lang-switcher">
+            <button class="lang-btn active" id="btn-en" onclick="switchLang('en')">EN</button>
+            <button class="lang-btn"        id="btn-ja" onclick="switchLang('ja')">日本語</button>
+            <button class="lang-btn"        id="btn-cn" onclick="switchLang('cn')">简体</button>
+            <button class="lang-btn"        id="btn-tw" onclick="switchLang('tw')">繁體</button>
+        </nav>
+    </div>
+</header>
+
+<!-- ─────────────────────────────── HERO -->
+<section class="hero">
+    <div class="hero-text">
+        <span class="eyebrow en">Pharmacist Hydroquinone Guide</span>
+        <span class="eyebrow ja">薬剤師のハイドロキノン完全ガイド</span>
+        <span class="eyebrow cn">药剂师氢醌完全指南</span>
+        <span class="eyebrow tw">藥劑師氫醌完全指南</span>
+
+        <h1 class="en">Fade dark spots,<br><em>the right</em><br>way.</h1>
+        <h1 class="ja">シミを消すなら<br><em>正しい</em><br>使い方で。</h1>
+        <h1 class="cn">淡化色斑，<br>要用<em>正确的</em><br>方式。</h1>
+        <h1 class="tw">淡化色斑，<br>要用<em>正確的</em><br>方式。</h1>
+
+        <p class="en">Hydroquinone is the strongest brightening agent there is — and a prescription-grade one. A Korean pharmacist explains how it works, why timing matters, and how to use it safely.</p>
+        <p class="ja">ハイドロキノンは最も強力な美白成分であり、医療グレードの成分です。作用の仕組み、使うタイミング、安全な使い方を韓国薬剤師が解説します。</p>
+        <p class="cn">氢醌是目前最强效的美白成分，也是医疗级成分。韩国药剂师为你讲解它的原理、使用时机与安全用法。</p>
+        <p class="tw">氫醌是目前最強效的美白成分，也是醫療級成分。韓國藥劑師為你講解它的原理、使用時機與安全用法。</p>
+    </div>
+
+    <div class="hero-visual">
+        <div class="hero-chip"><span class="dot" style="background:var(--c1)"></span><span class="en">HQ 2% · Entry</span><span class="ja">HQ 2% 入門</span><span class="cn">HQ 2% 入门</span><span class="tw">HQ 2% 入門</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c2)"></span><span class="en">HQ 4% · Potent</span><span class="ja">HQ 4% 高濃度</span><span class="cn">HQ 4% 高浓度</span><span class="tw">HQ 4% 高濃度</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c3)"></span><span class="en">Triple Combo</span><span class="ja">三剤併用</span><span class="cn">三联疗法</span><span class="tw">三聯療法</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c4)"></span><span class="en">Retinal Pairing</span><span class="ja">レチナール併用</span><span class="cn">视黄醛搭配</span><span class="tw">視黃醛搭配</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c5)"></span><span class="en">Barrier Repair</span><span class="ja">バリア補修</span><span class="cn">屏障修护</span><span class="tw">屏障修護</span></div>
+        <div class="hero-chip"><span class="dot" style="background:var(--c6)"></span><span class="en">Soothing Rx</span><span class="ja">鎮静ケア</span><span class="cn">舒缓处理</span><span class="tw">舒緩處理</span></div>
+    </div>
+</section>
+
+<!-- ─────────────────────────────── PRINCIPLE BANNER -->
+<div class="principle">
+    <div class="principle-inner">
+        <div class="principle-icon">🧑‍⚕️</div>
+        <div class="principle-text">
+            <strong class="en">Pharmacist's Core Message</strong>
+            <strong class="ja">薬剤師からの核心メッセージ</strong>
+            <strong class="cn">药剂师核心寄语</strong>
+            <strong class="tw">藥劑師核心提醒</strong>
+            <p class="en">Hydroquinone is not a cosmetic — it's a drug. Used correctly it's the gold standard for melasma and dark spots. Used carelessly it can do the opposite. The whole game is technique.</p>
+            <p class="ja">ハイドロキノンは化粧品ではなく「薬」です。正しく使えばシミ・肝斑治療のゴールドスタンダード。誤れば逆効果にもなります。すべては使い方次第です。</p>
+            <p class="cn">氢醌不是化妆品，而是药物。用对了，它是黄褐斑和色斑治疗的金标准；用错了，反而适得其反。关键全在用法。</p>
+            <p class="tw">氫醌不是化妝品，而是藥物。用對了，它是黃褐斑和色斑治療的黃金標準；用錯了，反而適得其反。關鍵全在用法。</p>
+        </div>
+    </div>
+</div>
+
+<!-- ─────────────────────────────── MECHANISM -->
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">01</span>
+        <div class="section-title-block">
+            <h2 class="en">How Hydroquinone Erases Pigment</h2>
+            <h2 class="ja">ハイドロキノンが色素を消す仕組み</h2>
+            <h2 class="cn">氢醌如何淡化色素</h2>
+            <h2 class="tw">氫醌如何淡化色素</h2>
+            <p class="en">The mechanism, in four steps</p>
+            <p class="ja">作用の流れを4ステップで</p>
+            <p class="cn">四步看懂作用机制</p>
+            <p class="tw">四步看懂作用機制</p>
+        </div>
+    </div>
+
+    <div class="mech">
+        <div class="mech-step">
+            <div class="n">i</div>
+            <h3 class="en">Melanin needs tyrosinase</h3>
+            <h3 class="ja">メラニンには酵素が必要</h3>
+            <h3 class="cn">黑色素依赖酪氨酸酶</h3>
+            <h3 class="tw">黑色素依賴酪胺酸酶</h3>
+            <p class="en">Skin darkens because melanocytes make melanin. The key enzyme that starts the process is tyrosinase.</p>
+            <p class="ja">肌が黒くなるのはメラニン色素のため。その生成の起点となる酵素がチロシナーゼです。</p>
+            <p class="cn">皮肤变黑源于黑色素。启动这一过程的关键酶是酪氨酸酶。</p>
+            <p class="tw">皮膚變黑源於黑色素。啟動這一過程的關鍵酶是酪胺酸酶。</p>
+        </div>
+        <div class="mech-step">
+            <div class="n">ii</div>
+            <h3 class="en">HQ competes for the enzyme</h3>
+            <h3 class="ja">HQが酵素を奪い合う</h3>
+            <h3 class="cn">氢醌竞争性抑制</h3>
+            <h3 class="tw">氫醌競爭性抑制</h3>
+            <p class="en">Hydroquinone resembles the melanin precursor, so tyrosinase processes HQ instead of tyrosine — competitive inhibition.</p>
+            <p class="ja">ハイドロキノンはメラニン前駆体に似ており、酵素がチロシンの代わりにHQを処理します（競合阻害）。</p>
+            <p class="cn">氢醌结构类似黑色素前体，酪氨酸酶转而处理氢醌——即竞争性抑制。</p>
+            <p class="tw">氫醌結構類似黑色素前體，酪胺酸酶轉而處理氫醌——即競爭性抑制。</p>
+        </div>
+        <div class="mech-step">
+            <div class="n">iii</div>
+            <h3 class="en">The line stalls</h3>
+            <h3 class="ja">生成ラインが止まる</h3>
+            <h3 class="cn">生产线被阻断</h3>
+            <h3 class="tw">生產線被阻斷</h3>
+            <p class="en">Like feeding a fake raw material into the production line, HQ blocks the first oxidation step from tyrosine to DOPA.</p>
+            <p class="ja">生産ラインに「偽の原料」を流すように、チロシン→DOPAの最初の酸化反応を止めます。</p>
+            <p class="cn">如同向生产线投入"假原料"，氢醌阻断酪氨酸转化为DOPA的第一步氧化。</p>
+            <p class="tw">如同向生產線投入「假原料」，氫醌阻斷酪胺酸轉化為DOPA的第一步氧化。</p>
+        </div>
+        <div class="mech-step">
+            <div class="n">iv</div>
+            <h3 class="en">Reversible lightening</h3>
+            <h3 class="ja">可逆的な美白</h3>
+            <h3 class="cn">可逆性淡化</h3>
+            <h3 class="tw">可逆性淡化</h3>
+            <p class="en">The result is reversible depigmentation, strongest on areas actively producing melanin.</p>
+            <p class="ja">その結果は可逆的な脱色素。メラニンを活発に作る部位ほど効果的です。</p>
+            <p class="cn">最终形成可逆的淡化效果，对活跃产色部位最有效。</p>
+            <p class="tw">最終形成可逆的淡化效果，對活躍產色部位最有效。</p>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────────────────── HOW TO USE (FACTS) -->
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">02</span>
+        <div class="section-title-block">
+            <h2 class="en">Using It Safely — 4 Things That Matter Most</h2>
+            <h2 class="ja">安全に使うために大切な4つのこと</h2>
+            <h2 class="cn">安全使用——最重要的4点</h2>
+            <h2 class="tw">安全使用——最重要的4點</h2>
+            <p class="en">Timing · irritation · barrier · duration</p>
+            <p class="ja">タイミング・刺激・バリア・使用期間</p>
+            <p class="cn">时机 · 刺激 · 屏障 · 疗程</p>
+            <p class="tw">時機 · 刺激 · 屏障 · 療程</p>
+        </div>
+    </div>
+
+    <div class="facts">
+
+        <!-- Fact: night -->
+        <div class="fact">
+            <div class="fact-badge">🌙</div>
+            <div>
+                <h3 class="en">Why "don't use it in daylight"?</h3>
+                <h3 class="ja">なぜ「日中は避けて」と言われるのか</h3>
+                <h3 class="cn">为什么说"白天别用"？</h3>
+                <h3 class="tw">為什麼說「白天別用」？</h3>
+                <p class="en">Two reasons. First, lowering melanin thins the skin's natural UV shield, so skin turns photosensitive — without sunscreen, UV triggers inflammation and rebound pigmentation, undoing your progress. Second, hydroquinone oxidizes easily in light and air, so a nighttime routine also keeps the formula stable.</p>
+                <p class="ja">理由は2つ。まずメラニンが減ると紫外線への天然の防御が弱まり光過敏になります。日焼け止めを怠ると炎症→色素の逆戻り（リバウンド）を招きます。次にHQは光と酸素で酸化しやすく、夜使用は製剤の安定性の面でも有利です。</p>
+                <p class="cn">两个原因。其一，黑色素减少会削弱皮肤天然的紫外线防护，使皮肤变得光敏，不防晒则紫外线引发炎症与反弹性色沉，前功尽弃。其二，氢醌遇光和空气易氧化，夜间使用也更利于配方稳定。</p>
+                <p class="tw">兩個原因。其一，黑色素減少會削弱皮膚天然的紫外線防護，使皮膚變得光敏，不防曬則紫外線引發炎症與反彈性色沉，前功盡棄。其二，氫醌遇光和空氣易氧化，夜間使用也更利於配方穩定。</p>
+                <span class="tag en">→ Not banned by day — but sunscreen SPF30+ is non-negotiable</span>
+                <span class="tag ja">→ 日中禁止ではないが、SPF30+の日焼け止めは必須</span>
+                <span class="tag cn">→ 白天并非禁用，但SPF30+防晒必不可少</span>
+                <span class="tag tw">→ 白天並非禁用，但SPF30+防曬必不可少</span>
+            </div>
+        </div>
+
+        <!-- Fact: irritation -->
+        <div class="fact">
+            <div class="fact-badge">📉</div>
+            <div>
+                <h3 class="en">If it stings — reduce, don't push through</h3>
+                <h3 class="ja">刺激が出たら「減らす」、我慢しない</h3>
+                <h3 class="cn">出现刺激就"减量"，别硬扛</h3>
+                <h3 class="tw">出現刺激就「減量」，別硬撐</h3>
+                <p class="en">Mild redness, tingling or dryness can happen. Scale back from daily to every other day, or apply a pea-sized amount only on the spots. Pushing through irritation is the riskiest move — inflammation itself leads to more pigmentation.</p>
+                <p class="ja">軽い赤み・ピリつき・乾燥は起こり得ます。毎日→隔日に減らす、または米粒大をシミ部分だけに塗るなど調整を。刺激を我慢して使い続けるのが最も危険。炎症がさらなる色素沈着を招きます。</p>
+                <p class="cn">可能出现轻微泛红、刺痛或干燥。可从每天减到隔天，或仅在色斑处点涂米粒大小的量。忍着刺激继续用最危险——炎症本身会带来更多色沉。</p>
+                <p class="tw">可能出現輕微泛紅、刺痛或乾燥。可從每天減到隔天，或僅在色斑處點塗米粒大小的量。忍著刺激繼續用最危險——炎症本身會帶來更多色沉。</p>
+            </div>
+        </div>
+
+        <!-- Fact: barrier -->
+        <div class="fact">
+            <div class="fact-badge">🛡️</div>
+            <div>
+                <h3 class="en">Pair it with barrier care</h3>
+                <h3 class="ja">バリアケアと組み合わせる</h3>
+                <h3 class="cn">搭配屏障护理</h3>
+                <h3 class="tw">搭配屏障護理</h3>
+                <p class="en">Hydroquinone can leave skin reactive, so a soothing barrier-repair cream (panthenol, cica, allantoin) layered afterward calms dryness and irritation. Brightening-support ingredients like niacinamide, alpha-arbutin, kojic acid and vitamin C help maintain results between cycles.</p>
+                <p class="ja">HQは肌を敏感にしがち。塗布後に鎮静・バリア補修クリーム（パンテノール・シカ・アラントインなど）を重ねると乾燥や刺激が和らぎます。ナイアシンアミド・αアルブチン・コウジ酸・ビタミンCなどの美白補助成分は休薬期の維持に有用です。</p>
+                <p class="cn">氢醌易使皮肤敏感，涂后叠加舒缓修护屏障霜（泛醇、积雪草、尿囊素）可缓解干燥与刺激。烟酰胺、α-熊果苷、曲酸、维生素C等辅助提亮成分则有助于疗程间维持效果。</p>
+                <p class="tw">氫醌易使皮膚敏感，塗後疊加舒緩修護屏障霜（泛醇、積雪草、尿囊素）可緩解乾燥與刺激。菸鹼醯胺、α-熊果苷、麴酸、維生素C等輔助提亮成分則有助於療程間維持效果。</p>
+            </div>
+        </div>
+
+        <!-- Fact: duration -->
+        <div class="fact">
+            <div class="fact-badge">⏳</div>
+            <div>
+                <h3 class="en">Never use it indefinitely</h3>
+                <h3 class="ja">無期限に使わない</h3>
+                <h3 class="cn">切勿无限期使用</h3>
+                <h3 class="tw">切勿無限期使用</h3>
+                <p class="en">The usual guidance: use for 3–6 months, then pause for a few months before restarting. Long-term overuse raises the risk of exogenous ochronosis — a blue-black discoloration that can be permanent and hard to treat, especially with UV exposure and on deeper skin tones.</p>
+                <p class="ja">一般的な目安は3〜6か月使用し、数か月休んでから再開。長期の過剰使用は「外因性オクロノーシス（青黒い色素沈着）」のリスクを高めます。紫外線曝露や色黒の肌でより起こりやすく、永続的で治療困難なこともあります。</p>
+                <p class="cn">通常建议使用3–6个月后停用数月再重启。长期过度使用会增加"外源性褐黄病"风险——一种蓝黑色色素沉着，可能永久且难以治疗，紫外线暴露及深肤色人群更易发生。</p>
+                <p class="tw">通常建議使用3–6個月後停用數月再重啟。長期過度使用會增加「外源性褐黃病」風險——一種藍黑色色素沉著，可能永久且難以治療，紫外線暴露及深膚色人群更易發生。</p>
+                <span class="tag en">→ Cycle on, then off. More is not better.</span>
+                <span class="tag ja">→ 使ったら休む。多ければ良いわけではない。</span>
+                <span class="tag cn">→ 用一阵，停一阵。用得多≠效果好。</span>
+                <span class="tag tw">→ 用一陣，停一陣。用得多≠效果好。</span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ─────────────────────────────── PRODUCTS -->
+<section class="section">
+    <div class="section-header">
+        <span class="section-num">03</span>
+        <div class="section-title-block">
+            <h2 class="en">The Line-Up · Which One Fits You</h2>
+            <h2 class="ja">ラインナップ・あなたに合うのは</h2>
+            <h2 class="cn">产品阵容 · 哪一款适合你</h2>
+            <h2 class="tw">產品陣容 · 哪一款適合你</h2>
+            <p class="en">6 products · from entry strength to prescription combos</p>
+            <p class="ja">6製品 · 入門濃度から処方併用まで</p>
+            <p class="cn">6款产品 · 从入门浓度到处方联合</p>
+            <p class="tw">6款產品 · 從入門濃度到處方聯合</p>
+        </div>
+    </div>
+
+    <div class="ing-grid">
+
+        <!-- 01 Melatoning HQ 2% -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c1)"></div>
+            <div class="prod-img-box"><img src="1.jpg" alt="Melatoning Cream HQ 2%"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c1)">
+                    <span class="en">01 · Entry Strength</span>
+                    <span class="ja">01 · 入門濃度</span>
+                    <span class="cn">01 · 入门浓度</span>
+                    <span class="tw">01 · 入門濃度</span>
+                </span>
+                <div class="ing-card-name">Melatoning Cream</div>
+                <div class="ing-card-sub">
+                    <span class="en">Hydroquinone 2%</span>
+                    <span class="ja">ハイドロキノン 2%</span>
+                    <span class="cn">氢醌 2%</span>
+                    <span class="tw">氫醌 2%</span>
+                </div>
+                <span class="conc-pill">HQ 2%</span>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">The starting point for most people. At 2%, it delivers meaningful brightening with a gentler irritation profile — ideal for first-timers or for maintenance between higher-strength cycles.</p>
+                <p class="ing-card-desc ja">多くの人にとっての出発点。2%は刺激が比較的穏やかでありながらしっかり美白。初めての方や、高濃度サイクルの合間の維持に最適です。</p>
+                <p class="ing-card-desc cn">大多数人的起点。2%浓度在温和刺激的同时带来可见提亮，适合初次使用者，或高浓度疗程之间的维持。</p>
+                <p class="ing-card-desc tw">大多數人的起點。2%濃度在溫和刺激的同時帶來可見提亮，適合初次使用者，或高濃度療程之間的維持。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c1)">✓</span><span class="en">First time using hydroquinone</span><span class="ja">ハイドロキノン初心者</span><span class="cn">首次使用氢醌</span><span class="tw">首次使用氫醌</span></li>
+                    <li><span class="check" style="color:var(--c1)">✓</span><span class="en">Mild spots &amp; uneven tone</span><span class="ja">薄いシミ・くすみ</span><span class="cn">轻度色斑与暗沉</span><span class="tw">輕度色斑與暗沉</span></li>
+                    <li><span class="check" style="color:var(--c1)">✓</span><span class="en">Sensitive or reactive skin</span><span class="ja">敏感肌・刺激が心配な方</span><span class="cn">敏感或易刺激肌肤</span><span class="tw">敏感或易刺激肌膚</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c1)">
+                    <span class="en">"Start here, at night, with sunscreen by day"</span>
+                    <span class="ja">「まずはここから、夜に。日中は日焼け止め」</span>
+                    <span class="cn">「从这里开始，夜间使用，白天防晒」</span>
+                    <span class="tw">「從這裡開始，夜間使用，白天防曬」</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 02 Melanosa HQ 4% -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c2)"></div>
+            <div class="prod-img-box"><img src="2.jpg" alt="Melanosa Cream HQ 4%"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c2)">
+                    <span class="en">02 · Potent Strength</span>
+                    <span class="ja">02 · 高濃度</span>
+                    <span class="cn">02 · 高浓度</span>
+                    <span class="tw">02 · 高濃度</span>
+                </span>
+                <div class="ing-card-name">Melanosa Cream</div>
+                <div class="ing-card-sub">
+                    <span class="en">Hydroquinone 4%</span>
+                    <span class="ja">ハイドロキノン 4%</span>
+                    <span class="cn">氢醌 4%</span>
+                    <span class="tw">氫醌 4%</span>
+                </div>
+                <span class="conc-pill">HQ 4%</span>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">Higher strength for stubborn melasma and set-in dark spots. More potent means more likely to irritate, so 4% is best kept to short, focused cycles — and paired with diligent barrier care and sun protection.</p>
+                <p class="ing-card-desc ja">頑固な肝斑・濃いシミ向けの高濃度。効果が強い分、刺激も出やすいため、短期集中で使い、バリアケアと紫外線対策を徹底するのが前提です。</p>
+                <p class="ing-card-desc cn">针对顽固黄褐斑与顽固色斑的高浓度。效力越强越易刺激，故4%宜用于短期集中疗程，并配合屏障护理与严格防晒。</p>
+                <p class="ing-card-desc tw">針對頑固黃褐斑與頑固色斑的高濃度。效力越強越易刺激，故4%宜用於短期集中療程，並配合屏障護理與嚴格防曬。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c2)">✓</span><span class="en">Stubborn melasma / set-in spots</span><span class="ja">頑固な肝斑・濃いシミ</span><span class="cn">顽固黄褐斑/深色斑</span><span class="tw">頑固黃褐斑/深色斑</span></li>
+                    <li><span class="check" style="color:var(--c2)">✓</span><span class="en">Already tolerated 2% well</span><span class="ja">2%に問題なく慣れた方</span><span class="cn">已良好耐受2%</span><span class="tw">已良好耐受2%</span></li>
+                    <li><span class="check" style="color:var(--c2)">✓</span><span class="en">Short, focused treatment cycle</span><span class="ja">短期集中ケア</span><span class="cn">短期集中疗程</span><span class="tw">短期集中療程</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c2)">
+                    <span class="en">"Bigger gun — keep the cycle short"</span>
+                    <span class="ja">「強力ゆえ、短期集中で」</span>
+                    <span class="cn">「更强效——务必缩短疗程」</span>
+                    <span class="tw">「更強效——務必縮短療程」</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 03 Melanon Triple Combination -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c3)"></div>
+            <div class="prod-img-box"><img src="3.jpg" alt="Melanon Cream triple combination"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c3)">
+                    <span class="en">03 · Triple Combination · Rx</span>
+                    <span class="ja">03 · 三剤併用 · 処方</span>
+                    <span class="cn">03 · 三联疗法 · 处方</span>
+                    <span class="tw">03 · 三聯療法 · 處方</span>
+                </span>
+                <div class="ing-card-name">Melanon Cream</div>
+                <div class="ing-card-sub">
+                    <span class="en">Hydroquinone + Retinoic acid + Steroid</span>
+                    <span class="ja">ハイドロキノン＋レチノイン酸＋ステロイド</span>
+                    <span class="cn">氢醌＋维A酸＋类固醇</span>
+                    <span class="tw">氫醌＋維A酸＋類固醇</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">The classic "triple combination" for melasma. Retinoic acid speeds turnover so HQ penetrates better; the steroid calms the irritation both cause. Proven more effective than HQ alone — but this belongs strictly under dermatologist supervision.</p>
+                <p class="ing-card-desc ja">肝斑治療の定番「三剤併用」。レチノイン酸がターンオーバーを促しHQの浸透を助け、ステロイドが両者の刺激を抑えます。単独より高い効果が示されていますが、必ず皮膚科の管理下で。</p>
+                <p class="ing-card-desc cn">黄褐斑经典"三联疗法"。维A酸加速代谢助氢醌渗透，类固醇则平息两者引起的刺激。已证实比单用氢醌更有效——但务必在皮肤科医师指导下使用。</p>
+                <p class="ing-card-desc tw">黃褐斑經典「三聯療法」。維A酸加速代謝助氫醌滲透，類固醇則平息兩者引起的刺激。已證實比單用氫醌更有效——但務必在皮膚科醫師指導下使用。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c3)">✓</span><span class="en">Diagnosed, persistent melasma</span><span class="ja">診断済みの難治性肝斑</span><span class="cn">已确诊的顽固黄褐斑</span><span class="tw">已確診的頑固黃褐斑</span></li>
+                    <li><span class="check" style="color:var(--c3)">✓</span><span class="en">Under dermatologist care</span><span class="ja">皮膚科の管理下</span><span class="cn">在皮肤科指导下</span><span class="tw">在皮膚科指導下</span></li>
+                    <li><span class="check" style="color:var(--c3)">✓</span><span class="en">Monotherapy wasn't enough</span><span class="ja">単独療法で不十分だった</span><span class="cn">单一疗法效果不足</span><span class="tw">單一療法效果不足</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c3)">
+                    <span class="en">"Prescription-only — not for self-mixing"</span>
+                    <span class="ja">「処方専用 — 自己流の併用は不可」</span>
+                    <span class="cn">「仅限处方——切勿自行调配」</span>
+                    <span class="tw">「僅限處方——切勿自行調配」</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 04 Vitalift A Fortissimo Retinal -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c4)"></div>
+            <div class="prod-img-box"><img src="4.jpg" alt="Dr.Different Vitalift A Fortissimo Retinal 0.15%"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c4)">
+                    <span class="en">04 · Retinoid Pairing</span>
+                    <span class="ja">04 · レチノイド併用</span>
+                    <span class="cn">04 · 视黄醛搭配</span>
+                    <span class="tw">04 · 視黃醛搭配</span>
+                </span>
+                <div class="ing-card-name">Dr.Different Vitalift A Fortissimo</div>
+                <div class="ing-card-sub">
+                    <span class="en">Retinal (retinaldehyde) 0.15%</span>
+                    <span class="ja">レチナール（レチンアルデヒド）0.15%</span>
+                    <span class="cn">视黄醛 0.15%</span>
+                    <span class="tw">視黃醛 0.15%</span>
+                </div>
+                <span class="conc-pill">Retinal 0.15%</span>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">An OTC-friendly way to bring retinoid benefit alongside hydroquinone. Retinal boosts cell turnover and helps brightening actives work — a gentler stand-in for prescription retinoic acid. Introduce slowly and never stack it on the same night as HQ until skin adapts.</p>
+                <p class="ing-card-desc ja">処方レチノイン酸の代わりに、市販で取り入れやすいレチノイド。ターンオーバーを促し美白成分の働きを後押しします。少量から始め、肌が慣れるまではHQと同じ夜に重ねないのが安全です。</p>
+                <p class="ing-card-desc cn">以市售方式引入视黄醛的好处，与氢醌相辅。视黄醛促进代谢、助力提亮成分——是处方维A酸的温和替代。需缓慢建立耐受，肌肤适应前勿与氢醌同晚叠加。</p>
+                <p class="ing-card-desc tw">以市售方式引入視黃醛的好處，與氫醌相輔。視黃醛促進代謝、助力提亮成分——是處方維A酸的溫和替代。需緩慢建立耐受，肌膚適應前勿與氫醌同晚疊加。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c4)">✓</span><span class="en">Want retinoid support without Rx</span><span class="ja">処方なしでレチノイドを</span><span class="cn">想要非处方的视黄醛支持</span><span class="tw">想要非處方的視黃醛支持</span></li>
+                    <li><span class="check" style="color:var(--c4)">✓</span><span class="en">Texture &amp; tone together</span><span class="ja">キメとトーンを同時に</span><span class="cn">同时改善肤质与肤色</span><span class="tw">同時改善膚質與膚色</span></li>
+                    <li><span class="check" style="color:var(--c4)">✓</span><span class="en">Building tolerance gradually</span><span class="ja">徐々に慣らしたい</span><span class="cn">逐步建立耐受</span><span class="tw">逐步建立耐受</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c4)">
+                    <span class="en">"Retinoid uplift — ramp up slowly"</span>
+                    <span class="ja">「レチノイドの後押し — 徐々に」</span>
+                    <span class="cn">「视黄醛加成——循序渐进」</span>
+                    <span class="tw">「視黃醛加成——循序漸進」</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 05 Cica Mela Barrier -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c5)"></div>
+            <div class="prod-img-box"><img src="5.jpg" alt="Cica Mela Repair Cream barrier"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c5)">
+                    <span class="en">05 · Barrier &amp; Soothing</span>
+                    <span class="ja">05 · バリア＆鎮静</span>
+                    <span class="cn">05 · 屏障与舒缓</span>
+                    <span class="tw">05 · 屏障與舒緩</span>
+                </span>
+                <div class="ing-card-name">Cica Mela Repair Cream</div>
+                <div class="ing-card-sub">
+                    <span class="en">Panthenol · Cica · Allantoin + brightening barrier</span>
+                    <span class="ja">パンテノール・シカ・アラントイン＋美白バリア</span>
+                    <span class="cn">泛醇·积雪草·尿囊素＋美白屏障</span>
+                    <span class="tw">泛醇·積雪草·尿囊素＋美白屏障</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">The support partner every hydroquinone routine needs. Layered after HQ, its panthenol–cica–allantoin blend calms dryness and irritation while its brightening-barrier design helps hold results — the difference between quitting from irritation and finishing the cycle.</p>
+                <p class="ing-card-desc ja">ハイドロキノン生活に欠かせない相棒。HQの後に重ねると、パンテノール・シカ・アラントインが乾燥や刺激を鎮め、美白バリア設計が結果の維持を助けます。刺激で挫折するか、最後までやり切れるかの分かれ目です。</p>
+                <p class="ing-card-desc cn">每套氢醌流程都需要的辅助搭档。叠涂于氢醌之后，泛醇-积雪草-尿囊素配方舒缓干燥与刺激，美白屏障设计助力维持效果——决定你是因刺激放弃，还是坚持完成疗程。</p>
+                <p class="ing-card-desc tw">每套氫醌流程都需要的輔助搭檔。疊塗於氫醌之後，泛醇-積雪草-尿囊素配方舒緩乾燥與刺激，美白屏障設計助力維持效果——決定你是因刺激放棄，還是堅持完成療程。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c5)">✓</span><span class="en">Dryness or tightness from actives</span><span class="ja">活性成分による乾燥・つっぱり</span><span class="cn">活性成分导致的干燥紧绷</span><span class="tw">活性成分導致的乾燥緊繃</span></li>
+                    <li><span class="check" style="color:var(--c5)">✓</span><span class="en">Finishing step after HQ / retinal</span><span class="ja">HQ・レチナール後の仕上げ</span><span class="cn">氢醌/视黄醛后的收尾</span><span class="tw">氫醌/視黃醛後的收尾</span></li>
+                    <li><span class="check" style="color:var(--c5)">✓</span><span class="en">Maintaining results on off-days</span><span class="ja">休薬日の維持ケア</span><span class="cn">停用日的维持护理</span><span class="tw">停用日的維持護理</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c5)">
+                    <span class="en">"The partner that lets you finish the cycle"</span>
+                    <span class="ja">「最後までやり切るための相棒」</span>
+                    <span class="cn">「让你坚持到底的搭档」</span>
+                    <span class="tw">「讓你堅持到底的搭檔」</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 06 Lacticare Soothing Rx -->
+        <div class="ing-card">
+            <div class="ing-card-stripe" style="background:var(--c6)"></div>
+            <div class="prod-img-box"><img src="6.jpg" alt="Lacticare 1% mild OTC steroid"></div>
+            <div class="ing-card-head">
+                <span class="ing-label" style="background:var(--c6)">
+                    <span class="en">06 · Irritation Rescue</span>
+                    <span class="ja">06 · 刺激レスキュー</span>
+                    <span class="cn">06 · 刺激急救</span>
+                    <span class="tw">06 · 刺激急救</span>
+                </span>
+                <div class="ing-card-name">Lacticare 1%</div>
+                <div class="ing-card-sub">
+                    <span class="en">Mild OTC steroid (hydrocortisone) alongside HQ</span>
+                    <span class="ja">マイルドなOTCステロイド（ヒドロコルチゾン）＋HQ</span>
+                    <span class="cn">温和OTC类固醇（氢化可的松）＋氢醌</span>
+                    <span class="tw">溫和OTC類固醇（氫化可體松）＋氫醌</span>
+                </div>
+            </div>
+            <div class="ing-card-body">
+                <p class="ing-card-desc en">A gentle OTC steroid to short-circuit flare-ups when HQ irritates. Used briefly, it dials down redness and inflammation so you don't abandon treatment. Steroids aren't for continuous use, though — keep it to short stints and check in with a pharmacist or doctor.</p>
+                <p class="ing-card-desc ja">HQで刺激が出たときに一時的に赤みや炎症を抑える、マイルドなOTCステロイド。短期使用で治療の中断を防ぎます。ただしステロイドは継続使用向きではなく、短期にとどめ、薬剤師・医師に相談を。</p>
+                <p class="ing-card-desc cn">当氢醌引起刺激时，用温和OTC类固醇短期"救急"，压下泛红与炎症，避免中断治疗。但类固醇不宜连续使用，务必短期使用并咨询药师或医生。</p>
+                <p class="ing-card-desc tw">當氫醌引起刺激時，用溫和OTC類固醇短期「救急」，壓下泛紅與炎症，避免中斷治療。但類固醇不宜連續使用，務必短期使用並諮詢藥師或醫生。</p>
+                <ul class="ing-card-uses">
+                    <li><span class="check" style="color:var(--c6)">✓</span><span class="en">Sudden redness / irritation flare</span><span class="ja">急な赤み・刺激の悪化</span><span class="cn">突发泛红/刺激加重</span><span class="tw">突發泛紅/刺激加重</span></li>
+                    <li><span class="check" style="color:var(--c6)">✓</span><span class="en">Short-term rescue only</span><span class="ja">短期のレスキューのみ</span><span class="cn">仅限短期急救</span><span class="tw">僅限短期急救</span></li>
+                    <li><span class="check" style="color:var(--c6)">✓</span><span class="en">Ask a pharmacist before extending</span><span class="ja">継続前に薬剤師へ相談</span><span class="cn">延长前请咨询药师</span><span class="tw">延長前請諮詢藥師</span></li>
+                </ul>
+                <div class="ing-card-verdict" style="background:var(--c6)">
+                    <span class="en">"A brake for irritation — not a daily driver"</span>
+                    <span class="ja">「刺激のブレーキ、常用はしない」</span>
+                    <span class="cn">「刺激的刹车——不是日常常用」</span>
+                    <span class="tw">「刺激的剎車——不是日常常用」</span>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /ing-grid -->
+</section>
+
+<!-- ─────────────────────────────── RX CALLOUT -->
+<div class="rxnote">
+    <div class="rxnote-inner">
+        <div class="rxnote-icon">⚠️</div>
+        <div class="rxnote-text">
+            <strong class="en">A note on regulation</strong>
+            <strong class="ja">規制についての注意</strong>
+            <strong class="cn">关于监管的说明</strong>
+            <strong class="tw">關於監管的說明</strong>
+            <p class="en">In Korea, hydroquinone is a prescription-grade medicine, not a cosmetic ingredient — and it's banned for general cosmetic use in the EU, Australia and Japan. Products combining it with retinoic acid or steroids are prescription-only. Don't self-diagnose, self-mix, or use long-term without professional guidance. Talk to a dermatologist or pharmacist first.</p>
+            <p class="ja">韓国ではハイドロキノンは化粧品成分ではなく医療用医薬品扱いで、EU・オーストラリア・日本では一般化粧品への配合が禁止されています。レチノイン酸やステロイドとの配合剤は処方専用です。自己判断での併用・長期使用は避け、必ず皮膚科医・薬剤師にご相談ください。</p>
+            <p class="cn">在韩国，氢醌属于处方级药品而非化妆品成分；在欧盟、澳大利亚和日本被禁止用于一般化妆品。与维A酸或类固醇复配的产品仅限处方。请勿自行诊断、自行调配或长期使用，务必先咨询皮肤科医生或药师。</p>
+            <p class="tw">在韓國，氫醌屬於處方級藥品而非化妝品成分；在歐盟、澳洲和日本被禁止用於一般化妝品。與維A酸或類固醇複配的產品僅限處方。請勿自行診斷、自行調配或長期使用，務必先諮詢皮膚科醫生或藥師。</p>
+        </div>
+    </div>
+</div>
+
+<!-- ─────────────────────────────── QUICK REFERENCE -->
+<section class="pick-section">
+    <div class="pick-box">
+        <div class="pick-header">
+            <h2 class="en">Korean Pharmacist's Quick Match</h2>
+            <h2 class="ja">韓国薬剤師の早見マッチング</h2>
+            <h2 class="cn">韩国药剂师速配指南</h2>
+            <h2 class="tw">韓國藥劑師速配指南</h2>
+            <span class="pick-badge en">Quick Reference</span>
+            <span class="pick-badge ja">早見表</span>
+            <span class="pick-badge cn">速查表</span>
+            <span class="pick-badge tw">速查表</span>
+        </div>
+
+        <div class="pick-grid">
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c1)"></span>
+                    <span class="en">New to hydroquinone</span>
+                    <span class="ja">ハイドロキノン初心者</span>
+                    <span class="cn">初次使用氢醌</span>
+                    <span class="tw">初次使用氫醌</span>
+                </div>
+                <div class="pick-ing">→ Melatoning (HQ 2%)</div>
+                <div class="pick-ing-sub en">Gentle entry strength</div>
+                <div class="pick-ing-sub ja">やさしい入門濃度</div>
+                <div class="pick-ing-sub cn">温和入门浓度</div>
+                <div class="pick-ing-sub tw">溫和入門濃度</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c2)"></span>
+                    <span class="en">Stubborn, set-in spots</span>
+                    <span class="ja">頑固な濃いシミ</span>
+                    <span class="cn">顽固深色斑</span>
+                    <span class="tw">頑固深色斑</span>
+                </div>
+                <div class="pick-ing">→ Melanosa (HQ 4%)</div>
+                <div class="pick-ing-sub en">Short potent cycles</div>
+                <div class="pick-ing-sub ja">短期・高濃度</div>
+                <div class="pick-ing-sub cn">短期高浓度</div>
+                <div class="pick-ing-sub tw">短期高濃度</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c3)"></span>
+                    <span class="en">Persistent melasma (Rx)</span>
+                    <span class="ja">難治性肝斑（処方）</span>
+                    <span class="cn">顽固黄褐斑（处方）</span>
+                    <span class="tw">頑固黃褐斑（處方）</span>
+                </div>
+                <div class="pick-ing">→ Melanon (Triple)</div>
+                <div class="pick-ing-sub en">Dermatologist-guided</div>
+                <div class="pick-ing-sub ja">皮膚科の管理下</div>
+                <div class="pick-ing-sub cn">皮肤科指导</div>
+                <div class="pick-ing-sub tw">皮膚科指導</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c4)"></span>
+                    <span class="en">Texture + tone, no Rx</span>
+                    <span class="ja">キメ＋トーン（市販）</span>
+                    <span class="cn">肤质＋肤色（非处方）</span>
+                    <span class="tw">膚質＋膚色（非處方）</span>
+                </div>
+                <div class="pick-ing">→ Vitalift A (Retinal)</div>
+                <div class="pick-ing-sub en">Gentle retinoid uplift</div>
+                <div class="pick-ing-sub ja">やさしいレチノイド</div>
+                <div class="pick-ing-sub cn">温和视黄醛加成</div>
+                <div class="pick-ing-sub tw">溫和視黃醛加成</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c5)"></span>
+                    <span class="en">Dryness / need soothing</span>
+                    <span class="ja">乾燥・鎮静したい</span>
+                    <span class="cn">干燥/需要舒缓</span>
+                    <span class="tw">乾燥/需要舒緩</span>
+                </div>
+                <div class="pick-ing">→ Cica Mela Repair</div>
+                <div class="pick-ing-sub en">Barrier support</div>
+                <div class="pick-ing-sub ja">バリアサポート</div>
+                <div class="pick-ing-sub cn">屏障支持</div>
+                <div class="pick-ing-sub tw">屏障支持</div>
+            </div>
+
+            <div class="pick-item">
+                <div class="pick-concern">
+                    <span class="pick-dot" style="background:var(--c6)"></span>
+                    <span class="en">Sudden irritation flare</span>
+                    <span class="ja">急な刺激・赤み</span>
+                    <span class="cn">突发刺激泛红</span>
+                    <span class="tw">突發刺激泛紅</span>
+                </div>
+                <div class="pick-ing">→ Lacticare 1%</div>
+                <div class="pick-ing-sub en">Short-term rescue</div>
+                <div class="pick-ing-sub ja">短期レスキュー</div>
+                <div class="pick-ing-sub cn">短期急救</div>
+                <div class="pick-ing-sub tw">短期急救</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────────────────── FOOTER -->
+<footer class="site-footer">
+    <p class="footer-cta en">Which stage are you at with dark spots? Drop a comment below 👇</p>
+    <p class="footer-cta ja">あなたのシミケアは今どの段階？コメントで教えてください 👇</p>
+    <p class="footer-cta cn">你的祛斑正处在哪个阶段？在评论区告诉我们 👇</p>
+    <p class="footer-cta tw">你的祛斑正處在哪個階段？在留言區告訴我們 👇</p>
+
+    <div class="footer-disclaimer en">This guide is general information from a pharmacist's perspective, not a diagnosis or prescription. Hydroquinone and combination products are prescription-grade — please consult a dermatologist or pharmacist before use.</div>
+    <div class="footer-disclaimer ja">本ガイドは薬剤師の視点による一般情報であり、診断・処方ではありません。ハイドロキノンおよび配合剤は医療グレードです。ご使用前に皮膚科医・薬剤師にご相談ください。</div>
+    <div class="footer-disclaimer cn">本指南为药剂师视角的一般信息，非诊断或处方。氢醌及复配产品属医疗级，使用前请咨询皮肤科医生或药师。</div>
+    <div class="footer-disclaimer tw">本指南為藥劑師視角的一般資訊，非診斷或處方。氫醌及複配產品屬醫療級，使用前請諮詢皮膚科醫生或藥師。</div>
+
+    <div class="hashtag-block">
+        <div class="en">#Hydroquinone #Melasma #DarkSpots #Hyperpigmentation #Brightening #Retinal #SkinBarrier #KoreanPharmacy #KoreanPharmacist #Kbeauty #SkincareScience</div>
+        <div class="ja">#ハイドロキノン #肝斑 #シミ #色素沈着 #美白 #レチナール #スキンバリア #韓国薬局 #韓国薬剤師 #韓国コスメ</div>
+        <div class="cn">#氢醌 #黄褐斑 #色斑 #色素沉着 #美白 #视黄醛 #皮肤屏障 #韩国药局 #韩国药剂师 #韩国护肤</div>
+        <div class="tw">#氫醌 #黃褐斑 #色斑 #色素沉著 #美白 #視黃醛 #皮膚屏障 #韓國藥局 #韓國藥師 #韓國保養</div>
+    </div>
+
+    <div class="footer-brand">EIGHT PHARMACY · Seoul, Korea</div>
+</footer>
+
+<script>
+    function switchLang(lang) {
+        document.body.className = 'lang-' + lang;
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + lang).classList.add('active');
+    }
+</script>
+</body>
+</html>
