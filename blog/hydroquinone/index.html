@@ -314,6 +314,13 @@
             margin-top: 2.5rem; font-size: .78rem; color: #A79FC0;
             font-family: 'Cormorant Garamond', serif; letter-spacing: .1em;
         }
+
+        /* ── VIEW COUNTER ──────────────────────────── */
+        .view-counter {
+            max-width: 960px; margin: 0 auto; padding: .6rem 1.5rem 0;
+            text-align: right; font-size: .78rem; color: #A79FC0;
+            letter-spacing: .02em;
+        }
     </style>
 </head>
 <body class="lang-en">
@@ -330,6 +337,9 @@
         </nav>
     </div>
 </header>
+
+<!-- ─────────────────────────────── VIEW COUNTER -->
+<div class="view-counter" id="view-counter">👁 —</div>
 
 <!-- ─────────────────────────────── HERO -->
 <section class="hero">
@@ -551,7 +561,7 @@
         <!-- 01 Melatoning HQ 2% -->
         <div class="ing-card">
             <div class="ing-card-stripe" style="background:var(--c1)"></div>
-            <div class="prod-img-box"><img src="1.jpg" alt="Melatoning Cream HQ 2%"></div>
+            <div class="prod-img-box"><img src="1.png" alt="Melatoning Cream HQ 2%"></div>
             <div class="ing-card-head">
                 <span class="ing-label" style="background:var(--c1)">
                     <span class="en">01 · Entry Strength</span>
@@ -590,7 +600,7 @@
         <!-- 02 Melanosa HQ 4% -->
         <div class="ing-card">
             <div class="ing-card-stripe" style="background:var(--c2)"></div>
-            <div class="prod-img-box"><img src="2.jpg" alt="Melanosa Cream HQ 4%"></div>
+            <div class="prod-img-box"><img src="2.png" alt="Melanosa Cream HQ 4%"></div>
             <div class="ing-card-head">
                 <span class="ing-label" style="background:var(--c2)">
                     <span class="en">02 · Potent Strength</span>
@@ -629,7 +639,7 @@
         <!-- 03 Melanon Triple Combination -->
         <div class="ing-card">
             <div class="ing-card-stripe" style="background:var(--c3)"></div>
-            <div class="prod-img-box"><img src="3.jpg" alt="Melanon Cream triple combination"></div>
+            <div class="prod-img-box"><img src="3.png" alt="Melanon Cream triple combination"></div>
             <div class="ing-card-head">
                 <span class="ing-label" style="background:var(--c3)">
                     <span class="en">03 · Triple Combination · Rx</span>
@@ -667,7 +677,7 @@
         <!-- 04 Vitalift A Fortissimo Retinal -->
         <div class="ing-card">
             <div class="ing-card-stripe" style="background:var(--c4)"></div>
-            <div class="prod-img-box"><img src="4.jpg" alt="Dr.Different Vitalift A Fortissimo Retinal 0.15%"></div>
+            <div class="prod-img-box"><img src="4.png" alt="Dr.Different Vitalift A Fortissimo Retinal 0.15%"></div>
             <div class="ing-card-head">
                 <span class="ing-label" style="background:var(--c4)">
                     <span class="en">04 · Retinoid Pairing</span>
@@ -706,7 +716,7 @@
         <!-- 05 Cica Mela Barrier -->
         <div class="ing-card">
             <div class="ing-card-stripe" style="background:var(--c5)"></div>
-            <div class="prod-img-box"><img src="5.jpg" alt="Cica Mela Repair Cream barrier"></div>
+            <div class="prod-img-box"><img src="5.png" alt="Cica Mela Repair Cream barrier"></div>
             <div class="ing-card-head">
                 <span class="ing-label" style="background:var(--c5)">
                     <span class="en">05 · Barrier &amp; Soothing</span>
@@ -744,7 +754,7 @@
         <!-- 06 Lacticare Soothing Rx -->
         <div class="ing-card">
             <div class="ing-card-stripe" style="background:var(--c6)"></div>
-            <div class="prod-img-box"><img src="6.jpg" alt="Lacticare 1% mild OTC steroid"></div>
+            <div class="prod-img-box"><img src="6.png" alt="Lacticare 1% mild OTC steroid"></div>
             <div class="ing-card-head">
                 <span class="ing-label" style="background:var(--c6)">
                     <span class="en">06 · Irritation Rescue</span>
@@ -936,5 +946,41 @@
         document.getElementById('btn-' + lang).classList.add('active');
     }
 </script>
+
+<!-- Firebase view counter -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBq259CQRj2Fu59XQBJg3xGKqMyDNFIEvY",
+    authDomain: "pharmacy-ef935.firebaseapp.com",
+    projectId: "pharmacy-ef935",
+    storageBucket: "pharmacy-ef935.firebasestorage.app",
+    messagingSenderId: "99763164145",
+    appId: "1:99763164145:web:7ad57b826384b6d2a6aa50"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const PAGE_SLUG = 'hydroquinone';
+
+  db.collection('posts')
+    .where('slug', '==', PAGE_SLUG)
+    .get()
+    .then(snap => {
+      if (!snap.empty) {
+        const doc = snap.docs[0];
+        // views +1
+        doc.ref.update({
+          views: firebase.firestore.FieldValue.increment(1)
+        });
+        // show count (pre-update value + 1)
+        const currentViews = (doc.data().views || 0) + 1;
+        document.getElementById('view-counter').textContent = '👁 ' + currentViews.toLocaleString() + ' views';
+      }
+    })
+    .catch(err => console.log('View count error:', err));
+</script>
+
 </body>
 </html>
