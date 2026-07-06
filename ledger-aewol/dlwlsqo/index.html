@@ -17,12 +17,24 @@
             <button class="tab-btn active" onclick="switchTab('sales-tab-content', this)">📊 매출 대시보드</button>
             <button class="tab-btn" onclick="switchTab('expense-tab-content', this)">💸 지출항목 등록</button>
             <button class="tab-btn" onclick="switchTab('profit-tab-content', this)">📈 월간 영업이익 리포트</button>
+            <button class="tab-btn" onclick="switchTab('crawl-tab-content', this)">🛰️ 오늘 매출 (POS 연동)</button>
         </nav>
 
         <div class="global-month-selector">
             <button id="prevMonth" class="nav-btn">&lt;</button>
             <h2 id="calendarTitle">2026년 06월</h2>
             <button id="nextMonth" class="nav-btn">&gt;</button>
+        </div>
+
+        <!-- 오늘 매출 배너 (POS 크롤링 결과 · 실시간) -->
+        <div class="today-sales-banner">
+            <div class="tsb-left">
+                <span class="tsb-icon">🛰️</span>
+                <div class="tsb-textwrap">
+                    <span class="tsb-label" id="todaySalesDate">오늘 매출 불러오는 중…</span>
+                    <span class="tsb-value" id="todaySalesValue">-</span>
+                </div>
+            </div>
         </div>
 
         <div id="sales-tab-content" class="tab-panel active">
@@ -167,6 +179,39 @@
                     </div>
                 </div>
             </section>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!-- 🛰️ POS 크롤링 탭 (오늘 매출 · 클라우드 수집) -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div id="crawl-tab-content" class="tab-panel">
+            <main class="crawl-single">
+                <div class="crawl-result-card">
+                    <div class="crawl-result-header">
+                        <div>
+                            <h2>🛰️ 오늘 매출 현황</h2>
+                            <span id="crawlLastUpdated" class="crawl-updated">POS에서 실시간 수집</span>
+                        </div>
+                        <button id="crawlRefreshBtn" class="crawl-refresh-btn">
+                            <span class="refresh-icon">↻</span> 지금 수집
+                        </button>
+                    </div>
+
+                    <div class="crawl-total-box">
+                        <span class="crawl-total-label">오늘 전체 매장 합계</span>
+                        <span class="crawl-total-value" id="todaySalesValue2">-</span>
+                    </div>
+
+                    <div id="crawlStoreList" class="crawl-store-list">
+                        <p class="placeholder-text">[지금 수집] 버튼을 누르면 오늘 매출을 불러옵니다.</p>
+                    </div>
+
+                    <p class="crawl-help">
+                        💡 [지금 수집]을 누르면 클라우드 서버가 POS에 접속해 오늘 매출을 가져옵니다.
+                        PC를 켜둘 필요 없이 휴대폰에서도 동작하며, 매일 밤 11시에 자동으로도 수집됩니다.
+                    </p>
+                </div>
+            </main>
         </div>
     </div>
 
