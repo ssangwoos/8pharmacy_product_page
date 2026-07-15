@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Korean Pharmacy Summer Essentials Top 6 | EIGHT PHARMACY</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700;900&family=Noto+Sans+JP:wght@400;700;900&family=Noto+Sans+SC:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet" />
+
+  <!-- Firebase (views counter) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --green:    #1E4D35;
+      --cross:    #3DAF6F;
+      --sky:      #0077B6;
+      --sky-lt:   #48CAE4;
+      --yellow:   #FFB703;
+      --bg:       #F0F8FF;
+      --card-bg:  #FFFFFF;
+      --ink:      #1A1A1A;
+      --muted:    #6B7280;
+      --border:   #DDE5E0;
+      --shadow:   0 4px 20px rgba(0,119,182,0.10);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Noto Sans', 'Noto Sans JP', 'Noto Sans SC', 'Noto Sans TC', sans-serif;
+      line-height: 1.7;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; width: 100%; }
+
+    /* ── LANG SECTION ── */
+    .lang-section { display: none; }
+    .lang-section.active { display: block; }
+
+    /* ── HEADER ── */
+    .site-header {
+      background: var(--green);
+      border-bottom: 3px solid var(--cross);
+      padding: 0 24px;
+    }
+    .site-header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .1em;
+    }
+    .header-logo svg { color: var(--cross); }
+    .view-counter {
+      font-size: 11px;
+      color: rgba(255,255,255,.55);
+      font-weight: 700;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--sky) 0%, #023E8A 100%);
+      color: #fff;
+      text-align: center;
+      padding: 52px 24px 44px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '☀️';
+      position: absolute;
+      font-size: 200px;
+      top: -40px;
+      right: -20px;
+      opacity: .06;
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: var(--yellow);
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 99px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(22px, 5vw, 40px);
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+    .hero h1 em { color: var(--sky-lt); font-style: normal; }
+    .hero-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,.65);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── LANG TABS ── */
+    .lang-tabs {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 28px 20px 0;
+    }
+    .lang-tab {
+      padding: 8px 20px;
+      border-radius: 99px;
+      border: 2px solid var(--sky);
+      background: transparent;
+      color: var(--sky);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .18s;
+      font-family: inherit;
+    }
+    .lang-tab.active, .lang-tab:hover {
+      background: var(--sky);
+      color: #fff;
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 36px 20px 64px;
+    }
+
+    .section-title {
+      font-size: clamp(16px, 3vw, 22px);
+      font-weight: 900;
+      margin-bottom: 28px;
+      padding-bottom: 12px;
+      border-bottom: 3px solid var(--sky);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title .accent { color: var(--sky); }
+
+    /* ── PRODUCT GRID ── */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .pcard {
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .pcard:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 32px rgba(0,119,182,0.15);
+    }
+    .pcard-img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: #E8F4FD;
+      display: block;
+    }
+    .pcard-body {
+      padding: 18px 18px 22px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .pcard-tag {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--sky);
+      background: #E0F0FF;
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 99px;
+      align-self: flex-start;
+    }
+    .pcard-name {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+    .pcard-ingredient {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--sky);
+      background: #F0F8FF;
+      border: 1px solid #BAD8EE;
+      border-radius: 4px;
+      padding: 3px 8px;
+      display: inline-block;
+      align-self: flex-start;
+    }
+    .pcard-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      flex: 1;
+    }
+    .pcard-tip {
+      margin-top: 6px;
+      background: #FFFBEA;
+      border: 1px solid #FFE082;
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 12px;
+      color: #7A5800;
+      line-height: 1.6;
+    }
+    .pcard-tip::before { content: '💬 '; font-weight: 700; }
+
+    /* ── CAUTION BOX ── */
+    .caution-box {
+      margin-top: 32px;
+      background: #FFF3E0;
+      border: 1px solid #FFCC80;
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-size: 13px;
+      color: #7A4000;
+      line-height: 1.75;
+    }
+    .caution-box h4 {
+      font-size: 13px;
+      font-weight: 900;
+      color: #E65100;
+      margin-bottom: 8px;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 28px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(0,119,182,.2);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--green);
+      color: rgba(255,255,255,.45);
+      text-align: center;
+      padding: 28px 20px;
+      font-size: 12px;
+    }
+    footer strong { color: rgba(255,255,255,.8); }
+    footer nav { display: flex; gap: 16px; justify-content: center; margin-bottom: 10px; }
+    footer nav a { color: rgba(255,255,255,.45); font-size: 12px; font-weight: 700; }
+    footer nav a:hover { color: #fff; }
+
+    @media (max-width: 540px) {
+      .product-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .pcard-body { padding: 12px 12px 16px; }
+      .pcard-name { font-size: 13px; }
+      .pcard-desc { font-size: 11.5px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="/blog/" class="header-logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 2h6v6h6v6h-6v6H9v-6H3V8h6z"/></svg>
+      EIGHT PHARMACY
+    </a>
+    <div class="view-counter" id="view-counter">👁 —</div>
+  </div>
+</header>
+
+<!-- LANG TABS -->
+<div class="lang-tabs">
+  <button class="lang-tab active" onclick="switchLang('en',this)">🇺🇸 EN</button>
+  <button class="lang-tab"        onclick="switchLang('ja',this)">🇯🇵 日本語</button>
+  <button class="lang-tab"        onclick="switchLang('zh',this)">🇨🇳 简体</button>
+  <button class="lang-tab"        onclick="switchLang('tw',this)">🇹🇼 繁體</button>
+</div>
+
+
+<!-- ══════════ ENGLISH ══════════ -->
+<div id="en" class="lang-section active">
+  <div class="hero">
+    <span class="hero-badge">☀️ Summer Special · EIGHT PHARMACY</span>
+    <h1>Beat the Heat —<br/><em>Korea's Best Summer Pharmacy Picks</em></h1>
+    <p class="hero-sub">Pharmacist-curated essentials for sweating, heat exhaustion & summer fatigue. Only at Korean pharmacies.</p>
+  </div>
+  <div class="content">
+    <h2 class="section-title"><span class="accent">Top 6 Summer Essentials</span> ☀️</h2>
+    <div class="divider"><span>🌊</span></div>
+    <div class="product-grid">
+
+      <div class="pcard">
+        <img class="pcard-img" src="1.jpg" alt="Nosweat" />
+        <div class="pcard-body">
+          <span class="pcard-tag">Antiperspirant</span>
+          <div class="pcard-name">Nosweat (노스엣)</div>
+          <span class="pcard-ingredient">Aluminium Chloride 20%</span>
+          <p class="pcard-desc">Physically blocks sweat ducts by forming a gel plug when it contacts moisture. Reduces sweating by 70–90%. Apply to dry skin at bedtime and rinse off in the morning. Best for underarms, hands and feet.</p>
+          <div class="pcard-tip">"Apply at night when sweat glands are less active — this is when it works best. Don't apply to wet or irritated skin."</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="2.jpg" alt="Nosweat Sense" />
+        <div class="pcard-body">
+          <span class="pcard-tag">Sensitive Skin</span>
+          <div class="pcard-name">Nosweat Sense (노스엣센스)</div>
+          <span class="pcard-ingredient">Aluminium Chloride 12%</span>
+          <p class="pcard-desc">A gentler version of Nosweat with a lower concentration — less irritation, still effective. Recommended for women or those with sensitive skin who find the original too strong. Same mechanism, milder formula.</p>
+          <div class="pcard-tip">"If the original Nosweat stings or itches, switch to this one. Lower strength but gentler on skin — great for first-timers."</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="3.jpg" alt="Sweatrol Pad" />
+        <div class="pcard-body">
+          <span class="pcard-tag">Facial Sweating</span>
+          <div class="pcard-name">Sweatrol Pad (스웨트롤패드)</div>
+          <span class="pcard-ingredient">Glycopyrrolate 23.4mg</span>
+          <p class="pcard-desc">Korea's only OTC facial sweat pad. Glycopyrrolate blocks the nerve signals that trigger sweat glands — works differently from aluminium-based products. Apply to the face (avoid eyes, nose, mouth) once at night. Do not wash the face for at least 4 hours after application.</p>
+          <div class="pcard-tip">"Perfect for keeping makeup intact all day. Apply the night before an event — effect lasts through the next day."</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="4.jpg" alt="Saengmaeksan" />
+        <div class="pcard-body">
+          <span class="pcard-tag">Heat Exhaustion</span>
+          <div class="pcard-name">Saengmaeksan / Bosaengwon (생맥산)</div>
+          <span class="pcard-ingredient">Ginseng · Ophiopogon · Schisandra</span>
+          <p class="pcard-desc">A traditional Korean herbal remedy used since the Joseon dynasty — even Korean kings drank it every summer. Replenishes vital fluids and energy lost to heat. Used for heat exhaustion, fatigue, excessive sweating and low energy. Ginseng restores energy, Ophiopogon replenishes fluids, Schisandra stabilises the body. Take 1 pouch, 3x daily between meals.</p>
+          <div class="pcard-tip">"When you feel drained, sweaty and have no appetite in summer heat — this is the classic Korean fix. Also shown to reduce fatigue in exercise studies."</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="5.jpg" alt="Champ Cooling Sheet" />
+        <div class="pcard-body">
+          <span class="pcard-tag">Fever / Cooling</span>
+          <div class="pcard-name">Champ Cooling Sheet (챔프 열냉각시트)</div>
+          <span class="pcard-ingredient">Hydrogel Cooling Technology</span>
+          <p class="pcard-desc">A hydrogel patch that uses the principle of evaporative cooling — water molecules in the gel absorb and dissipate body heat. Safe for children and adults. Apply to the forehead when fever occurs or for quick cooling in the heat. No medication involved — purely physical cooling.</p>
+          <div class="pcard-tip">"A go-to for parents with feverish children. Non-medicinal, so it can be used alongside fever reducers. Keep one in the bag all summer."</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="6.jpg" alt="Glucose Candy" />
+        <div class="pcard-body">
+          <span class="pcard-tag">Energy / Low Blood Sugar</span>
+          <div class="pcard-name">Glucose Candy (포도당 캔디)</div>
+          <span class="pcard-ingredient">Dextrose (Glucose) 95%+</span>
+          <p class="pcard-desc">95%+ pure glucose — absorbed directly into the bloodstream without digestion. Instantly raises blood sugar levels, making it essential for diabetics with hypoglycaemia and anyone who feels faint from summer heat. Also popular among students and hikers for quick energy. Unlike regular candy, it dissolves fast and is gentler on teeth.</p>
+          <div class="pcard-tip">"Keep a few in your pocket on hot days. If you feel dizzy or weak from the heat, 2–3 of these will bring you back fast. Much quicker than regular snacks."</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="caution-box">
+      <h4>⚠️ Important Notes</h4>
+      Nosweat / Nosweat Sense: Do not apply to wet, shaved or irritated skin — may cause burning. Compensatory sweating (increased sweating elsewhere) is rare but possible. · Sweatrol Pad: Avoid eye area. Do not use with contact lenses. · Saengmaeksan: Avoid if you have heat conditions or take blood thinners — consult a pharmacist. · Glucose Candy: Use with caution if you have diabetes — can raise blood sugar rapidly.
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 日本語 ══════════ -->
+<div id="ja" class="lang-section">
+  <div class="hero">
+    <span class="hero-badge">☀️ 夏の特集 · EIGHT PHARMACY</span>
+    <h1>夏の不調を解決 —<br/><em>韓国薬局の夏必須アイテム 6選</em></h1>
+    <p class="hero-sub">汗・熱中症・夏バテ対策に。薬剤師が厳選した韓国でしか買えないアイテムを徹底解説。</p>
+  </div>
+  <div class="content">
+    <h2 class="section-title"><span class="accent">夏の必須アイテム 6選</span> ☀️</h2>
+    <div class="divider"><span>🌊</span></div>
+    <div class="product-grid">
+
+      <div class="pcard">
+        <img class="pcard-img" src="1.jpg" alt="ノースエット" />
+        <div class="pcard-body">
+          <span class="pcard-tag">制汗剤</span>
+          <div class="pcard-name">ノースエット (노스엣)</div>
+          <span class="pcard-ingredient">塩化アルミニウム 20%</span>
+          <p class="pcard-desc">水分と接触するとゲル状に変化し、汗腺の出口に蓋を形成して物理的に発汗を抑制。使用により汗が70〜90%減少するとされる。就寝前に乾いた肌へ塗布し、翌朝洗い流す。わきの下・手・足に効果的。</p>
+          <div class="pcard-tip">"汗腺の活動が低下する夜間に塗布するのが効果的。濡れた肌や剃毛直後の肌への使用は刺激になるため避けて。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="2.jpg" alt="ノースエットセンス" />
+        <div class="pcard-body">
+          <span class="pcard-tag">敏感肌向け</span>
+          <div class="pcard-name">ノースエットセンス (노스엣센스)</div>
+          <span class="pcard-ingredient">塩化アルミニウム 12%</span>
+          <p class="pcard-desc">ノースエットの低濃度・低刺激バージョン。刺激が少なく、皮膚が弱い方や女性に多く推奨される。効果は同様のメカニズムだが、よりマイルドな使用感。初めて制汗剤を試す方にも最適。</p>
+          <div class="pcard-tip">"ノースエットを使ってヒリヒリしたことがある方はこちらへ。濃度は低くても効果はしっかりある。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="3.jpg" alt="スウェトロールパッド" />
+        <div class="pcard-body">
+          <span class="pcard-tag">顔の汗</span>
+          <div class="pcard-name">スウェトロールパッド (스웨트롤패드)</div>
+          <span class="pcard-ingredient">グリコピロレート 23.4mg</span>
+          <p class="pcard-desc">韓国唯一の顔専用・市販制汗パッド。グリコピロレート成分が神経信号をブロックし、汗腺の活動を抑制するアルミニウム系とは異なるメカニズム。就寝前に顔（目・鼻・口を除く）にパッドを当てて5回程度軽く拭き取る。適用後4時間は洗顔しないこと。</p>
+          <div class="pcard-tip">"翌日のメイク崩れが気になる夜に使用。1日1回の使用で翌日一日中効果が持続するのがポイント。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="4.jpg" alt="生脈散" />
+        <div class="pcard-body">
+          <span class="pcard-tag">熱中症・夏バテ</span>
+          <div class="pcard-name">生脈散 / 保生元 (생맥산)</div>
+          <span class="pcard-ingredient">人参・麦門冬・五味子</span>
+          <p class="pcard-desc">朝鮮時代の王たちが夏に愛飲した伝統的な漢方薬。熱暑による気力の消耗と体液不足を補う。人参が元気を補い、麦門冬が体液を補充、五味子が気力の散逸を防ぐ。熱中症・夏バテ・過度な発汗・食欲不振に。1日3回、食間に1包服用。</p>
+          <div class="pcard-tip">"夏にだるい・汗が多い・食欲がない、そんな時は生脈散。映画「パラサイト」にも登場した韓国の夏の定番アイテム。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="5.jpg" alt="チャンプ熱冷却シート" />
+        <div class="pcard-body">
+          <span class="pcard-tag">発熱・冷却</span>
+          <div class="pcard-name">チャンプ熱冷却シート</div>
+          <span class="pcard-ingredient">ハイドロゲル冷却技術</span>
+          <p class="pcard-desc">ゲル内の水分が蒸発するときの気化熱を利用して体熱を吸収・発散する冷却パッチ。薬成分を含まないため、子供から大人まで安心して使用可能。発熱時のおでこや夏の急な熱感に貼るだけで冷却効果。解熱剤と同時使用も可能。</p>
+          <div class="pcard-tip">"子どもの発熱時に。薬ではないので解熱剤と一緒に使っても安心。夏のおでかけバッグに必ず1枚。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="6.jpg" alt="ぶどう糖キャンディ" />
+        <div class="pcard-body">
+          <span class="pcard-tag">エネルギー補給</span>
+          <div class="pcard-name">ぶどう糖キャンディ (포도당 캔디)</div>
+          <span class="pcard-ingredient">デキストロース（ぶどう糖）95%以上</span>
+          <p class="pcard-desc">消化不要でそのまま血液に吸収される純粋なぶどう糖。血糖値を素早く上げ、夏の暑さで気分が悪くなった時や低血糖時に即効性がある。糖尿病患者の低血糖対策にも必須。登山・運動・受験生の集中力補給にも人気。普通のキャンディよりすばやく溶ける。</p>
+          <div class="pcard-tip">"暑さでくらっとしたら2〜3粒すぐ食べて。普通のお菓子より数倍速く効く。夏のお守りアイテム。"</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="caution-box">
+      <h4>⚠️ ご注意</h4>
+      ノースエット系：濡れた肌・剃毛直後の肌への使用は刺激になります。 · スウェトロールパッド：目の周囲は避けてください。コンタクトレンズ使用中は使用不可。 · 生脈散：熱性体質や血液凝固薬を服用中の方は薬剤師にご相談を。 · ぶどう糖キャンディ：糖尿病の方は血糖値が急上昇することがあるため注意が必要。
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 简体中文 ══════════ -->
+<div id="zh" class="lang-section">
+  <div class="hero">
+    <span class="hero-badge">☀️ 夏日特辑 · EIGHT PHARMACY</span>
+    <h1>解决夏日烦恼 —<br/><em>韩国药局夏季必备 6 款</em></h1>
+    <p class="hero-sub">药剂师精选，专为出汗、中暑、夏日疲劳而设计，只有韩国药局才能买到。</p>
+  </div>
+  <div class="content">
+    <h2 class="section-title"><span class="accent">夏季必备 6 款</span> ☀️</h2>
+    <div class="divider"><span>🌊</span></div>
+    <div class="product-grid">
+
+      <div class="pcard">
+        <img class="pcard-img" src="1.jpg" alt="诺斯汗液" />
+        <div class="pcard-body">
+          <span class="pcard-tag">止汗剂</span>
+          <div class="pcard-name">诺斯汗液 (노스엣)</div>
+          <span class="pcard-ingredient">氯化铝 20%</span>
+          <p class="pcard-desc">与汗液接触后形成凝胶，从物理层面堵塞汗腺开口，抑制排汗。可减少70%~90%的出汗量。睡前涂抹于干燥皮肤，早晨洗净即可。适用于腋下、手掌和脚掌多汗。</p>
+          <div class="pcard-tip">"睡前使用，因为夜间汗腺活动减弱，吸收效果最佳。避免在潮湿或刚剃毛的皮肤上使用，会刺激皮肤。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="2.jpg" alt="诺斯汗敏感型" />
+        <div class="pcard-body">
+          <span class="pcard-tag">敏感肌专用</span>
+          <div class="pcard-name">诺斯汗敏感型 (노스엣센스)</div>
+          <span class="pcard-ingredient">氯化铝 12%</span>
+          <p class="pcard-desc">诺斯汗的低浓度温和版，刺激性更小，适合皮肤敏感或觉得原版刺激的人群，尤其推荐女性。作用原理相同，使用感更温和。初次使用止汗产品的新手首选。</p>
+          <div class="pcard-tip">"用了原版觉得刺痛？换这款！浓度虽低，效果依然在线，敏感肌和初次尝试的人首选。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="3.jpg" alt="斯韦特罗面部止汗贴" />
+        <div class="pcard-body">
+          <span class="pcard-tag">面部出汗</span>
+          <div class="pcard-name">斯韦特罗面部止汗贴 (스웨트롤패드)</div>
+          <span class="pcard-ingredient">格隆溴铵 23.4mg</span>
+          <p class="pcard-desc">韩国唯一的OTC面部专用止汗贴。格隆溴铵通过阻断神经信号抑制汗腺活动，作用机制与铝系产品完全不同。睡前用贴片在脸上（避开眼、鼻、嘴）轻擦5下，使用后4小时内不要洗脸。效果可持续至第二天全天。</p>
+          <div class="pcard-tip">"约会或重要场合前一晚使用，第二天妆容持久不花，特别适合容易出汗的人。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="4.jpg" alt="生脉散" />
+        <div class="pcard-body">
+          <span class="pcard-tag">中暑 · 夏日疲劳</span>
+          <div class="pcard-name">生脉散 / 保生元 (생맥산)</div>
+          <span class="pcard-ingredient">人参 · 麦冬 · 五味子</span>
+          <p class="pcard-desc">朝鲜时代王室的夏季养生饮品，历史超过500年。补充因暑热流失的气力与津液。人参补元气，麦冬补体液，五味子收敛固气。适用于中暑、夏日疲劳、大量出汗、食欲不振。每日3次，餐间服用1包（100mL）。</p>
+          <div class="pcard-tip">"夏天又热又累、没食欲、一直出汗？这就是韩国人的解决方案，连朝鲜王也喝的。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="5.jpg" alt="儿童退热贴" />
+        <div class="pcard-body">
+          <span class="pcard-tag">发热 · 降温</span>
+          <div class="pcard-name">챔프 退热冷却贴</div>
+          <span class="pcard-ingredient">水凝胶冷却技术</span>
+          <p class="pcard-desc">利用水凝胶中的水分蒸发时的气化热原理，物理吸收并散发体表热量。不含任何药物成分，儿童和成人均可安心使用，可与退烧药同时使用。发热时贴于额头，或夏日外出时快速降温。</p>
+          <div class="pcard-tip">"孩子发烧时的必备好物。无药物成分，与退烧药同用完全安全。夏季出门必备一片。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="6.jpg" alt="葡萄糖糖果" />
+        <div class="pcard-body">
+          <span class="pcard-tag">能量补充</span>
+          <div class="pcard-name">葡萄糖糖果 (포도당 캔디)</div>
+          <span class="pcard-ingredient">右旋糖（葡萄糖）95%以上</span>
+          <p class="pcard-desc">95%以上的纯葡萄糖，无需消化直接进入血液吸收，是升血糖最快的方式。中暑头晕、低血糖、运动后虚脱时2~3颗立竿见影。糖尿病患者低血糖必备，考生和登山者也广泛使用。比普通糖果溶解更快，效果更迅速。</p>
+          <div class="pcard-tip">"夏天头晕眼花？立刻吃2~3颗。比任何零食都见效快，包包里一定要备一袋。"</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="caution-box">
+      <h4>⚠️ 注意事项</h4>
+      诺斯汗系列：潮湿或刚剃毛的皮肤上使用会引起刺激，请避免。 · 面部止汗贴：避开眼周，佩戴隐形眼镜者不可使用。 · 生脉散：热性体质或正在服用抗凝血药者，请先咨询药剂师。 · 葡萄糖糖果：糖尿病患者血糖可能迅速升高，请注意用量。
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 繁體中文 ══════════ -->
+<div id="tw" class="lang-section">
+  <div class="hero">
+    <span class="hero-badge">☀️ 夏日特輯 · EIGHT PHARMACY</span>
+    <h1>解決夏日煩惱 —<br/><em>韓國藥局夏季必備 6 款</em></h1>
+    <p class="hero-sub">藥劑師精選，專為出汗、中暑、夏日疲勞而設計，只有韓國藥局才能買到。</p>
+  </div>
+  <div class="content">
+    <h2 class="section-title"><span class="accent">夏季必備 6 款</span> ☀️</h2>
+    <div class="divider"><span>🌊</span></div>
+    <div class="product-grid">
+
+      <div class="pcard">
+        <img class="pcard-img" src="1.jpg" alt="諾斯汗液" />
+        <div class="pcard-body">
+          <span class="pcard-tag">止汗劑</span>
+          <div class="pcard-name">諾斯汗液 (노스엣)</div>
+          <span class="pcard-ingredient">氯化鋁 20%</span>
+          <p class="pcard-desc">與汗液接觸後形成凝膠，從物理層面堵塞汗腺開口，抑制排汗。可減少70%~90%的出汗量。睡前塗抹於乾燥皮膚，早晨洗淨即可。適用於腋下、手掌和腳掌多汗。</p>
+          <div class="pcard-tip">"睡前使用，因為夜間汗腺活動減弱，吸收效果最佳。避免在潮濕或剛剃毛的皮膚上使用。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="2.jpg" alt="諾斯汗敏感型" />
+        <div class="pcard-body">
+          <span class="pcard-tag">敏感肌專用</span>
+          <div class="pcard-name">諾斯汗敏感型 (노스엣센스)</div>
+          <span class="pcard-ingredient">氯化鋁 12%</span>
+          <p class="pcard-desc">諾斯汗的低濃度溫和版，刺激性更小，適合皮膚敏感或覺得原版刺激的人群，尤其推薦女性。作用原理相同，使用感更溫和。初次使用止汗產品的新手首選。</p>
+          <div class="pcard-tip">"用了原版覺得刺痛？換這款！濃度雖低，效果依然在線，敏感肌和初次嘗試的人首選。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="3.jpg" alt="斯韋特羅面部止汗貼" />
+        <div class="pcard-body">
+          <span class="pcard-tag">臉部出汗</span>
+          <div class="pcard-name">斯韋特羅面部止汗貼 (스웨트롤패드)</div>
+          <span class="pcard-ingredient">格隆溴銨 23.4mg</span>
+          <p class="pcard-desc">韓國唯一的OTC臉部專用止汗貼。格隆溴銨透過阻斷神經訊號抑制汗腺活動，作用機制與鋁系產品完全不同。睡前用貼片在臉上（避開眼、鼻、嘴）輕擦5下，使用後4小時內不要洗臉。效果可持續至第二天全天。</p>
+          <div class="pcard-tip">"約會或重要場合前一晚使用，第二天妝容持久不花，特別適合容易出汗的人。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="4.jpg" alt="生脈散" />
+        <div class="pcard-body">
+          <span class="pcard-tag">中暑 · 夏日疲勞</span>
+          <div class="pcard-name">生脈散 / 保生元 (생맥산)</div>
+          <span class="pcard-ingredient">人參 · 麥冬 · 五味子</span>
+          <p class="pcard-desc">朝鮮時代王室的夏季養生飲品，歷史超過500年。補充因暑熱流失的氣力與津液。人參補元氣，麥冬補體液，五味子收斂固氣。適用於中暑、夏日疲勞、大量出汗、食慾不振。每日3次，餐間服用1包（100mL）。</p>
+          <div class="pcard-tip">"夏天又熱又累、沒食慾、一直出汗？這就是韓國人的解決方案，連朝鮮王也喝的。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="5.jpg" alt="兒童退熱貼" />
+        <div class="pcard-body">
+          <span class="pcard-tag">發熱 · 降溫</span>
+          <div class="pcard-name">챔프 退熱冷卻貼</div>
+          <span class="pcard-ingredient">水凝膠冷卻技術</span>
+          <p class="pcard-desc">利用水凝膠中的水分蒸發時的氣化熱原理，物理吸收並散發體表熱量。不含任何藥物成分，兒童和成人均可安心使用，可與退燒藥同時使用。發熱時貼於額頭，或夏日外出時快速降溫。</p>
+          <div class="pcard-tip">"孩子發燒時的必備好物。無藥物成分，與退燒藥同用完全安全。夏季出門必備一片。"</div>
+        </div>
+      </div>
+
+      <div class="pcard">
+        <img class="pcard-img" src="6.jpg" alt="葡萄糖糖果" />
+        <div class="pcard-body">
+          <span class="pcard-tag">能量補充</span>
+          <div class="pcard-name">葡萄糖糖果 (포도당 캔디)</div>
+          <span class="pcard-ingredient">右旋糖（葡萄糖）95%以上</span>
+          <p class="pcard-desc">95%以上的純葡萄糖，無需消化直接進入血液吸收，是升血糖最快的方式。中暑頭暈、低血糖、運動後虛脫時2~3顆立竿見影。糖尿病患者低血糖必備，考生和登山者也廣泛使用。比普通糖果溶解更快，效果更迅速。</p>
+          <div class="pcard-tip">"夏天頭暈眼花？立刻吃2~3顆。比任何零食都見效快，包包裡一定要備一袋。"</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="caution-box">
+      <h4>⚠️ 注意事項</h4>
+      諾斯汗系列：潮濕或剛剃毛的皮膚上使用會引起刺激，請避免。 · 面部止汗貼：避開眼周，佩戴隱形眼鏡者不可使用。 · 生脈散：熱性體質或正在服用抗凝血藥者，請先諮詢藥劑師。 · 葡萄糖糖果：糖尿病患者血糖可能迅速升高，請注意用量。
+    </div>
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<footer>
+  <nav>
+    <a href="/blog/">Home</a>
+    <a href="/blog/privacy.html">Privacy Policy</a>
+    <a href="/blog/terms.html">Terms of Use</a>
+  </nav>
+  <strong>EIGHT PHARMACY 에이트약국</strong> — Korean Pharmacy Shopping Guide<br/>
+  Content is for informational purposes only and does not constitute medical advice.
+</footer>
+
+<!-- Firebase views counter -->
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBq259CQRj2Fu59XQBJg3xGKqMyDNFIEvY",
+    authDomain: "pharmacy-ef935.firebaseapp.com",
+    projectId: "pharmacy-ef935",
+    storageBucket: "pharmacy-ef935.firebasestorage.app",
+    messagingSenderId: "99763164145",
+    appId: "1:99763164145:web:7ad57b826384b6d2a6aa50"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const PAGE_SLUG = 'summer';
+
+  db.collection('posts').where('slug', '==', PAGE_SLUG).get().then(snap => {
+    if (!snap.empty) {
+      const doc = snap.docs[0];
+      doc.ref.update({ views: firebase.firestore.FieldValue.increment(1) });
+      const views = (doc.data().views || 0) + 1;
+      document.getElementById('view-counter').textContent = '👁 ' + views.toLocaleString() + ' views';
+    }
+  }).catch(err => console.log('View count error:', err));
+
+  function switchLang(lang, btn) {
+    document.querySelectorAll('.lang-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.lang-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById(lang).classList.add('active');
+    btn.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>
