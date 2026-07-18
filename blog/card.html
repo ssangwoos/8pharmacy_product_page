@@ -1,0 +1,183 @@
+<!-- 이 파일은 8pharmacy.kr/blog/ 아래에 있어야한다-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EIGHT PHARMACY — Save product info</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+Thai:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:'Noto Sans','Noto Sans KR','Noto Sans SC','Noto Sans JP',sans-serif;
+    background:#eef0ec; color:#1c2b22; min-height:100vh; padding:16px; }
+  .wrap{ max-width:440px; margin:0 auto; }
+  .hint{ text-align:center; font-size:14px; color:#5a6b60; margin:10px 0 14px; line-height:1.6;}
+  .hint b{ color:#1D5C36; }
+
+  /* 저장될 카드 (이 영역이 그대로 PNG가 됨) */
+  #card{ background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.1); }
+  .card-head{ background:#1D5C36; color:#fff; padding:16px 20px; text-align:center; }
+  .card-head .brand{ font-size:18px; font-weight:700; letter-spacing:.02em;}
+  .card-head .sub{ font-size:12px; opacity:.85; margin-top:2px;}
+  .card-img{ width:100%; aspect-ratio:1/1; background:#fff; display:flex; align-items:center; justify-content:center; padding:18px;}
+  .card-img img{ max-width:100%; max-height:100%; object-fit:contain;}
+  .card-body{ padding:6px 22px 24px;}
+  .pname{ font-size:20px; font-weight:700; line-height:1.35; margin-bottom:14px; color:#12261c;}
+  .desc{ font-size:15px; line-height:1.7; color:#3a463f; white-space:pre-line; }
+  .card-foot{ border-top:1px solid #eceee9; padding:14px 22px; display:flex; align-items:center; gap:10px; }
+  .card-foot .site{ font-size:12px; color:#8a968e;}
+  .card-foot .site b{ color:#1D5C36;}
+
+  .btn{ display:block; width:100%; margin-top:16px; background:#1D5C36; color:#fff; border:none;
+    border-radius:14px; padding:16px; font-size:16px; font-weight:700; font-family:inherit; cursor:pointer;}
+  .btn:active{ background:#154226;}
+  .btn.sec{ background:#fff; color:#1D5C36; border:1.5px solid #1D5C36; margin-top:10px;}
+  #status{ text-align:center; font-size:13px; color:#5a6b60; margin-top:12px; min-height:18px;}
+  .loading{ text-align:center; padding:60px 0; color:#8a968e;}
+
+  /* 생성된 이미지 미리보기 */
+  #imgout{ display:none; margin-top:16px; }
+  #imgout img{ width:100%; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.12);}
+  #imgout .save-hint{ text-align:center; font-size:13px; color:#5a6b60; margin-top:10px; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="loading" class="loading">Loading…</div>
+
+  <div id="main" style="display:none;">
+    <div class="hint" id="topHint"></div>
+
+    <!-- PNG로 저장될 카드 -->
+    <div id="card">
+      <div class="card-head">
+        <div class="brand">EIGHT PHARMACY</div>
+        <div class="sub">Pharmacist-curated · 8pharmacy.kr</div>
+      </div>
+      <div class="card-img"><img id="cImg" src="" alt=""></div>
+      <div class="card-body">
+        <div class="pname" id="cName"></div>
+        <div class="desc" id="cDesc"></div>
+      </div>
+      <div class="card-foot">
+        <span class="site">Find more at <b>8pharmacy.kr</b></span>
+      </div>
+    </div>
+
+    <button class="btn" id="saveBtn" onclick="makeImage()">📷 Save as image</button>
+    <div id="status"></div>
+
+    <div id="imgout">
+      <img id="outImg" alt="product card">
+      <div class="save-hint" id="saveHint"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCygpc_WS2_35_8eYgdTEJwZCtNGJjHvY4",
+  authDomain: "pharmacy-productlist.firebaseapp.com",
+  projectId: "pharmacy-productlist",
+  storageBucket: "pharmacy-productlist.firebasestorage.app",
+  messagingSenderId: "409677826366",
+  appId: "1:409677826366:web:dc825470ef673194e2446f"
+};
+
+// 언어별 UI 문구
+const T = {
+  kr:{save:"이미지로 저장",hint:"아래 <b>이미지로 저장</b>을 누른 뒤,\\n사진을 길게 눌러 저장하세요",done:"완성됐어요! 아래 이미지를 길게 눌러 저장하세요 📥",desc:"상세 설명",making:"이미지 만드는 중…"},
+  en:{save:"Save as image",hint:"Tap <b>Save as image</b> below,\\nthen press &amp; hold the picture to save",done:"Done! Press and hold the image to save 📥",desc:"Description",making:"Creating image…"},
+  jp:{save:"画像として保存",hint:"下の<b>画像として保存</b>を押して、\\n画像を長押しして保存してください",done:"完成！画像を長押しして保存してください 📥",desc:"詳細情報",making:"画像を作成中…"},
+  cn:{save:"保存为图片",hint:"点击下方<b>保存为图片</b>，\\n然后长按图片保存",done:"完成！长按图片即可保存 📥",desc:"详细信息",making:"正在生成图片…"},
+  tw:{save:"儲存為圖片",hint:"點擊下方<b>儲存為圖片</b>，\\n然後長按圖片儲存",done:"完成！長按圖片即可儲存 📥",desc:"詳細資訊",making:"正在產生圖片…"},
+  th:{save:"บันทึกเป็นรูป",hint:"แตะ<b>บันทึกเป็นรูป</b>ด้านล่าง\\nแล้วกดค้างที่รูปเพื่อบันทึก",done:"เสร็จแล้ว! กดค้างที่รูปเพื่อบันทึก 📥",desc:"รายละเอียด",making:"กำลังสร้างรูป…"},
+  vn:{save:"Lưu thành ảnh",hint:"Nhấn <b>Lưu thành ảnh</b> bên dưới,\\nrồi giữ ảnh để lưu",done:"Xong! Giữ ảnh để lưu 📥",desc:"Chi tiết",making:"Đang tạo ảnh…"},
+  id:{save:"Simpan sebagai gambar",hint:"Ketuk <b>Simpan sebagai gambar</b>,\\nlalu tekan lama gambar untuk menyimpan",done:"Selesai! Tekan lama gambar untuk menyimpan 📥",desc:"Detail",making:"Membuat gambar…"},
+  mn:{save:"Зураг болгож хадгалах",hint:"Доорх <b>Зураг болгож хадгалах</b> дарж,\\nзургийг удаан дарж хадгална уу",done:"Дууслаа! Зургийг удаан дарж хадгална уу 📥",desc:"Дэлгэрэнгүй",making:"Зураг үүсгэж байна…"}
+};
+
+const params = new URLSearchParams(location.search);
+const productId = params.get('id');
+let lang = params.get('lang') || 'en';
+if(!T[lang]) lang='en';
+
+const app = firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+async function load(){
+  const t = T[lang];
+  if(!productId){ document.getElementById('loading').textContent="Invalid link."; return; }
+  try{
+    const snap = await db.collection("products").doc(productId).get();
+    if(!snap.exists){ document.getElementById('loading').textContent="Product not found."; return; }
+    const p = snap.data();
+
+    document.getElementById('cName').textContent = p.name || "";
+    // 선택 언어 설명 (없으면 영어 폴백)
+    const desc = p['desc_'+lang] || p.desc_en || p.desc_kr || "";
+    document.getElementById('cDesc').textContent = desc;
+
+    // 이미지 (CORS 위해 crossorigin)
+    const img = document.getElementById('cImg');
+    if(p.image){
+      img.crossOrigin = "anonymous";
+      img.src = p.image + (p.image.includes('?')?'&':'?') + "cb=" + Date.now();
+    }
+
+    document.getElementById('saveBtn').innerHTML = "📷 " + t.save;
+    document.getElementById('topHint').innerHTML = t.hint.replace(/\\n/g,'<br>');
+
+    document.getElementById('loading').style.display="none";
+    document.getElementById('main').style.display="block";
+  }catch(e){
+    document.getElementById('loading').textContent = "Error: " + e.message;
+  }
+}
+
+async function makeImage(){
+  const t = T[lang];
+  const status = document.getElementById('status');
+  const btn = document.getElementById('saveBtn');
+  status.textContent = t.making;
+  btn.disabled = true;
+
+  try{
+    const card = document.getElementById('card');
+    const canvas = await html2canvas(card, {
+      scale: 2, useCORS: true, backgroundColor: "#ffffff", logging:false
+    });
+    const dataUrl = canvas.toDataURL("image/png");
+
+    // 미리보기로 보여주고 길게 눌러 저장 (iOS/안드로이드 모두 안정적)
+    document.getElementById('outImg').src = dataUrl;
+    document.getElementById('imgout').style.display = "block";
+    document.getElementById('saveHint').textContent = t.done;
+
+    // 데스크톱/안드로이드는 자동 다운로드도 시도
+    try{
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = (document.getElementById('cName').textContent || "product") + ".png";
+      // iOS 사파리는 무시될 수 있음 → 미리보기가 안전망
+      a.click();
+    }catch(e){}
+
+    status.textContent = "";
+    document.getElementById('imgout').scrollIntoView({behavior:"smooth"});
+  }catch(e){
+    status.textContent = "Failed: " + e.message;
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+load();
+</script>
+</body>
+</html>
