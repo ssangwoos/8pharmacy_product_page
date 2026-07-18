@@ -101,6 +101,7 @@
   .homebtn:active{ background:rgba(255,255,255,.28); }
 
   .findwrap{ max-width:760px; margin:0 auto; width:100%; padding:24px 20px 60px; }
+  @media(max-width:560px){ .findwrap{ padding:18px 12px 50px; } }
 
   .searchcard{
     background:#fff; border:1.5px solid var(--line); border-radius:22px;
@@ -122,6 +123,16 @@
     font-size:16px; font-weight:700; cursor:pointer; flex-shrink:0; font-family:inherit;
   }
   .gobtn:active{ background:#154226; }
+
+  /* 모바일: 검색창 요소 축소해 글씨 안 잘리게 */
+  @media(max-width:560px){
+    .searchcard{ padding:6px 6px 6px 14px; gap:6px; border-radius:18px; }
+    .searchcard svg.si{ width:18px; height:18px; }
+    #q{ font-size:16px; padding:12px 2px; }
+    .micbtn{ width:44px; height:44px; }
+    .micbtn svg{ width:19px; height:19px; }
+    .gobtn{ height:44px; padding:0 14px; font-size:15px; border-radius:13px; }
+  }
 
   .hint2{ font-size:13px; color:var(--sub); margin:12px 4px 0; min-height:18px;}
 
