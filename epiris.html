@@ -373,6 +373,8 @@ let TAG_MASTER={};    // id -> {names, type, ...}
 let curLang="en";
 let selectedTags=[];  // 드릴다운 선택된 태그
 let firstTagLogged=false; // 첫 태그 로그는 세션당 1회
+let lastSuggestions=null; // 마지막 자연어 검색의 추천 키워드 (뒤로 갈 때 복원용)
+let lastNameHits=[];      // 마지막 검색의 제품명 매칭 결과
 
 /* ============================================================
    초기화
@@ -453,6 +455,7 @@ function buildLangGrid(){
 function pickLang(code){
   curLang=code;
   selectedTags=[]; firstTagLogged=false;
+  lastSuggestions=null; lastNameHits=[];
   const u=UI[code];
   document.getElementById('q').placeholder=u.place;
   document.getElementById('goLabel').textContent=u.search;
@@ -585,6 +588,7 @@ async function runQuery(){
   // 매칭된 태그도 없고 제품명 매칭도 없으면 폴백
   if(!matchedTags.length && !nameHits.length){
     selectedTags=[];
+    lastSuggestions=suggestions; lastNameHits=[];
     enterSuggestMode();
     renderSuggestions(suggestions, []);
     showFallback();
@@ -593,6 +597,7 @@ async function runQuery(){
 
   // 추천 키워드 + 제품명 직접 결과를 함께 표시
   selectedTags=[];
+  lastSuggestions=suggestions; lastNameHits=nameHits;
   enterSuggestMode();
   renderSuggestions(suggestions, nameHits);
 }
@@ -694,13 +699,22 @@ function pickFirstTag(tid){
 function toggleTag(tid){
   const i=selectedTags.indexOf(tid);
   if(i===-1) selectedTags.push(tid); else selectedTags.splice(i,1);
-  document.getElementById('suggestBox').innerHTML="";
-  if(!selectedTags.length){ // 다 지우면 top으로
-    document.getElementById('drill').style.display="none";
-    document.getElementById('topSection').style.display="block";
-    document.getElementById('q').value="";
+  if(!selectedTags.length){
+    // 태그를 다 지웠을 때:
+    // 검색으로 들어온 경우 → 방금 본 "관련 키워드" 화면으로 복귀
+    // 그냥 Top10에서 들어온 경우 → Top10으로
+    if(lastSuggestions){
+      enterSuggestMode();
+      renderSuggestions(lastSuggestions, lastNameHits);
+    } else {
+      document.getElementById('suggestBox').innerHTML="";
+      document.getElementById('drill').style.display="none";
+      document.getElementById('topSection').style.display="block";
+      document.getElementById('q').value="";
+    }
     return;
   }
+  document.getElementById('suggestBox').innerHTML="";
   enterDrill();
 }
 
@@ -775,6 +789,8 @@ function renderDrill(){
 
 function resetDrill(){
   selectedTags=[];
+  lastSuggestions=null; lastNameHits=[];   // 처음부터 = 검색 맥락도 초기화
+  document.getElementById('suggestBox').innerHTML="";
   document.getElementById('drill').style.display="none";
   document.getElementById('topSection').style.display="block";
   document.getElementById('q').value="";
