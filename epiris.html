@@ -405,9 +405,28 @@ async function loadData(){
       });
     });
     TAG_MASTER={}; tsnap.forEach(d=> TAG_MASTER[d.id]=d.data());
+
+    // ★ 안전 게이트: 의약품/비의약품 구분 태그가 없는 제품은 고객에게 노출하지 않음
+    //   (미분류 제품이 판매·검색 목록에 뜨는 것을 원천 차단)
+    const medId = findTagIdByName("의약품");
+    const nonId = findTagIdByName("비의약품");
+    if(medId || nonId){
+      PRODUCTS = PRODUCTS.filter(p =>
+        (medId && p.tag_ids.includes(medId)) || (nonId && p.tag_ids.includes(nonId))
+      );
+    }
+    // (구분 태그 자체가 아직 하나도 안 만들어졌으면 게이트를 적용하지 않음 - 초기 상태 보호)
+
     document.getElementById('conn').style.display="none";
   }catch(e){ console.error(e); loadDemo(); }
   buildLangGrid();
+}
+
+// 이름(kr)으로 태그 id 찾기
+function findTagIdByName(name){
+  return Object.keys(TAG_MASTER).find(id =>
+    ((TAG_MASTER[id].names && TAG_MASTER[id].names.kr) || TAG_MASTER[id].raw || "") === name
+  ) || null;
 }
 
 /* ============================================================
@@ -459,6 +478,11 @@ function goHome(){
 /* ============================================================
    태그 이름 (선택 언어)
    ============================================================ */
+// 의약품/비의약품 구분 태그는 내부 분류용 → 고객 태그 칩/Top10에 노출 안 함
+function isClassTag(tid){
+  const nm=(TAG_MASTER[tid] && TAG_MASTER[tid].names && TAG_MASTER[tid].names.kr) || (TAG_MASTER[tid]&&TAG_MASTER[tid].raw) || "";
+  return nm==="의약품" || nm==="비의약품";
+}
 function tagName(tid){
   const t=TAG_MASTER[tid]; if(!t) return "";
   return (t.names&&t.names[curLang]) || (t.names&&t.names.kr) || t.raw || tid;
@@ -490,7 +514,7 @@ async function renderTop10(){
     const more=Object.keys(usage).filter(t=>!ranking.includes(t)).sort((a,b)=>usage[b]-usage[a]);
     ranking=ranking.concat(more);
   }
-  ranking=ranking.filter(t=>TAG_MASTER[t]).slice(0,10);
+  ranking=ranking.filter(t=>TAG_MASTER[t] && !isClassTag(t)).slice(0,10);
   if(!ranking.length){ grid.innerHTML='<div class="empty">—</div>'; return; }
 
   const medal=["gold","silver","bronze"];
@@ -724,7 +748,7 @@ function renderDrill(){
   // 다음 좁힐 태그 (남은 제품에 있는 태그, 선택된 것 제외)
   const usage={};
   list.forEach(p=>p.tag_ids.forEach(t=>{ if(!selectedTags.includes(t)) usage[t]=(usage[t]||0)+1; }));
-  const nextIds=Object.keys(usage).filter(t=>TAG_MASTER[t]).sort((a,b)=>usage[b]-usage[a]).slice(0,12);
+  const nextIds=Object.keys(usage).filter(t=>TAG_MASTER[t] && !isClassTag(t)).sort((a,b)=>usage[b]-usage[a]).slice(0,12);
 
   if(nextIds.length){
     document.getElementById('nextLabel').innerHTML='<span>'+u.next+'</span>';
