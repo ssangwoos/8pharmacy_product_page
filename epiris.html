@@ -517,7 +517,10 @@ async function renderTop10(){
     const more=Object.keys(usage).filter(t=>!ranking.includes(t)).sort((a,b)=>usage[b]-usage[a]);
     ranking=ranking.concat(more);
   }
-  ranking=ranking.filter(t=>TAG_MASTER[t] && !isClassTag(t)).slice(0,10);
+  ranking=ranking.filter(t=>TAG_MASTER[t] && !isClassTag(t));
+  // 표시이름 중복 제거 (번역이 겹친 태그는 하나만)
+  const seenTopLbl=new Set();
+  ranking=ranking.filter(t=>{ const l=(tagName(t)||"").toLowerCase(); if(seenTopLbl.has(l)) return false; seenTopLbl.add(l); return true; }).slice(0,10);
   if(!ranking.length){ grid.innerHTML='<div class="empty">—</div>'; return; }
 
   const medal=["gold","silver","bronze"];
@@ -555,9 +558,27 @@ async function runQuery(){
   if(!keywords.length) keywords=[raw];
 
   // 2) 각 키워드를 우리 태그에 매칭
-  const suggestions=keywords.map(kw=>{
+  let suggestions=keywords.map(kw=>{
     const tid=matchKeywordToTag(kw);
     return { keyword:kw, tagId:tid };   // tagId 있으면 활성, 없으면 준비중
+  });
+
+  // 2a) 중복 제거: 같은 태그(tagId) 또는 화면 표시이름이 같으면 하나만
+  const seenTag=new Set(), seenLabel=new Set();
+  suggestions = suggestions.filter(s=>{
+    if(s.tagId){
+      if(seenTag.has(s.tagId)) return false;         // 같은 태그 중복
+      seenTag.add(s.tagId);
+      const label=(tagName(s.tagId)||"").toLowerCase();
+      if(seenLabel.has(label)) return false;          // 표시이름 중복(다른 태그지만 번역이 같음)
+      seenLabel.add(label);
+      return true;
+    } else {
+      const label=(s.keyword||"").toLowerCase();
+      if(seenLabel.has(label)) return false;
+      seenLabel.add(label);
+      return true;
+    }
   });
 
   // 2b) 제품명 직접 매칭 — 사용자 입력을 단어별로 쪼개 각각 제품명에 매칭
@@ -739,6 +760,12 @@ function enterDrill(){
   renderDrill();
 }
 
+// 같은 표시이름(현재 언어)을 가진 태그들을 한 그룹으로 (번역이 우연히 겹친 태그 묶기)
+function tagGroup(tid){
+  const label=(tagName(tid)||"").toLowerCase();
+  if(!label) return [tid];
+  return Object.keys(TAG_MASTER).filter(id=> (tagName(id)||"").toLowerCase()===label );
+}
 function renderDrill(){
   const u=UI[curLang];
   // 선택 칩
@@ -751,18 +778,31 @@ function renderDrill(){
   }
   document.getElementById('selchips').innerHTML=ch;
 
-  // AND 필터
-  const list=PRODUCTS.filter(p=>selectedTags.every(t=>p.tag_ids.includes(t)));
+  // AND 필터 (각 선택 태그는 "그룹" 단위 → 이름 같은 태그 중 하나라도 있으면 통과)
+  const selGroups = selectedTags.map(t=>tagGroup(t));
+  const list=PRODUCTS.filter(p=>
+    selGroups.every(group => group.some(gid => p.tag_ids.includes(gid)))
+  );
   document.getElementById('countline').innerHTML = u.count(list.length);
   document.getElementById('fallbackBox').innerHTML="";
 
   // Zero → 폴백
   if(!list.length){ showFallback(); document.getElementById('nexttags').innerHTML=""; document.getElementById('nextLabel').innerHTML=""; document.getElementById('prodLabel').innerHTML=""; document.getElementById('prodgrid').innerHTML=""; return; }
 
-  // 다음 좁힐 태그 (남은 제품에 있는 태그, 선택된 것 제외)
+  // 이미 선택된 그룹의 모든 태그 id (다음 태그 후보에서 제외용)
+  const selectedGroupIds = new Set();
+  selGroups.forEach(g=>g.forEach(id=>selectedGroupIds.add(id)));
+
+  // 다음 좁힐 태그 (남은 제품에 있는 태그, 선택 그룹 제외)
   const usage={};
-  list.forEach(p=>p.tag_ids.forEach(t=>{ if(!selectedTags.includes(t)) usage[t]=(usage[t]||0)+1; }));
-  const nextIds=Object.keys(usage).filter(t=>TAG_MASTER[t] && !isClassTag(t)).sort((a,b)=>usage[b]-usage[a]).slice(0,12);
+  list.forEach(p=>p.tag_ids.forEach(t=>{ if(!selectedGroupIds.has(t)) usage[t]=(usage[t]||0)+1; }));
+  // 표시이름 중복 제거하며 정렬
+  const seenLbl=new Set();
+  const nextIds=Object.keys(usage)
+    .filter(t=>TAG_MASTER[t] && !isClassTag(t))
+    .sort((a,b)=>usage[b]-usage[a])
+    .filter(t=>{ const l=(tagName(t)||"").toLowerCase(); if(seenLbl.has(l)) return false; seenLbl.add(l); return true; })
+    .slice(0,12);
 
   if(nextIds.length){
     document.getElementById('nextLabel').innerHTML='<span>'+u.next+'</span>';
