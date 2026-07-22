@@ -350,15 +350,15 @@ const LANGS = [
 
 // UI 문구 (언어별)
 const UI = {
-  kr:{search:"검색",home:"처음으로",top:"많이 찾는 고민",place:"증상이나 찾는 것을 입력하세요",next:"더 좁혀보기",prod:"제품",none:"조건에 맞는 제품이 없습니다",fbtitle:"찾으시는 건 없지만, 이런 건 어떠세요?",qr:"이 정보를 <b>휴대폰으로</b> 가져가려면 QR을 스캔하세요",reset:"처음부터",count:(n)=>`제품 <b>${n}개</b>`,listening:"듣고 있어요…",thinking:"찾는 중…",suggest:"관련 키워드",soon:"준비중"},
-  en:{search:"Search",home:"Home",top:"Most searched concerns",place:"Type a symptom or what you need",next:"Narrow down",prod:"Products",none:"No matching products",fbtitle:"Not found, but how about these?",qr:"Scan the QR to take this <b>to your phone</b>",reset:"Start over",count:(n)=>`<b>${n}</b> products`,listening:"Listening…",thinking:"Searching…",suggest:"Related keywords",soon:"soon"},
-  jp:{search:"検索",home:"ホーム",top:"よく検索される悩み",place:"症状やお探しのものを入力",next:"絞り込む",prod:"製品",none:"該当する製品がありません",fbtitle:"見つかりませんが、これはいかが?",qr:"QRをスキャンして<b>スマホに</b>保存",reset:"最初から",count:(n)=>`製品 <b>${n}</b>件`,listening:"聞いています…",thinking:"検索中…",suggest:"関連キーワード",soon:"準備中"},
-  cn:{search:"搜索",home:"首页",top:"热门搜索",place:"输入症状或需求",next:"进一步筛选",prod:"产品",none:"没有匹配的产品",fbtitle:"没找到，这些如何?",qr:"扫描二维码<b>保存到手机</b>",reset:"重新开始",count:(n)=>`<b>${n}</b>个产品`,listening:"聆听中…",thinking:"搜索中…",suggest:"相关关键词",soon:"敬请期待"},
-  tw:{search:"搜尋",home:"首頁",top:"熱門搜尋",place:"輸入症狀或需求",next:"進一步篩選",prod:"產品",none:"沒有符合的產品",fbtitle:"沒找到，這些如何?",qr:"掃描QR<b>存到手機</b>",reset:"重新開始",count:(n)=>`<b>${n}</b>個產品`,listening:"聆聽中…",thinking:"搜尋中…",suggest:"相關關鍵詞",soon:"敬請期待"},
-  th:{search:"ค้นหา",home:"หน้าแรก",top:"อาการที่ค้นหาบ่อย",place:"พิมพ์อาการหรือสิ่งที่ต้องการ",next:"จำกัดให้แคบลง",prod:"สินค้า",none:"ไม่พบสินค้าที่ตรงกัน",fbtitle:"ไม่พบ แต่ลองสิ่งเหล่านี้ไหม?",qr:"สแกน QR เพื่อ<b>บันทึกลงมือถือ</b>",reset:"เริ่มใหม่",count:(n)=>`สินค้า <b>${n}</b> รายการ`,listening:"กำลังฟัง…",thinking:"กำลังค้นหา…",suggest:"คำที่เกี่ยวข้อง",soon:"เร็วๆ นี้"},
-  vn:{search:"Tìm",home:"Trang chủ",top:"Tìm kiếm phổ biến",place:"Nhập triệu chứng hoặc nhu cầu",next:"Thu hẹp",prod:"Sản phẩm",none:"Không có sản phẩm phù hợp",fbtitle:"Không thấy, nhưng thử cái này?",qr:"Quét QR để <b>lưu vào điện thoại</b>",reset:"Bắt đầu lại",count:(n)=>`<b>${n}</b> sản phẩm`,listening:"Đang nghe…",thinking:"Đang tìm…",suggest:"Từ khóa liên quan",soon:"sắp có"},
-  id:{search:"Cari",home:"Beranda",top:"Pencarian populer",place:"Ketik gejala atau kebutuhan",next:"Persempit",prod:"Produk",none:"Tidak ada produk cocok",fbtitle:"Tidak ada, coba ini?",qr:"Pindai QR untuk <b>simpan ke ponsel</b>",reset:"Mulai lagi",count:(n)=>`<b>${n}</b> produk`,listening:"Mendengarkan…",thinking:"Mencari…",suggest:"Kata kunci terkait",soon:"segera"},
-  mn:{search:"Хайх",home:"Нүүр",top:"Их хайдаг",place:"Шинж тэмдэг эсвэл хэрэгцээ бичнэ үү",next:"Нарийсгах",prod:"Бүтээгдэхүүн",none:"Тохирох бүтээгдэхүүн алга",fbtitle:"Олдсонгүй, эдгээр яах вэ?",qr:"QR уншуулж <b>утсандаа хадгал</b>",reset:"Дахин эхлэх",count:(n)=>`<b>${n}</b> бүтээгдэхүүн`,listening:"Сонсож байна…",thinking:"Хайж байна…",suggest:"Холбоотой түлхүүр үг",soon:"удахгүй"}
+  kr:{search:"검색",home:"처음으로",top:"많이 찾는 고민",place:"증상이나 찾는 것을 입력하세요",next:"더 딱 맞게",prod:"제품",none:"조건에 맞는 제품이 없습니다",fbtitle:"찾으시는 건 없지만, 이런 건 어떠세요?",qr:"이 정보를 <b>휴대폰으로</b> 가져가려면 QR을 스캔하세요",reset:"처음부터",count:(n)=>`제품 <b>${n}개</b>`,listening:"듣고 있어요…",thinking:"찾는 중…",suggest:"더 딱 맞게",soon:"준비중"},
+  en:{search:"Search",home:"Home",top:"Most searched concerns",place:"Type a symptom or what you need",next:"Fit it better",prod:"Products",none:"No matching products",fbtitle:"Not found, but how about these?",qr:"Scan the QR to take this <b>to your phone</b>",reset:"Start over",count:(n)=>`<b>${n}</b> products`,listening:"Listening…",thinking:"Searching…",suggest:"Fit it better",soon:"soon"},
+  jp:{search:"検索",home:"ホーム",top:"よく検索される悩み",place:"症状やお探しのものを入力",next:"もっとぴったりに",prod:"製品",none:"該当する製品がありません",fbtitle:"見つかりませんが、これはいかが?",qr:"QRをスキャンして<b>スマホに</b>保存",reset:"最初から",count:(n)=>`製品 <b>${n}</b>件`,listening:"聞いています…",thinking:"検索中…",suggest:"もっとぴったりに",soon:"準備中"},
+  cn:{search:"搜索",home:"首页",top:"热门搜索",place:"输入症状或需求",next:"更贴合你",prod:"产品",none:"没有匹配的产品",fbtitle:"没找到，这些如何?",qr:"扫描二维码<b>保存到手机</b>",reset:"重新开始",count:(n)=>`<b>${n}</b>个产品`,listening:"聆听中…",thinking:"搜索中…",suggest:"更贴合你",soon:"敬请期待"},
+  tw:{search:"搜尋",home:"首頁",top:"熱門搜尋",place:"輸入症狀或需求",next:"更貼合你",prod:"產品",none:"沒有符合的產品",fbtitle:"沒找到，這些如何?",qr:"掃描QR<b>存到手機</b>",reset:"重新開始",count:(n)=>`<b>${n}</b>個產品`,listening:"聆聽中…",thinking:"搜尋中…",suggest:"更貼合你",soon:"敬請期待"},
+  th:{search:"ค้นหา",home:"หน้าแรก",top:"อาการที่ค้นหาบ่อย",place:"พิมพ์อาการหรือสิ่งที่ต้องการ",next:"ให้ตรงใจยิ่งขึ้น",prod:"สินค้า",none:"ไม่พบสินค้าที่ตรงกัน",fbtitle:"ไม่พบ แต่ลองสิ่งเหล่านี้ไหม?",qr:"สแกน QR เพื่อ<b>บันทึกลงมือถือ</b>",reset:"เริ่มใหม่",count:(n)=>`สินค้า <b>${n}</b> รายการ`,listening:"กำลังฟัง…",thinking:"กำลังค้นหา…",suggest:"ให้ตรงใจยิ่งขึ้น",soon:"เร็วๆ นี้"},
+  vn:{search:"Tìm",home:"Trang chủ",top:"Tìm kiếm phổ biến",place:"Nhập triệu chứng hoặc nhu cầu",next:"Cho vừa ý hơn",prod:"Sản phẩm",none:"Không có sản phẩm phù hợp",fbtitle:"Không thấy, nhưng thử cái này?",qr:"Quét QR để <b>lưu vào điện thoại</b>",reset:"Bắt đầu lại",count:(n)=>`<b>${n}</b> sản phẩm`,listening:"Đang nghe…",thinking:"Đang tìm…",suggest:"Cho vừa ý hơn",soon:"sắp có"},
+  id:{search:"Cari",home:"Beranda",top:"Pencarian populer",place:"Ketik gejala atau kebutuhan",next:"Lebih pas untukmu",prod:"Produk",none:"Tidak ada produk cocok",fbtitle:"Tidak ada, coba ini?",qr:"Pindai QR untuk <b>simpan ke ponsel</b>",reset:"Mulai lagi",count:(n)=>`<b>${n}</b> produk`,listening:"Mendengarkan…",thinking:"Mencari…",suggest:"Lebih pas untukmu",soon:"segera"},
+  mn:{search:"Хайх",home:"Нүүр",top:"Их хайдаг",place:"Шинж тэмдэг эсвэл хэрэгцээ бичнэ үү",next:"Илүү тохируулах",prod:"Бүтээгдэхүүн",none:"Тохирох бүтээгдэхүүн алга",fbtitle:"Олдсонгүй, эдгээр яах вэ?",qr:"QR уншуулж <b>утсандаа хадгал</b>",reset:"Дахин эхлэх",count:(n)=>`<b>${n}</b> бүтээгдэхүүн`,listening:"Сонсож байна…",thinking:"Хайж байна…",suggest:"Илүү тохируулах",soon:"удахгүй"}
 };
 
 // 음성인식 언어 코드
@@ -375,6 +375,7 @@ let selectedTags=[];  // 드릴다운 선택된 태그
 let firstTagLogged=false; // 첫 태그 로그는 세션당 1회
 let lastSuggestions=null; // 마지막 자연어 검색의 추천 키워드 (뒤로 갈 때 복원용)
 let lastNameHits=[];      // 마지막 검색의 제품명 매칭 결과
+let searchScope=null;     // 검색으로 좁혀진 제품 id 집합 (드릴다운이 이 안에서만 이뤄지게)
 
 /* ============================================================
    초기화
@@ -455,7 +456,7 @@ function buildLangGrid(){
 function pickLang(code){
   curLang=code;
   selectedTags=[]; firstTagLogged=false;
-  lastSuggestions=null; lastNameHits=[];
+  lastSuggestions=null; lastNameHits=[]; searchScope=null;
   const u=UI[code];
   document.getElementById('q').placeholder=u.place;
   document.getElementById('goLabel').textContent=u.search;
@@ -581,32 +582,44 @@ async function runQuery(){
     }
   });
 
-  // 2b) 제품명 직접 매칭 — 사용자 입력을 단어별로 쪼개 각각 제품명에 매칭
-  //     ("시가 멜라"처럼 음성이 띄어 들어와도 시가/멜라 각각 걸리게)
+  // 2b) 제품 결과 = 제품명 매칭 + 태그 매칭 을 합쳐 관련도순으로
+  //   · 제품명에 검색어가 들어감 → 강한 신호 (단어당 3점)
+  //   · 추출된 태그를 가짐 → 태그 하나당 2점
+  //   여러 조건에 걸릴수록 위로 올라감
+  const matchedTags=suggestions.filter(s=>s.tagId).map(s=>s.tagId);
   const words = raw.toLowerCase().split(/\s+/).filter(w=>w.length>=2);
-  const seen = new Set();
-  let nameHits = [];
+  const pscore = {};   // productId -> 점수
+  const pref = {};     // productId -> product
+
   if(words.length){
     PRODUCTS.forEach(p=>{
       const nm=(p.name||"").toLowerCase();
-      const hitCount = words.filter(w=>nm.includes(w)).length;
-      if(hitCount>0 && !seen.has(p.id)){
-        seen.add(p.id); nameHits.push({p, hitCount});
-      }
+      const hit = words.filter(w=>nm.includes(w)).length;
+      if(hit>0){ pscore[p.id]=(pscore[p.id]||0)+hit*3; pref[p.id]=p; }
     });
-    // 더 많은 단어가 맞은 제품을 위로
-    nameHits.sort((a,b)=>b.hitCount-a.hitCount);
-    nameHits = nameHits.map(x=>x.p);
+  }
+  if(matchedTags.length){
+    // 태그도 "이름이 같은 태그 그룹"으로 확장해서 매칭 (번역 겹침 대응)
+    const tagSet=new Set();
+    matchedTags.forEach(t=> tagGroup(t).forEach(g=>tagSet.add(g)) );
+    PRODUCTS.forEach(p=>{
+      const hits = p.tag_ids.filter(t=>tagSet.has(t)).length;
+      if(hits>0){ pscore[p.id]=(pscore[p.id]||0)+hits*2; pref[p.id]=p; }
+    });
   }
 
+  let nameHits = Object.keys(pscore)
+    .sort((a,b)=>pscore[b]-pscore[a])
+    .slice(0,60)
+    .map(id=>pref[id]);
+
   // 로그: 원본 + 매칭결과 (없는 키워드 = 태그 후보)
-  const matchedTags=suggestions.filter(s=>s.tagId).map(s=>s.tagId);
   const unmatchedKw=suggestions.filter(s=>!s.tagId).map(s=>s.keyword);
   logQuery(raw, matchedTags, unmatchedKw);
 
   document.getElementById('hint2').textContent="";
 
-  // 매칭된 태그도 없고 제품명 매칭도 없으면 폴백
+  // 매칭된 태그도 없고 제품 결과도 없으면 폴백
   if(!matchedTags.length && !nameHits.length){
     selectedTags=[];
     lastSuggestions=suggestions; lastNameHits=[];
@@ -616,9 +629,11 @@ async function runQuery(){
     return;
   }
 
-  // 추천 키워드 + 제품명 직접 결과를 함께 표시
+  // 추천 키워드 + 통합 제품 결과를 함께 표시
   selectedTags=[];
   lastSuggestions=suggestions; lastNameHits=nameHits;
+  // 이후 태그 클릭(드릴다운)은 이 검색 결과 안에서만 좁혀지도록 범위 저장
+  searchScope = new Set(Object.keys(pscore));
   enterSuggestMode();
   renderSuggestions(suggestions, nameHits);
 }
@@ -669,27 +684,16 @@ function matchKeywordToTag(kw){
   }) || null;
 }
 
-// 추천 키워드 + 제품명 직접 결과 표시
+// 검색 결과 표시 — 좁히는 도구(키워드)를 먼저, 제품을 아래로 (드릴다운 화면과 동일한 순서)
 function renderSuggestions(suggestions, productHits){
   const u=UI[curLang];
   const box=document.getElementById('suggestBox');
   productHits = productHits || [];
   let h="";
 
-  // 제품명에 직접 걸린 제품 (있으면 위에 크게)
-  if(productHits.length){
-    h+='<div class="sectlabel"><span>'+u.prod+'</span> <span class="pill">'+productHits.length+'</span></div>';
-    h+='<div class="prodgrid" style="margin-bottom:22px;">';
-    productHits.slice(0,24).forEach(p=>{
-      const img=p.image?'<img src="'+p.image+'" onerror="this.style.display=\'none\'">':'<span class="noimg">💊</span>';
-      h+='<div class="prodcard" onclick="openProduct(\''+p.id+'\')"><div class="imgbox">'+img+'</div><div class="pname">'+p.name+'</div></div>';
-    });
-    h+='</div>';
-  }
-
-  // 관련 키워드 (태그) — 있을 때만
+  // 1) 관련 키워드 (좁히는 도구) — 먼저
   if(suggestions && suggestions.length){
-    h+='<div class="sectlabel"><span>'+u.suggest+'</span></div><div class="nexttags">';
+    h+='<div class="sectlabel"><span>'+u.suggest+'</span></div><div class="nexttags" style="margin-bottom:22px;">';
     suggestions.forEach(s=>{
       if(s.tagId){
         const icon=tagIcon(s.tagId);
@@ -702,6 +706,17 @@ function renderSuggestions(suggestions, productHits){
     h+='</div>';
   }
 
+  // 2) 제품 결과 — 아래
+  if(productHits.length){
+    h+='<div class="sectlabel"><span>'+u.prod+'</span> <span class="pill">'+productHits.length+'</span></div>';
+    h+='<div class="prodgrid">';
+    productHits.slice(0,40).forEach(p=>{
+      const img=p.image?'<img src="'+p.image+'" onerror="this.style.display=\'none\'">':'<span class="noimg">💊</span>';
+      h+='<div class="prodcard" onclick="openProduct(\''+p.id+'\')"><div class="imgbox">'+img+'</div><div class="pname">'+p.name+'</div></div>';
+    });
+    h+='</div>';
+  }
+
   box.innerHTML=h;
 }
 function escapeH(s){ return (s||"").replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
@@ -710,6 +725,8 @@ function escapeH(s){ return (s||"").replace(/</g,'&lt;').replace(/"/g,'&quot;');
    드릴다운
    ============================================================ */
 function pickFirstTag(tid){
+  // Top10 등에서 바로 들어온 경우(검색 결과가 없으면) 범위 제한 없음
+  if(!lastSuggestions) searchScope=null;
   // 첫 태그 로그 (세션 첫 선택만)
   if(!firstTagLogged){ logFirstTag(tid); firstTagLogged=true; }
   if(!selectedTags.includes(tid)) selectedTags.push(tid);
@@ -719,11 +736,16 @@ function pickFirstTag(tid){
 
 function toggleTag(tid){
   const i=selectedTags.indexOf(tid);
-  if(i===-1) selectedTags.push(tid); else selectedTags.splice(i,1);
+  if(i===-1){
+    // 새 태그 추가 = 드릴다운 진행 → 직전 태그에서 이 태그로의 "전이" 로그
+    const prev = selectedTags.length ? selectedTags[selectedTags.length-1] : null;
+    if(prev) logTransition(prev, tid);
+    selectedTags.push(tid);
+  } else {
+    selectedTags.splice(i,1);
+  }
   if(!selectedTags.length){
     // 태그를 다 지웠을 때:
-    // 검색으로 들어온 경우 → 방금 본 "관련 키워드" 화면으로 복귀
-    // 그냥 Top10에서 들어온 경우 → Top10으로
     if(lastSuggestions){
       enterSuggestMode();
       renderSuggestions(lastSuggestions, lastNameHits);
@@ -779,8 +801,10 @@ function renderDrill(){
   document.getElementById('selchips').innerHTML=ch;
 
   // AND 필터 (각 선택 태그는 "그룹" 단위 → 이름 같은 태그 중 하나라도 있으면 통과)
+  //   검색으로 들어온 경우, 그 검색 결과 범위(searchScope) 안에서만 좁힘
   const selGroups = selectedTags.map(t=>tagGroup(t));
-  const list=PRODUCTS.filter(p=>
+  const base = searchScope ? PRODUCTS.filter(p=>searchScope.has(p.id)) : PRODUCTS;
+  const list=base.filter(p=>
     selGroups.every(group => group.some(gid => p.tag_ids.includes(gid)))
   );
   document.getElementById('countline').innerHTML = u.count(list.length);
@@ -829,7 +853,7 @@ function renderDrill(){
 
 function resetDrill(){
   selectedTags=[];
-  lastSuggestions=null; lastNameHits=[];   // 처음부터 = 검색 맥락도 초기화
+  lastSuggestions=null; lastNameHits=[]; searchScope=null;   // 처음부터 = 검색 맥락도 초기화
   document.getElementById('suggestBox').innerHTML="";
   document.getElementById('drill').style.display="none";
   document.getElementById('topSection').style.display="block";
@@ -877,6 +901,14 @@ function logFirstTag(tid){
   if(!USE_FIREBASE) return;
   db.collection("kiosk_first_tags").add({
     lang:curLang, tag_id:tid, timestamp:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(()=>{});
+}
+// 태그 전이 로그: from_tag 다음에 to_tag 를 눌렀다 (드릴다운 순서)
+function logTransition(fromTag, toTag){
+  if(!USE_FIREBASE || !fromTag || !toTag || fromTag===toTag) return;
+  db.collection("tag_transitions").add({
+    from_tag:fromTag, to_tag:toTag, lang:curLang,
+    timestamp:firebase.firestore.FieldValue.serverTimestamp()
   }).catch(()=>{});
 }
 function logQuery(raw, matchedTags, unmatchedKw){
