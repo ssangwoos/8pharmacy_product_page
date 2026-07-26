@@ -721,20 +721,43 @@ function renderSuggestions(suggestions, productHits){
   let h="";
 
   // 1) 관련 키워드 (좁히는 도구) — 먼저
-  //    소비자 모드: 매칭된 태그만 표시 (준비중 숨김)
-  //    관리자 모드: 준비중도 회색으로 표시
-  const shown = (suggestions||[]).filter(s=> ADMIN_MODE || s.tagId);
-  if(shown.length){
+  //    (a) GPT가 뽑아 매칭된 태그  +  (b) 검색된 제품들에 실제로 붙은 태그(빈도순)
+  //    → 이렇게 해야 "감기약" 검색 시 콧물·기침·목 등 제품 태그가 드릴다운으로 뜬다
+  const gptTagIds = (suggestions||[]).filter(s=>s.tagId).map(s=>s.tagId);
+  const gptSet = new Set(gptTagIds);
+
+  // 제품에서 태그 빈도 집계 (분류 태그·의약품 구분 제외)
+  const tagFreq={};
+  productHits.forEach(p=>(p.tag_ids||[]).forEach(tid=>{
+    if(!TAG_MASTER[tid]) return;
+    if(isClassTag(tid)) return;            // 의약품/비의약품 숨김
+    tagFreq[tid]=(tagFreq[tid]||0)+1;
+  }));
+  // GPT가 이미 준 태그는 제외하고, 많이 붙은 순으로
+  const derived = Object.keys(tagFreq)
+    .filter(tid=>!gptSet.has(tid))
+    .sort((a,b)=>tagFreq[b]-tagFreq[a])
+    .slice(0,12);
+
+  // 최종 추천 태그: GPT 매칭 태그(우선) + 제품 파생 태그
+  const chipTagIds = [...gptTagIds, ...derived];
+
+  // 소비자 모드에서 준비중(미매칭 GPT 키워드)은 관리자 모드에서만
+  const soonChips = (suggestions||[]).filter(s=>!s.tagId);
+  const hasChips = chipTagIds.length || (ADMIN_MODE && soonChips.length);
+
+  if(hasChips){
     h+='<div class="sectlabel"><span>'+u.suggest+'</span></div><div class="nexttags" style="margin-bottom:22px;">';
-    shown.forEach(s=>{
-      if(s.tagId){
-        const icon=tagIcon(s.tagId);
-        const im=icon?'<img class="ti" src="'+icon+'" onerror="this.style.display=\'none\'">':'';
-        h+='<span class="nexttag" onclick="pickFirstTag(\''+s.tagId+'\')">'+im+tagName(s.tagId)+'</span>';
-      } else {
-        h+='<span class="nexttag soon" title="'+u.soon+'">'+escapeH(s.keyword)+' <span class="cnt">'+u.soon+'</span></span>';
-      }
+    chipTagIds.forEach(tid=>{
+      const icon=tagIcon(tid);
+      const im=icon?'<img class="ti" src="'+icon+'" onerror="this.style.display=\'none\'">':'';
+      h+='<span class="nexttag" onclick="pickFirstTag(\''+tid+'\')">'+im+tagName(tid)+'</span>';
     });
+    if(ADMIN_MODE){
+      soonChips.forEach(s=>{
+        h+='<span class="nexttag soon" title="'+u.soon+'">'+escapeH(s.keyword)+' <span class="cnt">'+u.soon+'</span></span>';
+      });
+    }
     h+='</div>';
   }
 
