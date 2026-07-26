@@ -187,17 +187,20 @@
   .countline{ font-size:14px; color:var(--sub); margin:4px 4px 16px;}
   .countline b{ color:var(--brand); }
 
-  .nexttags{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:24px;}
+  .nexttags{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:24px;}
   .nexttag{
-    background:#fff; border:1.5px solid var(--line); border-radius:30px; padding:11px 16px; font-size:15px; cursor:pointer;
-    display:inline-flex; align-items:center; gap:8px; transition:border-color .12s, background .12s;
+    background:#fff; border:1.5px solid var(--line); border-radius:16px; padding:13px 14px; font-size:15px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px; transition:border-color .12s, background .12s;
+    text-align:center; min-height:48px; box-sizing:border-box;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .nexttag:hover,.nexttag:active{ border-color:var(--brand); background:var(--paper-2); }
   .nexttag .cnt{ font-size:12px; color:var(--sub);}
-  .nexttag .ti{ width:22px;height:22px;border-radius:6px;object-fit:cover;}
+  .nexttag .ti{ width:22px;height:22px;border-radius:6px;object-fit:cover;flex-shrink:0;}
   .nexttag.soon{ background:var(--paper-2); border-style:dashed; color:var(--sub); cursor:default; }
   .nexttag.soon:hover{ border-color:var(--line); background:var(--paper-2); }
   .nexttag.soon .cnt{ font-size:11px; color:var(--gold); font-weight:600; }
+  @media (max-width:640px){ .nexttags{ grid-template-columns:repeat(2, 1fr); } }
 
   .prodgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:14px; }
   .prodcard{
@@ -375,6 +378,7 @@ let TAG_MASTER={};    // id -> {names, type, ...}
 let BLOCKED_KW=new Set();  // 관리자가 블록한 키워드(추천에서 숨김)
 // 관리자 모드: 태그엔진에서 ?admin=1 로 열면 진단 패널 표시 + 준비중 태그 노출
 const ADMIN_MODE = /[?&]admin=1\b/.test(location.search);
+const MAX_TAGS = 8;   // 드릴다운·추천 태그 최대 노출 수 (가독성·가림효과 균형)
 let curLang="en";
 let selectedTags=[];  // 드릴다운 선택된 태그
 let firstTagLogged=false; // 첫 태그 로그는 세션당 1회
@@ -736,11 +740,21 @@ function renderSuggestions(suggestions, productHits){
   // GPT가 이미 준 태그는 제외하고, 많이 붙은 순으로
   const derived = Object.keys(tagFreq)
     .filter(tid=>!gptSet.has(tid))
-    .sort((a,b)=>tagFreq[b]-tagFreq[a])
-    .slice(0,12);
+    .sort((a,b)=>tagFreq[b]-tagFreq[a]);
 
-  // 최종 추천 태그: GPT 매칭 태그(우선) + 제품 파생 태그
-  const chipTagIds = [...gptTagIds, ...derived];
+  // 최종 추천 태그 후보: GPT 매칭 태그(우선) + 제품 파생 태그
+  let chipTagIds = [...gptTagIds, ...derived];
+
+  // 종속 정렬: 상위(얕은) 먼저, 하위(깊은) 뒤로 → MAX_TAGS 제한에서 하위가 자연스럽게 잘림(가림효과)
+  //   깊이 = 이 태그가 다른 태그의 하위로 연결된 사슬 길이 (linkedTo 방향 추적)
+  const inResult = new Set(chipTagIds);
+  chipTagIds.sort((a,b)=>{
+    const da=tagDepth(a, inResult), db=tagDepth(b, inResult);
+    if(da!==db) return da-db;                  // 얕은 상위 먼저
+    const fa=tagFreq[a]||0, fb=tagFreq[b]||0;
+    return fb-fa;                              // 같은 깊이면 빈도순
+  });
+  chipTagIds = chipTagIds.slice(0, MAX_TAGS);   // 8개 제한 = 가림효과
 
   // 소비자 모드에서 준비중(미매칭 GPT 키워드)은 관리자 모드에서만
   const soonChips = (suggestions||[]).filter(s=>!s.tagId);
@@ -775,6 +789,21 @@ function renderSuggestions(suggestions, productHits){
   box.innerHTML=h;
 }
 function escapeH(s){ return (s||"").replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+/* 태그 깊이: 이 태그가 (결과에 함께 있는) 상위 태그의 하위로 연결된 사슬 길이.
+   linkedTo = 동의어 관리에서 "이 태그를 상위 태그로 연결"할 때 저장한 상위 tagId.
+   상위가 이번 결과에 없으면 깊이에 반영 안 함(불상사 방지). */
+function tagDepth(tid, inResultSet, guard){
+  guard = guard || new Set();
+  if(guard.has(tid)) return 0;         // 순환 방지
+  guard.add(tid);
+  const t=TAG_MASTER[tid];
+  const parent = t && t.linkedTo;
+  if(!parent || !TAG_MASTER[parent]) return 0;
+  // 상위가 이번 검색 결과에 함께 있을 때만 깊이 +1 (있어야 가림효과가 의미있음)
+  if(inResultSet && !inResultSet.has(parent)) return 0;
+  return 1 + tagDepth(parent, inResultSet, guard);
+}
 
 /* ---- 관리자 진단 패널 (?admin=1 에서만) ---- */
 function renderAdminDiag(raw, rawKeywords, productCount){
@@ -912,13 +941,19 @@ function renderDrill(){
   // 다음 좁힐 태그 (남은 제품에 있는 태그, 선택 그룹 제외)
   const usage={};
   list.forEach(p=>p.tag_ids.forEach(t=>{ if(!selectedGroupIds.has(t)) usage[t]=(usage[t]||0)+1; }));
-  // 표시이름 중복 제거하며 정렬
+  // 표시이름 중복 제거
   const seenLbl=new Set();
-  const nextIds=Object.keys(usage)
+  let nextIds=Object.keys(usage)
     .filter(t=>TAG_MASTER[t] && !isClassTag(t))
-    .sort((a,b)=>usage[b]-usage[a])
-    .filter(t=>{ const l=(tagName(t)||"").toLowerCase(); if(seenLbl.has(l)) return false; seenLbl.add(l); return true; })
-    .slice(0,12);
+    .filter(t=>{ const l=(tagName(t)||"").toLowerCase(); if(seenLbl.has(l)) return false; seenLbl.add(l); return true; });
+  // 종속 정렬: 상위 먼저, 하위 뒤로 → 제한에서 하위가 잘림(가림효과)
+  const nextSet=new Set(nextIds);
+  nextIds.sort((a,b)=>{
+    const da=tagDepth(a,nextSet), db=tagDepth(b,nextSet);
+    if(da!==db) return da-db;
+    return (usage[b]||0)-(usage[a]||0);
+  });
+  nextIds=nextIds.slice(0, MAX_TAGS);
 
   if(nextIds.length){
     document.getElementById('nextLabel').innerHTML='<span>'+u.next+'</span>';
