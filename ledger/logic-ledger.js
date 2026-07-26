@@ -1,6 +1,42 @@
 let currentPage = 1;
 const itemsPerPage = 10;
 let allData = []; // 필터링된 전체 데이터를 담을 변수
+let cardNames = []; // 🔥 [카드연동] 등록된 카드 이름 목록 (결제 시 검색용)
+
+// 🔥 [카드연동] 등록된 카드 목록을 datalist에 채워 결제 입력 시 검색 가능하게 함
+async function loadCardsForDatalist() {
+    try {
+        const snap = await db.collection("cards").get();
+        cardNames = snap.docs.map(d => d.data().name).filter(n => n);
+        cardNames.sort((a, b) => a.localeCompare(b, "ko"));
+        const fill = (listId) => {
+            const list = document.getElementById(listId);
+            if (!list) return;
+            list.innerHTML = cardNames.map(n => `<option value="${n}"></option>`).join("");
+        };
+        fill('cardList');
+    } catch (e) {
+        console.error("카드 목록 로드 실패:", e);
+    }
+}
+
+// 🔥 [카드연동] 빠른입력 구분이 '결제'면 '내용(적요)' 칸을 카드 검색칸으로 전환 (별도 칸 없음)
+function toggleQuickPayment() {
+    const type = document.getElementById('qType')?.value;
+    const memo = document.getElementById('qMemo');
+    if (!memo) return;
+    if (type === 'pay') {
+        memo.setAttribute('list', 'cardList');
+        memo.placeholder = '💳 카드 검색/선택';
+        memo.style.color = '#6d28d9';
+        memo.style.fontWeight = '600';
+    } else {
+        memo.removeAttribute('list');
+        memo.placeholder = '내용(적요)';
+        memo.style.color = '';
+        memo.style.fontWeight = '';
+    }
+}
 
 // [데이터 호출 함수] 거래처 선택 시 해당 데이터만 DB에서 쿼리하여 최적화
 async function loadLedgerData(page = false) {
@@ -116,14 +152,25 @@ function renderLedger() {
         const proofIcon = isRealImg 
             ? `<button type="button" onclick="openProofViewer('${row.img}', ${row.rotation || 0}, '${row.id}')" style="border:none; background:none; cursor:pointer; font-size:1.2rem;">📄</button>` 
             : '-';
-        const typeBadge = row.isBuy ? '<span class="badge buy">입고</span>' : '<span class="badge pay">결제</span>';
+        // 🔥 [버그수정] 반품(return)이 결제로 표시되던 오류 → 구분별 뱃지 정확히 분기
+        const isReturn = (row.type === 'return' || row.type === '반품');
+        let typeBadge;
+        if (row.isBuy) typeBadge = '<span class="badge buy">입고</span>';
+        else if (isReturn) typeBadge = '<span class="badge return">반품</span>';
+        else typeBadge = '<span class="badge pay">결제</span>';
+        // 🔥 [카드연동] 카드가 적요와 다를 때만 카드칩 표시 (적요=카드인 신규 결제는 중복 표시 방지)
+        const cardVal = row.card ? String(row.card).trim() : '';
+        const memoVal = row.subItem && row.subItem.memo ? String(row.subItem.memo).trim() : '';
+        const cardChip = (cardVal && cardVal !== memoVal)
+            ? `<div style="margin-top:3px; font-size:0.68rem; color:#7c3aed; font-weight:700; white-space:nowrap;">💳 ${row.card}</div>`
+            : '';
 
         // 🔥 [적요 칸 커스텀] 마우스가 적요 칸에 정확히 들어왔을 때만 가벼운 단가 연산 툴팁 호출 ㅡㅡ^
         // 🔥 [수정] 네 번째 인자로 자기 자신(this)의 텍스트를 던지도록 수정하여 따옴표 오류를 차단합니다!
         html += `
             <tr class="ledger-row" data-parent-id="${groupId}" onmouseover="highlightGroup('${groupId}')" onmouseout="removeHighlight()">
                 <td style="text-align:center;">${row.date}</td>
-                <td style="text-align:center;">${typeBadge}</td>
+                <td style="text-align:center;">${typeBadge}${cardChip}</td>
                 <td style="text-align:center;">${row.vendor}</td>
                 <td style="text-align:left; padding-left:10px; cursor:pointer; font-weight:500;"
                     onclick="showUnitPriceTooltip(event, ${row.amount}, ${row.subItem.qty || 0}, this.innerText)"
@@ -347,7 +394,7 @@ function filterLedger() {
 document.addEventListener('DOMContentLoaded', async () => {
     const now = new Date();
     const past = new Date();
-    past.setDate(now.getDate() - 365); 
+    past.setDate(now.getDate() - 360); 
 
     const toYmd = (date) => {
         const y = date.getFullYear();
@@ -364,9 +411,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         balanceCheckbox.addEventListener('change', renderLedger);
     }
 
-    await fillVendorFilterOnly(); 
+    await fillVendorFilterOnly();
     await loadPharmacyName();
-    
+    await loadCardsForDatalist(); // 🔥 [카드연동] 카드 검색 목록 준비
+    toggleQuickPayment();         // 🔥 [카드연동] 초기 구분값 기준으로 카드칸 표시 정리
+
     const tableBody = document.getElementById('ledgerTableBody');
     if (tableBody) {
         tableBody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:50px; color:#666;">🔎 조회하실 <b>거래처를 선택</b>해 주세요.</td></tr>';
@@ -444,6 +493,8 @@ async function addQuickItem() {
     const qSupply = getNumberValue('qSupply');
     const qVat = getNumberValue('qVat');
     const qTotal = getNumberValue('qTotal');
+    // 🔥 [카드연동] 결제는 '적요' 칸에서 고른 값이 곧 카드명 (별도 칸 없음)
+    const qCard = (qType === 'pay') ? qMemo.trim() : "";
 
     if (!qDate || !qVendor || qTotal === 0) {
         alert("날짜, 거래처, 금액을 확인해 주세요.");
@@ -454,6 +505,7 @@ async function addQuickItem() {
         await db.collection("transactions").add({
             date: qDate, type: qType, vendor: qVendor, memo: qMemo, qty: qQty,
             supply: qSupply, vat: qVat, total: qTotal,
+            card: qCard, // 🔥 [카드연동] 결제일 때만 카드명 저장
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('qMemo').value = "";
@@ -500,7 +552,19 @@ function openEditModal(docId) {
     document.getElementById('editSupply').value = (item.supply || 0).toLocaleString();
     document.getElementById('editVat').value = (item.vat || 0).toLocaleString();
     document.getElementById('editTotalDisplay').value = (item.total || 0).toLocaleString();
+    // 🔥 [카드연동] 카드칸 채우고, 결제일 때만 표시
+    const editCardEl = document.getElementById('editCard');
+    if (editCardEl) editCardEl.value = item.card || '';
+    toggleEditPaymentField();
     document.getElementById('editModal').style.display = 'flex';
+}
+
+// 🔥 [카드연동] 수정 모달: 구분이 '결제'일 때만 카드칸 표시
+function toggleEditPaymentField() {
+    const type = document.getElementById('editType')?.value;
+    const wrap = document.getElementById('editCardWrap');
+    if (!wrap) return;
+    wrap.style.display = (type === 'pay') ? 'flex' : 'none';
 }
 
 async function saveEdit() {
@@ -509,13 +573,16 @@ async function saveEdit() {
     const vat = unformatNum(document.getElementById('editVat').value);
     const total = unformatNum(document.getElementById('editTotalDisplay').value);
 
+    const editType = document.getElementById('editType').value;
     const updateData = {
         date: document.getElementById('editDate').value,
-        type: document.getElementById('editType').value,
+        type: editType,
         vendor: document.getElementById('editVendor').value,
         memo: document.getElementById('editMemo').value,
         qty: Number(document.getElementById('editQty').value) || 0,
-        supply: supply, vat: vat, total: total
+        supply: supply, vat: vat, total: total,
+        // 🔥 [카드연동] 결제일 때만 카드 저장, 아니면 비움
+        card: (editType === 'pay') ? (document.getElementById('editCard')?.value.trim() || "") : ""
     };
 
     try {
