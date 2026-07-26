@@ -347,7 +347,7 @@ function filterLedger() {
 document.addEventListener('DOMContentLoaded', async () => {
     const now = new Date();
     const past = new Date();
-    past.setDate(now.getDate() - 180); 
+    past.setDate(now.getDate() - 365); 
 
     const toYmd = (date) => {
         const y = date.getFullYear();
