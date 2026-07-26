@@ -89,6 +89,13 @@
                     
                     <div id="vendorListCustom" style="position: absolute; top: 75px; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 8px; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
                 </div>
+
+                    <div class="c-group card-group" id="cardGroupWrap" style="display:none; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 0.85rem; color: #6d28d9; font-weight: bold;">💳 결제 카드</label>
+                        <input type="text" id="cardInput" list="cardList" autocomplete="off"
+                            placeholder="카드 검색/선택"
+                            style="width: 220px; padding: 10px; border: 1px solid #a78bfa; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box; color:#6d28d9; font-weight:600;">
+                    </div>
                 </div>
 
                 <div class="item-list-area">
@@ -130,6 +137,8 @@
         </section>
     </main>
 </div>
+
+<datalist id="cardList"></datalist>
 
 <script src="firebase-config.js"></script>
 <script src="logic-write.js"></script>

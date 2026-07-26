@@ -8,6 +8,34 @@ let initialWidth = 0;  // 초기 맞춤 너비
 let currentRotation = 0; 
 let currentSelectedDocId = null;
 let allVendors = []; // 🔥 전역 변수로 업체 목록 보관
+let cardNames = []; // 🔥 [카드연동] 등록된 카드명 목록
+
+// 🔥 [카드연동] 카드 목록을 datalist에 채움
+async function loadCardsForDatalist() {
+    try {
+        const snap = await db.collection("cards").get();
+        cardNames = snap.docs.map(d => d.data().name).filter(n => n);
+        cardNames.sort((a, b) => a.localeCompare(b, "ko"));
+        const list = document.getElementById('cardList');
+        if (list) list.innerHTML = cardNames.map(n => `<option value="${n}"></option>`).join("");
+    } catch (e) {
+        console.error("카드 목록 로드 실패:", e);
+    }
+}
+
+// 🔥 [카드연동] 구분이 '결제'일 때만 카드 입력칸 표시
+function togglePaymentField() {
+    const type = document.getElementById('typeSelect')?.value;
+    const wrap = document.getElementById('cardGroupWrap');
+    if (!wrap) return;
+    if (type === 'pay') {
+        wrap.style.display = 'flex';
+    } else {
+        wrap.style.display = 'none';
+        const c = document.getElementById('cardInput');
+        if (c) c.value = '';
+    }
+}
 
 async function loadRecentVendor() {
     try {
@@ -313,7 +341,8 @@ function updateAllTotals() {
 async function saveAllItems() {
     const date = document.getElementById('dateInput').value;
     const vendor = document.getElementById('vendorInput').value;
-    const type = document.getElementById('typeSelect')?.value || 'buy'; 
+    const type = document.getElementById('typeSelect')?.value || 'buy';
+    const cardVal = (type === 'pay') ? (document.getElementById('cardInput')?.value.trim() || "") : ""; // 🔥 [카드연동]
     
     // 1. 이미지 주소 정제 ㅡㅡ^
     let currentImgUrl = document.getElementById('docImage')?.src || "";
@@ -352,7 +381,8 @@ async function saveAllItems() {
                 batch.set(docRef, {
                     date,
                     vendor,
-                    type, 
+                    type,
+                    card: cardVal, // 🔥 [카드연동] 결제일 때만 카드명 저장
                     memo: memo,
                     img: currentImgUrl,
                     rotation: typeof currentRotation !== 'undefined' ? currentRotation : 0,
@@ -449,6 +479,10 @@ document.addEventListener('DOMContentLoaded', async () => { // async 추가
     
     // [추가] 약국 이름부터 로드합니다.
     await loadPharmacyName();
+
+    // 🔥 [카드연동] 카드 검색 목록 준비 + 초기 표시 정리
+    await loadCardsForDatalist();
+    togglePaymentField();
 
     // 1. 기존 대기목록 로드
     if (typeof loadQueueList === 'function') loadQueueList();
