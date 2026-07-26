@@ -675,7 +675,8 @@ async function gptExtractKeywords(raw){
 
 // 키워드 하나 → 우리 태그 id (없으면 null)
 function matchKeywordToTag(kw){
-  const k=kw.toLowerCase();
+  const k=kw.toLowerCase().trim();
+  if(!k) return null;
   // 정확 일치 우선
   let exact=Object.keys(TAG_MASTER).find(id=>{
     const t=TAG_MASTER[id];
@@ -684,12 +685,22 @@ function matchKeywordToTag(kw){
     return names.includes(k) || syn.includes(k);
   });
   if(exact) return exact;
-  // 포함 매칭 (차선)
+
+  // 포함 매칭 (차선) — 단, 우연한 글자 겹침 방지
+  //  · 2글자 이하의 짧은 조각은 부분매칭 금지 (예: "살"이 "몸살"에, "약"이 "간장약"에 걸리는 문제)
+  //  · 태그명이 검색어에 포함되는 경우도 태그명이 2글자 이상일 때만 인정
   return Object.keys(TAG_MASTER).find(id=>{
     const t=TAG_MASTER[id];
-    const names=Object.values(t.names||{}).map(s=>(s||"").toLowerCase());
-    const syn=(t.synonyms||[]).map(s=>(s||"").toLowerCase());
-    return names.some(n=>n&&(n.includes(k)||k.includes(n))) || syn.some(s=>s&&(s.includes(k)||k.includes(s)));
+    const cand=[...Object.values(t.names||{}),...(t.synonyms||[])]
+      .map(s=>(s||"").toLowerCase()).filter(Boolean);
+    return cand.some(n=>{
+      if(n===k) return true;
+      // 검색어가 태그명을 포함: 태그명이 2글자 이상이어야 (짧은 태그의 오매칭 방지)
+      if(n.length>=2 && k.includes(n)) return true;
+      // 태그명이 검색어를 포함: 검색어가 2글자 이상이어야
+      if(k.length>=2 && n.includes(k)) return true;
+      return false;
+    });
   }) || null;
 }
 
