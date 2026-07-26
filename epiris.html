@@ -370,6 +370,7 @@ const SPEECH_LANG = { kr:"ko-KR",en:"en-US",jp:"ja-JP",cn:"zh-CN",tw:"zh-TW",th:
 let db=null, USE_FIREBASE=false;
 let PRODUCTS=[];      // {id,name,image,qrImage,views,tag_ids}
 let TAG_MASTER={};    // id -> {names, type, ...}
+let BLOCKED_KW=new Set();  // 관리자가 블록한 키워드(추천에서 숨김)
 let curLang="en";
 let selectedTags=[];  // 드릴다운 선택된 태그
 let firstTagLogged=false; // 첫 태그 로그는 세션당 1회
@@ -392,11 +393,15 @@ function initFirebase(){
 async function loadData(){
   if(!USE_FIREBASE){ loadDemo(); buildLangGrid(); return; }
   try{
-    const [psnap, tsnap, ttags] = await Promise.all([
+    const [psnap, tsnap, ttags, bsnap] = await Promise.all([
       db.collection("products").get(),
       db.collection("tag_master").get(),
-      db.collection("product_tags").get()
+      db.collection("product_tags").get(),
+      db.collection("kiosk_blocked_keywords").get().catch(()=>({forEach:()=>{}}))
     ]);
+    // 블록된 키워드(관리자가 "쓸데없는 키워드"로 지정) → 추천에서 숨김
+    BLOCKED_KW = new Set();
+    bsnap.forEach(d=>{ const k=d.data().keyword; if(k) BLOCKED_KW.add(String(k).toLowerCase()); });
     const tagMap={}; ttags.forEach(d=> tagMap[d.id]=d.data());
     PRODUCTS=[];
     psnap.forEach(d=>{
@@ -558,11 +563,13 @@ async function runQuery(){
   // GPT 실패/미사용 → 입력어 자체를 키워드로
   if(!keywords.length) keywords=[raw];
 
-  // 2) 각 키워드를 우리 태그에 매칭
-  let suggestions=keywords.map(kw=>{
-    const tid=matchKeywordToTag(kw);
-    return { keyword:kw, tagId:tid };   // tagId 있으면 활성, 없으면 준비중
-  });
+  // 2) 각 키워드를 우리 태그에 매칭 (블록된 키워드는 아예 제외)
+  let suggestions=keywords
+    .filter(kw=> !BLOCKED_KW.has(String(kw).trim().toLowerCase()))
+    .map(kw=>{
+      const tid=matchKeywordToTag(kw);
+      return { keyword:kw, tagId:tid };   // tagId 있으면 활성, 없으면 준비중
+    });
 
   // 2a) 중복 제거: 같은 태그(tagId) 또는 화면 표시이름이 같으면 하나만
   const seenTag=new Set(), seenLabel=new Set();
@@ -648,6 +655,8 @@ async function gptExtractKeywords(raw){
       "당신은 약국 제품 검색 도우미입니다. 사용자의 문장에서 약국에서 찾을 만한 "+
       "핵심 키워드(증상·부위·효능·성분·제품종류)를 한국어 단어로 뽑아주세요. "+
       "예: '목이 따갑고 아파' → 목, 감기, 염증, 통증. "+
+      "단, '효능·제품·약·건강·기능·성분' 같이 너무 일반적이어서 특정 상품을 좁히지 못하는 "+
+      "단어는 제외하세요. 구체적인 증상·부위·성분·제품종류만 뽑습니다. "+
       "짧은 명사 위주, 최대 6개, JSON으로만.\\n"+
       "사용자입력: \""+raw+"\"\\n반환형식: {\"keywords\":[\"단어\",...]}";
     const res=await fetch("https://api.openai.com/v1/chat/completions",{
