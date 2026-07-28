@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>💊 EIGHT PHARMACY | 乾燥肌 & シミ 集中ケアレシピ</title>
+<style>
+  :root{
+    --green:#3a8f7a;
+    --green-d:#2c6c5c;
+    --green-l:#e7f4f0;
+    --mint:#f2faf7;
+    --gold:#c8a15a;
+    --ink:#2a3330;
+    --sub:#657069;
+    --line:#e3ebe8;
+    --card:#ffffff;
+    --am:#f0f7fb;
+    --am-ac:#5b9bc9;
+    --pm:#f3f0fa;
+    --pm-ac:#8674bd;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic','Noto Sans JP',system-ui,sans-serif;
+    background:#eef3f1;
+    color:var(--ink);
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;background:var(--mint);min-height:100vh;overflow:hidden;}
+
+  .hero{background:linear-gradient(160deg,var(--green) 0%,var(--green-d) 100%);color:#fff;padding:44px 26px 40px;text-align:center;position:relative;}
+  .hero .pill{display:inline-block;font-size:12px;letter-spacing:3px;font-weight:700;background:rgba(255,255,255,.15);padding:6px 16px;border-radius:100px;margin-bottom:18px;}
+  .hero h1{font-size:24px;font-weight:800;margin:0 0 10px;line-height:1.5;letter-spacing:-.5px;}
+  .hero .greeting{font-size:14px;font-weight:600;margin-bottom:12px;opacity:.95;letter-spacing:.3px;}
+  .hero .greeting b{font-size:19px;font-weight:800;color:#fff;border-bottom:2px solid var(--gold);padding:0 3px 3px;}
+  .hero .sub{font-size:13px;opacity:.9;font-weight:500;letter-spacing:1px;}
+  .hero .rx{margin-top:22px;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--gold);background:rgba(0,0,0,.12);padding:8px 18px;border-radius:100px;letter-spacing:1px;font-weight:600;}
+
+  section{padding:34px 20px;}
+  section:nth-child(even){background:#fff;}
+  .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .sec-no{flex:0 0 auto;width:38px;height:38px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;box-shadow:0 4px 10px rgba(58,143,122,.25);}
+  .sec-en{font-size:11px;letter-spacing:2px;color:var(--gold);font-weight:700;margin:0;text-transform:uppercase;}
+  .sec-ko{font-size:19px;font-weight:800;margin:2px 0 0;letter-spacing:-.3px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 6px 18px rgba(44,108,92,.05);}
+  section:nth-child(even) .card{background:var(--mint);}
+  .card h3{font-size:16px;font-weight:800;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:0 0 auto;}
+  .card h4{font-size:14px;font-weight:700;color:var(--green-d);margin:16px 0 8px;}
+  .card p{margin:0 0 6px;font-size:14px;color:var(--ink);}
+  .muted{color:var(--sub);font-size:13.5px;}
+
+  .chk{list-style:none;padding:0;margin:0;}
+  .chk li{position:relative;padding:8px 0 8px 30px;font-size:14.5px;font-weight:600;border-bottom:1px dashed var(--line);}
+  .chk li:last-child{border-bottom:none;}
+  .chk li:before{content:"✓";position:absolute;left:0;top:8px;width:20px;height:20px;border-radius:6px;background:var(--green-l);color:var(--green);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+
+  .an{margin:0 0 14px;}
+  .an .t{font-size:14px;font-weight:700;display:flex;gap:8px;align-items:flex-start;}
+  .an .t .n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .an .d{font-size:13.5px;color:var(--sub);padding-left:30px;margin-top:3px;}
+
+  .highlight{background:linear-gradient(135deg,var(--green-l),#dff0ea);border-left:4px solid var(--green);border-radius:12px;padding:18px;font-size:14px;line-height:1.8;color:var(--green-d);font-weight:600;}
+  .highlight strong{color:var(--green-d);}
+  .flow-note{margin-top:12px;text-align:center;font-weight:800;color:var(--green);font-size:13px;letter-spacing:-.3px;}
+
+  .tip{background:#fff8ec;border:1px solid #f0e0bf;border-radius:12px;padding:14px 16px;margin-top:12px;}
+  .tip .lb{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:1px;display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+  .tip p{font-size:13.5px;color:#6b5a34;margin:0;line-height:1.75;}
+
+  .routine{border-radius:18px;padding:22px 18px;margin-bottom:16px;}
+  .routine.inner{background:linear-gradient(160deg,#fff,#f3f9f6);border:1px solid var(--line);}
+  .routine.am{background:linear-gradient(160deg,#fbfdff,var(--am));border:1px solid #dceaf4;}
+  .routine.pm{background:linear-gradient(160deg,#fcfbff,var(--pm));border:1px solid #e5dff2;}
+  .routine .rt-title{font-size:16px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+  .routine .rt-sub{font-size:12.5px;color:var(--sub);margin:0 0 16px;}
+  .am .rt-title{color:var(--am-ac);}
+  .pm .rt-title{color:var(--pm-ac);}
+  .inner .rt-title{color:var(--green-d);}
+  .step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 3px 8px rgba(0,0,0,.03);}
+  .step .idx{flex:0 0 auto;width:26px;height:26px;border-radius:50%;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  .am .step .idx{background:var(--am-ac);}
+  .pm .step .idx{background:var(--pm-ac);}
+  .inner .step .idx{background:var(--green);}
+  .step .nm{font-size:14.5px;font-weight:700;}
+  .step .tg{font-size:11.5px;color:var(--sub);display:block;font-weight:500;margin-top:1px;}
+  .arrow{text-align:center;color:#c3d3cd;font-size:16px;line-height:1;margin:5px 0;}
+  .am .arrow{color:#b9d4e6;}
+  .pm .arrow{color:#cbc0e4;}
+  .point{margin-top:16px;background:rgba(255,255,255,.6);border-radius:12px;padding:12px 14px;}
+  .point .pt-lb{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--sub);margin-bottom:6px;}
+  .point ul{list-style:none;margin:0;padding:0;}
+  .point li{font-size:13px;padding:3px 0 3px 20px;position:relative;font-weight:600;}
+  .point li:before{content:"✔";position:absolute;left:0;color:var(--green);font-weight:900;}
+
+  .prod-img{width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:repeating-linear-gradient(45deg,#f4f8f6,#f4f8f6 12px,#eef4f1 12px,#eef4f1 24px);display:flex;align-items:center;justify-content:center;margin-bottom:14px;border:1px dashed #cdddd7;position:relative;}
+  .prod-img img{width:100%;height:100%;object-fit:cover;display:none;}
+  .prod-img.loaded img{display:block;}
+  .prod-img.loaded{border:1px solid var(--line);background:#fff;}
+  .prod-img .ph{text-align:center;color:#9fb4ad;font-size:12px;font-weight:600;padding:10px;}
+  .prod-img.loaded .ph{display:none;}
+  .prod-img .ph .ic{font-size:26px;display:block;margin-bottom:4px;opacity:.6;}
+  .prod-img .ph code{font-size:11px;color:#b0c0ba;background:#f0f5f3;padding:2px 6px;border-radius:5px;}
+
+  .prod-card h3 .badge{font-size:10px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--green);padding:3px 9px;border-radius:100px;margin-left:auto;}
+  .prod-card h3 .badge.inner{background:var(--gold);}
+  .prod-card h3 .badge.spot{background:#d98a6a;}
+
+  .why{list-style:none;padding:0;margin:0 0 4px;}
+  .why li{font-size:14px;padding:5px 0 5px 22px;position:relative;font-weight:600;}
+  .why li:before{content:"•";position:absolute;left:4px;color:var(--green);font-weight:900;font-size:16px;top:3px;}
+  .ing{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 4px;}
+  .ing span{font-size:12px;font-weight:700;color:var(--green-d);background:var(--green-l);padding:5px 11px;border-radius:100px;}
+
+  .sum-block{border-radius:16px;padding:18px;margin-bottom:14px;}
+  .sum-block.inner{background:#f3f9f6;border:1px solid var(--line);}
+  .sum-block.am{background:var(--am);border:1px solid #dceaf4;}
+  .sum-block.pm{background:var(--pm);border:1px solid #e5dff2;}
+  .sum-block.opt{background:#fff8ec;border:1px solid #f0e0bf;}
+  .sum-block .sb-t{font-size:14px;font-weight:800;margin:0 0 10px;display:flex;gap:7px;align-items:center;}
+  .sum-block .chain{display:flex;flex-direction:column;gap:4px;}
+  .sum-block .chain .it{font-size:14px;font-weight:700;background:#fff;border-radius:10px;padding:9px 13px;border:1px solid rgba(0,0,0,.04);}
+  .sum-block .chain .ar{text-align:center;color:#c3d3cd;font-size:13px;}
+  .sum-block.opt ul{list-style:none;margin:0;padding:0;}
+  .sum-block.opt li{font-size:13.5px;font-weight:600;padding:5px 0 5px 20px;position:relative;}
+  .sum-block.opt li:before{content:"•";position:absolute;left:4px;color:var(--gold);font-weight:900;}
+
+  .caution li{list-style:none;position:relative;padding:10px 0 10px 30px;font-size:13.5px;border-bottom:1px solid var(--line);color:var(--sub);font-weight:500;}
+  .caution{padding:0;margin:0;}
+  .caution li:last-child{border-bottom:none;}
+  .caution li:before{content:"!";position:absolute;left:2px;top:9px;width:20px;height:20px;border-radius:50%;background:#fbe9df;color:#d98a6a;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;}
+
+  .qr{display:block;text-decoration:none;text-align:center;margin-top:22px;background:var(--green-l);border-radius:16px;padding:24px;cursor:pointer;transition:transform .1s ease,box-shadow .2s ease;}
+  .qr:active{transform:scale(.99);}
+  .qr .hint{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:var(--green);background:#fff;border:1px solid #cfe6df;padding:4px 12px;border-radius:100px;}
+  .qr .box{width:130px;height:130px;margin:0 auto 12px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;border:1px dashed #b7cfc7;color:#9fb4ad;font-size:12px;font-weight:600;overflow:hidden;}
+  .qr .box img{width:100%;height:100%;object-fit:contain;display:none;}
+  .qr .box.loaded img{display:block;}
+  .qr .box.loaded{border:1px solid var(--line);}
+  .qr .box.loaded span{display:none;}
+  .qr p{font-size:13px;color:var(--green-d);font-weight:600;margin:0;}
+
+  footer{background:var(--green-d);color:rgba(255,255,255,.85);text-align:center;padding:28px 20px;font-size:12px;letter-spacing:1px;}
+  footer .lg{font-size:15px;font-weight:800;letter-spacing:2px;color:#fff;margin-bottom:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="pill">💊 EIGHT PHARMACY</span>
+    <div class="greeting"><b id="rxName">お客様</b>のための処方箋</div>
+    <h1>乾燥肌 &amp; シミ<br>集中ケアレシピ</h1>
+    <div class="sub">Pharmacist's Personalized Prescription</div>
+    <div class="rx">℞ 薬剤師のオーダーメイド処方</div>
+  </div>
+
+  <!-- ① SKIN ANALYSIS -->
+  <section>
+    <div class="sec-head"><div class="sec-no">1</div><div><p class="sec-en">Skin Analysis</p><p class="sec-ko">肌悩みの分析</p></div></div>
+
+    <div class="card">
+      <h3><span class="dot"></span>主なお悩み</h3>
+      <ul class="chk">
+        <li>乾燥肌 (Dry Skin)</li>
+        <li>シミ・色素沈着 (Melasma / Hyperpigmentation)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>乾燥肌の状態分析</h3>
+      <div class="an"><div class="t"><span class="n">1</span>肌内部の保水不足</div><div class="d">肌内部の水分が不足し、つっぱりやゴワつきが起こります。</div></div>
+      <div class="an"><div class="t"><span class="n">2</span>肌バリアの低下</div><div class="d">外部刺激に敏感になり、肌の回復力が低下します。</div></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>シミの状態分析</h3>
+      <div class="an"><div class="t"><span class="n">1</span>メラニン生成の増加</div><div class="d">紫外線や炎症の刺激によってメラニン生成が増加します。</div></div>
+      <div class="an"><div class="t"><span class="n">2</span>メラニンの蓄積</div><div class="d">生成されたメラニンが肌に残り、シミや色素沈着を作ります。</div></div>
+    </div>
+
+    <div class="highlight">
+      乾燥肌の状態でシミ治療を始めると、バリアが弱った肌に刺激の強い美白成分を使うことで、かえって肌が敏感になってしまうことがあります。
+      <div class="flow-note">内部保湿の回復 → 肌バリア強化 → メラニン抑制 → 紫外線対策</div>
+    </div>
+  </section>
+
+  <!-- ② CARE GOAL -->
+  <section>
+    <div class="sec-head"><div class="sec-no">2</div><div><p class="sec-en">Care Goal</p><p class="sec-ko">今回のケアの目標</p></div></div>
+    <div class="card">
+      <ul class="chk">
+        <li>肌内部の保水回復</li>
+        <li>肌バリアの強化</li>
+        <li>メラニン生成の抑制</li>
+        <li>色素沈着の改善</li>
+        <li>ターンオーバーの正常化</li>
+        <li>紫外線による再発の予防</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ③ DAILY ROUTINE -->
+  <section>
+    <div class="sec-head"><div class="sec-no">3</div><div><p class="sec-en">Daily Routine</p><p class="sec-ko">デイリールーティン</p></div></div>
+
+    <div class="routine inner">
+      <p class="rt-title">💊 INNER CARE</p>
+      <p class="rt-sub">飲むケアで、体の内側から美白・抗酸化</p>
+      <div class="step"><span class="idx">1</span><span><span class="nm">ユハン ビタミンC</span><span class="tg">メラニン抑制・抗酸化・コラーゲン生成</span></span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">2</span><span><span class="nm">医薬品グレード グルタチオン</span><span class="tg">黒色メラニンの減少・明るい肌トーン</span></span></div>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>乾燥肌には高濃度の塗るビタミンCが刺激になることがあります。飲むビタミンCで抗酸化と美白を同時にケアするのがおすすめです。</p></div>
+    </div>
+
+    <div class="routine am">
+      <p class="rt-title">☀️ MORNING CARE</p>
+      <p class="rt-sub">保湿・バリア保護・紫外線対策</p>
+      <div class="step"><span class="idx">1</span><span class="nm">ノドラナ液</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">2</span><span class="nm">シカメラ</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">3</span><span class="nm">レビオン 保湿サンクリーム</span></div>
+      <div class="point"><div class="pt-lb">MORNING POINT</div><ul><li>肌内部の保水回復</li><li>肌バリアの保護</li><li>紫外線対策でシミの再発予防</li></ul></div>
+    </div>
+
+    <div class="routine pm">
+      <p class="rt-title">🌙 NIGHT CARE</p>
+      <p class="rt-sub">再生・鎮静・シミの集中ケア</p>
+      <div class="step"><span class="idx">1</span><span class="nm">ノドラナ液</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">2</span><span class="nm">シカメラ</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">3</span><span><span class="nm">ハイドロキノン</span><span class="tg">シミ部分にのみ部分塗布</span></span></div>
+      <div class="point"><div class="pt-lb">NIGHT POINT</div><ul><li>肌の再生</li><li>肌の鎮静</li><li>メラニン生成の抑制</li><li>シミの集中ケア</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ④ PRODUCT GUIDE -->
+  <section>
+    <div class="sec-head"><div class="sec-no">4</div><div><p class="sec-en">Product Guide</p><p class="sec-ko">製品ガイド</p></div></div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="노드라나액"><img alt="ノドラナ液"><div class="ph"><span class="ic">🧴</span>製品イメージ<br><code>노드라나액.jpg</code></div></div>
+      <h3><span class="dot"></span>ノドラナ液<span class="badge">保湿</span></h3>
+      <ul class="why"><li>肌内部の保水ケア</li><li>乾燥肌の水分回復</li><li>肌のつっぱり改善</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>乾燥肌は表面の保湿だけでは足りません。ノドラナ液で内側からしっかり水分を補い、朝晩どちらも続けて使うのがおすすめです。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="시카멜라"><img alt="シカメラ"><div class="ph"><span class="ic">🧴</span>製品イメージ<br><code>시카멜라.jpg</code></div></div>
+      <h3><span class="dot"></span>シカメラ<span class="badge">鎮静・バリア</span></h3>
+      <ul class="why"><li>肌の鎮静</li><li>肌バリアの回復</li><li>ターンオーバーの正常化</li><li>ハイドロキノン使用時の刺激緩和</li></ul>
+      <h4>主な成分</h4>
+      <div class="ing"><span>低濃度ナイアシンアミド</span><span>ツボクサエキス (CICA)</span><span>パンテノール</span><span>アラントイン</span></div>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>高濃度(4%以上)のナイアシンアミドは皮脂を減らし乾燥を悪化させることがあります。乾燥肌には低濃度ナイアシンアミドがより適しています。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="유한비타민C"><img alt="ユハン ビタミンC"><div class="ph"><span class="ic">💊</span>製品イメージ<br><code>유한비타민C.jpg</code></div></div>
+      <h3><span class="dot"></span>ユハン ビタミンC<span class="badge inner">インナーケア</span></h3>
+      <ul class="why"><li>メラニン生成の抑制</li><li>抗酸化</li><li>エイジングケア</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>乾燥肌には塗るビタミンCより飲むビタミンCを優先しておすすめします。コスパの面でもユハン ビタミンCは良い選択です。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="글루타치온"><img alt="医薬品グレード グルタチオン"><div class="ph"><span class="ic">💊</span>製品イメージ<br><code>글루타치온.jpg</code></div></div>
+      <h3><span class="dot"></span>医薬品グレード グルタチオン<span class="badge inner">インナーケア</span></h3>
+      <ul class="why"><li>黒色メラニン生成の抑制</li><li>肌トーンの改善</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>グルタチオンは必ず医薬品グレードの製品を選ぶのがおすすめです。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="하이드로퀴논"><img alt="ハイドロキノン"><div class="ph"><span class="ic">🧪</span>製品イメージ<br><code>하이드로퀴논.jpg</code></div></div>
+      <h3><span class="dot"></span>ハイドロキノン<span class="badge spot">スポット</span></h3>
+      <ul class="why"><li>シミのケア</li><li>メラニン生成の抑制</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>就寝前にシミ部分にのみ部分的に塗布します。乾燥肌には低刺激の2%製品がおすすめです。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="레비온선크림"><img alt="レビオン 保湿サンクリーム"><div class="ph"><span class="ic">☀️</span>製品イメージ<br><code>레비온선크림.jpg</code></div></div>
+      <h3><span class="dot"></span>レビオン 保湿サンクリーム<span class="badge">紫外線対策</span></h3>
+      <ul class="why"><li>紫外線カット</li><li>再色素沈着の予防</li><li>しっとりとした保湿感</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>シミケアは日焼け止めをどれだけ続けられるかが結果を左右します。</p></div>
+    </div>
+  </section>
+
+  <!-- ⑤ OPTIONAL CARE -->
+  <section>
+    <div class="sec-head"><div class="sec-no">5</div><div><p class="sec-en">Optional Care</p><p class="sec-ko">オプションケア</p></div></div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="라키라마스크팩"><img alt="ラキラ ハイドロゲル スリーピングマスク"><div class="ph"><span class="ic">🌙</span>製品イメージ<br><code>라키라마스크팩.jpg</code></div></div>
+      <h3><span class="dot"></span>ラキラ ハイドロゲル スリーピングマスク<span class="badge">週2~3回</span></h3>
+      <ul class="why"><li>夜間の肌の水分キープ</li><li>肌バリア回復のサポート</li><li>乾燥によるつっぱり緩和</li><li>翌日の肌コンディション改善</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>乾燥がひどい日には、週2~3回、夜のスキンケアの最後のステップで使うと、よりしっとりとした肌を保ちやすくなります。</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>🎯 スポット集中ケア</h3>
+      <div class="prod-img" data-img="TXA크림"><img alt="TXA(トラネキサム酸)クリーム"><div class="ph"><span class="ic">🎯</span>製品イメージ<br><code>TXA크림.jpg</code></div></div>
+      <h4>TXA (トラネキサム酸) クリーム</h4>
+      <p class="muted">シミ・色素部分の集中ケア</p>
+      <div class="prod-img" data-img="레티놀크림" style="margin-top:16px;"><img alt="レチノールクリーム"><div class="ph"><span class="ic">🎯</span>製品イメージ<br><code>레티놀크림.jpg</code></div></div>
+      <h4>レチノールクリーム</h4>
+      <p class="muted">ターンオーバー促進・キメ&amp;色素ケア</p>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>シミの濃い部分にのみ部分的に使用することをおすすめします。刺激になりやすいため、必須ではなくオプションケアとしてご案内しています。</p></div>
+    </div>
+  </section>
+
+  <!-- ⑥ SUMMARY -->
+  <section>
+    <div class="sec-head"><div class="sec-no">6</div><div><p class="sec-en">Summary</p><p class="sec-ko">ひと目でわかる処方</p></div></div>
+
+    <div class="sum-block inner">
+      <p class="sb-t">💊 INNER</p>
+      <div class="chain"><div class="it">ユハン ビタミンC</div><div class="ar">↓</div><div class="it">医薬品グレード グルタチオン</div></div>
+    </div>
+
+    <div class="sum-block am">
+      <p class="sb-t">☀️ AM</p>
+      <div class="chain"><div class="it">ノドラナ液</div><div class="ar">↓</div><div class="it">シカメラ</div><div class="ar">↓</div><div class="it">レビオン 保湿サンクリーム</div></div>
+    </div>
+
+    <div class="sum-block pm">
+      <p class="sb-t">🌙 PM</p>
+      <div class="chain"><div class="it">ノドラナ液</div><div class="ar">↓</div><div class="it">シカメラ</div><div class="ar">↓</div><div class="it">ハイドロキノン</div></div>
+    </div>
+
+    <div class="sum-block opt">
+      <p class="sb-t">✨ OPTIONAL</p>
+      <ul>
+        <li>TXA クリーム (スポット)</li>
+        <li>レチノールクリーム (スポット)</li>
+        <li>ラキラ ハイドロゲル スリーピングマスク (週2~3回)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ⑦ PHARMACIST'S NOTE -->
+  <section>
+    <div class="sec-head"><div class="sec-no">7</div><div><p class="sec-en">Pharmacist's Note</p><p class="sec-ko">薬剤師からのひとこと</p></div></div>
+    <div class="highlight">
+      シミは美白成分だけでは解決できません。乾燥肌はまず内部保湿と肌バリアを回復させることで、刺激を抑えながら効果的な色素ケアが可能になります。継続的な紫外線対策まで一緒に実践することが、健康で澄んだ肌をつくる最も大切な習慣です。
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3><span class="dot"></span>乾燥肌のための低刺激処方</h3>
+      <ul class="why">
+        <li>乾燥肌は刺激に敏感なため、ハイドロキノンは<b>4%ではなく低刺激の2%製品</b>をおすすめしました。</li>
+        <li>レチノールクリームとTXAクリームは効果的ですが、<b>刺激になりやすいため、必須ではなくオプションケア</b>として構成しました。</li>
+        <li>肌バリアが安定してから段階的に取り入れることで、刺激なく色素ケアを続けられます。</li>
+      </ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>今はまず肌バリアを安定させることが最優先です。刺激要素は最小限にして、肌のコンディションが整ってからオプションケアを一つずつ加えていきましょう。</p></div>
+    </div>
+  </section>
+
+  <!-- ⑧ CAUTION & QR -->
+  <section>
+    <div class="sec-head"><div class="sec-no">8</div><div><p class="sec-en">Caution &amp; QR</p><p class="sec-ko">ご使用上の注意</p></div></div>
+    <div class="card">
+      <ul class="caution">
+        <li>ハイドロキノンは就寝前にシミ部分にのみ使用してください。</li>
+        <li>日中は必ず日焼け止めを使用してください。</li>
+        <li>肌の刺激が続く場合は使用を中止し、薬剤師にご相談ください。</li>
+        <li>医薬品は推奨される使用期間を守ってください。</li>
+        <li>もっと多くのおすすめ製品は、下のQR(エピリス)からご確認いただけます。</li>
+      </ul>
+      <a class="qr" href="https://8pharmacy.kr/epiris.html" target="_blank" rel="noopener">
+        <div class="box" data-img="qr"><img alt="エピリス QRコード"><span>QRコード<br>スペース</span></div>
+        <p>📱 スキャンまたはタップで、エピリスで<br>もっと多くのおすすめ製品が見つかります</p>
+        <span class="hint">👆 タップで移動</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="lg">💊 EIGHT PHARMACY</div>
+    本内容は薬剤師によるカウンセリング案内であり、<br>個人の肌状態により異なる場合があります。
+  </footer>
+
+</div>
+
+<script>
+  // リンクの末尾に ?name=田中 を付けると、上部に宛名が自動で入ります
+  (function(){
+    var n = new URLSearchParams(location.search).get('name');
+    if(n && n.trim()){
+      n = n.trim();
+      var el = document.getElementById('rxName');
+      if(el) el.textContent = n + '様';
+      document.title = n + '様のための処方箋 | EIGHT PHARMACY';
+    }
+  })();
+  document.querySelectorAll('.prod-img, .qr .box').forEach(function(box){
+    var base = box.getAttribute('data-img');
+    if(!base) return;
+    var img = box.querySelector('img');
+    var exts = ['jpg','png','jpeg','webp','JPG','PNG'];
+    var i = 0;
+    function tryNext(){ if(i >= exts.length){ return; } img.src = base + '.' + exts[i++]; }
+    img.onload = function(){ box.classList.add('loaded'); };
+    img.onerror = function(){ tryNext(); };
+    tryNext();
+  });
+</script>
+</body>
+</html>

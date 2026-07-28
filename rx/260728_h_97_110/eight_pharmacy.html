@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>💊 EIGHT PHARMACY | 건조 피부 & 기미 맞춤 케어</title>
+<style>
+  :root{
+    --green:#3a8f7a;
+    --green-d:#2c6c5c;
+    --green-l:#e7f4f0;
+    --mint:#f2faf7;
+    --gold:#c8a15a;
+    --ink:#2a3330;
+    --sub:#657069;
+    --line:#e3ebe8;
+    --card:#ffffff;
+    --am:#f0f7fb;
+    --am-ac:#5b9bc9;
+    --pm:#f3f0fa;
+    --pm-ac:#8674bd;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+    background:#eef3f1;
+    color:var(--ink);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    word-break:keep-all;
+  }
+  .wrap{
+    max-width:480px;
+    margin:0 auto;
+    background:var(--mint);
+    min-height:100vh;
+    overflow:hidden;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    background:linear-gradient(160deg,var(--green) 0%,var(--green-d) 100%);
+    color:#fff;
+    padding:44px 26px 40px;
+    text-align:center;
+    position:relative;
+  }
+  .hero .pill{
+    display:inline-block;
+    font-size:12px;
+    letter-spacing:3px;
+    font-weight:700;
+    background:rgba(255,255,255,.15);
+    padding:6px 16px;
+    border-radius:100px;
+    margin-bottom:18px;
+  }
+  .hero h1{
+    font-size:25px;
+    font-weight:800;
+    margin:0 0 10px;
+    line-height:1.45;
+    letter-spacing:-.5px;
+  }
+  .hero .greeting{font-size:14px;font-weight:600;margin-bottom:12px;opacity:.95;letter-spacing:.3px;}
+  .hero .greeting b{font-size:19px;font-weight:800;color:#fff;border-bottom:2px solid var(--gold);padding:0 3px 3px;}
+  .hero .sub{
+    font-size:14px;
+    opacity:.9;
+    font-weight:500;
+    letter-spacing:1px;
+  }
+  .hero .rx{
+    margin-top:22px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:12.5px;
+    color:var(--gold);
+    background:rgba(0,0,0,.12);
+    padding:8px 18px;
+    border-radius:100px;
+    letter-spacing:1px;
+    font-weight:600;
+  }
+
+  /* ---------- SECTION ---------- */
+  section{padding:34px 20px;}
+  section:nth-child(even){background:#fff;}
+  .sec-head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .sec-no{
+    flex:0 0 auto;
+    width:38px;height:38px;
+    border-radius:50%;
+    background:var(--green);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:17px;
+    box-shadow:0 4px 10px rgba(58,143,122,.25);
+  }
+  .sec-en{
+    font-size:11px;letter-spacing:2px;color:var(--gold);font-weight:700;
+    margin:0;text-transform:uppercase;
+  }
+  .sec-ko{
+    font-size:19px;font-weight:800;margin:2px 0 0;letter-spacing:-.3px;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:20px;
+    margin-bottom:14px;
+    box-shadow:0 6px 18px rgba(44,108,92,.05);
+  }
+  section:nth-child(even) .card{background:var(--mint);}
+
+  .card h3{
+    font-size:16px;font-weight:800;margin:0 0 12px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:0 0 auto;}
+  .card h4{font-size:14px;font-weight:700;color:var(--green-d);margin:16px 0 8px;}
+  .card p{margin:0 0 6px;font-size:14px;color:var(--ink);}
+  .muted{color:var(--sub);font-size:13.5px;}
+
+  .chk{list-style:none;padding:0;margin:0;}
+  .chk li{
+    position:relative;padding:8px 0 8px 30px;font-size:14.5px;font-weight:600;
+    border-bottom:1px dashed var(--line);
+  }
+  .chk li:last-child{border-bottom:none;}
+  .chk li:before{
+    content:"✓";position:absolute;left:0;top:8px;
+    width:20px;height:20px;border-radius:6px;
+    background:var(--green-l);color:var(--green);
+    font-size:12px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* numbered analysis blocks */
+  .an{margin:0 0 14px;}
+  .an .t{font-size:14px;font-weight:700;display:flex;gap:8px;align-items:flex-start;}
+  .an .t .n{
+    flex:0 0 auto;width:22px;height:22px;border-radius:50%;
+    background:var(--green);color:#fff;font-size:12px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;margin-top:1px;
+  }
+  .an .d{font-size:13.5px;color:var(--sub);padding-left:30px;margin-top:3px;}
+
+  /* diagnosis / note highlight */
+  .highlight{
+    background:linear-gradient(135deg,var(--green-l),#dff0ea);
+    border-left:4px solid var(--green);
+    border-radius:12px;padding:18px;font-size:14px;line-height:1.75;
+    color:var(--green-d);font-weight:600;
+  }
+  .highlight strong{color:var(--green-d);}
+  .flow-note{
+    margin-top:12px;text-align:center;font-weight:800;color:var(--green);
+    font-size:13.5px;letter-spacing:-.3px;
+  }
+
+  /* TIP box */
+  .tip{
+    background:#fff8ec;border:1px solid #f0e0bf;border-radius:12px;
+    padding:14px 16px;margin-top:12px;
+  }
+  .tip .lb{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:1px;display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+  .tip p{font-size:13.5px;color:#6b5a34;margin:0;line-height:1.7;}
+
+  /* routine flow */
+  .routine{
+    border-radius:18px;padding:22px 18px;margin-bottom:16px;
+  }
+  .routine.inner{background:linear-gradient(160deg,#fff,#f3f9f6);border:1px solid var(--line);}
+  .routine.am{background:linear-gradient(160deg,#fbfdff,var(--am));border:1px solid #dceaf4;}
+  .routine.pm{background:linear-gradient(160deg,#fcfbff,var(--pm));border:1px solid #e5dff2;}
+  .routine .rt-title{font-size:16px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+  .routine .rt-sub{font-size:12.5px;color:var(--sub);margin:0 0 16px;}
+  .am .rt-title{color:var(--am-ac);}
+  .pm .rt-title{color:var(--pm-ac);}
+  .inner .rt-title{color:var(--green-d);}
+
+  .step{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:12px 14px;display:flex;align-items:center;gap:12px;
+    box-shadow:0 3px 8px rgba(0,0,0,.03);
+  }
+  .step .idx{
+    flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+    color:#fff;font-size:13px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .am .step .idx{background:var(--am-ac);}
+  .pm .step .idx{background:var(--pm-ac);}
+  .inner .step .idx{background:var(--green);}
+  .step .nm{font-size:14.5px;font-weight:700;}
+  .step .tg{font-size:11.5px;color:var(--sub);display:block;font-weight:500;margin-top:1px;}
+  .arrow{text-align:center;color:#c3d3cd;font-size:16px;line-height:1;margin:5px 0;}
+  .am .arrow{color:#b9d4e6;}
+  .pm .arrow{color:#cbc0e4;}
+
+  .point{
+    margin-top:16px;background:rgba(255,255,255,.6);border-radius:12px;padding:12px 14px;
+  }
+  .point .pt-lb{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--sub);margin-bottom:6px;}
+  .point ul{list-style:none;margin:0;padding:0;}
+  .point li{font-size:13px;padding:3px 0 3px 20px;position:relative;font-weight:600;}
+  .point li:before{content:"✔";position:absolute;left:0;color:var(--green);font-weight:900;}
+
+  /* product image slot */
+  .prod-img{
+    width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden;
+    background:repeating-linear-gradient(45deg,#f4f8f6,#f4f8f6 12px,#eef4f1 12px,#eef4f1 24px);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:14px;border:1px dashed #cdddd7;position:relative;
+  }
+  .prod-img img{width:100%;height:100%;object-fit:cover;display:none;}
+  .prod-img.loaded img{display:block;}
+  .prod-img.loaded{border:1px solid var(--line);background:#fff;}
+  .prod-img .ph{
+    text-align:center;color:#9fb4ad;font-size:12px;font-weight:600;padding:10px;
+  }
+  .prod-img.loaded .ph{display:none;}
+  .prod-img .ph .ic{font-size:26px;display:block;margin-bottom:4px;opacity:.6;}
+  .prod-img .ph code{font-size:11px;color:#b0c0ba;background:#f0f5f3;padding:2px 6px;border-radius:5px;}
+
+  .prod-card h3 .badge{
+    font-size:10px;font-weight:800;letter-spacing:.5px;color:#fff;
+    background:var(--green);padding:3px 9px;border-radius:100px;margin-left:auto;
+  }
+  .prod-card h3 .badge.inner{background:var(--gold);}
+  .prod-card h3 .badge.spot{background:#d98a6a;}
+
+  .why{list-style:none;padding:0;margin:0 0 4px;}
+  .why li{font-size:14px;padding:5px 0 5px 22px;position:relative;font-weight:600;}
+  .why li:before{content:"•";position:absolute;left:4px;color:var(--green);font-weight:900;font-size:16px;top:3px;}
+
+  .ing{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 4px;}
+  .ing span{
+    font-size:12px;font-weight:700;color:var(--green-d);
+    background:var(--green-l);padding:5px 11px;border-radius:100px;
+  }
+
+  /* summary columns */
+  .sum-block{border-radius:16px;padding:18px;margin-bottom:14px;}
+  .sum-block.inner{background:#f3f9f6;border:1px solid var(--line);}
+  .sum-block.am{background:var(--am);border:1px solid #dceaf4;}
+  .sum-block.pm{background:var(--pm);border:1px solid #e5dff2;}
+  .sum-block.opt{background:#fff8ec;border:1px solid #f0e0bf;}
+  .sum-block .sb-t{font-size:14px;font-weight:800;margin:0 0 10px;display:flex;gap:7px;align-items:center;}
+  .sum-block .chain{display:flex;flex-direction:column;gap:4px;}
+  .sum-block .chain .it{font-size:14px;font-weight:700;background:#fff;border-radius:10px;padding:9px 13px;border:1px solid rgba(0,0,0,.04);}
+  .sum-block .chain .ar{text-align:center;color:#c3d3cd;font-size:13px;}
+  .sum-block.opt ul{list-style:none;margin:0;padding:0;}
+  .sum-block.opt li{font-size:13.5px;font-weight:600;padding:5px 0 5px 20px;position:relative;}
+  .sum-block.opt li:before{content:"•";position:absolute;left:4px;color:var(--gold);font-weight:900;}
+
+  /* caution */
+  .caution li{
+    list-style:none;position:relative;padding:10px 0 10px 30px;font-size:13.5px;
+    border-bottom:1px solid var(--line);color:var(--sub);font-weight:500;
+  }
+  .caution{padding:0;margin:0;}
+  .caution li:last-child{border-bottom:none;}
+  .caution li:before{content:"!";position:absolute;left:2px;top:9px;width:20px;height:20px;border-radius:50%;background:#fbe9df;color:#d98a6a;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;}
+
+  .qr{
+    display:block;text-decoration:none;text-align:center;margin-top:22px;background:var(--green-l);border-radius:16px;padding:24px;cursor:pointer;transition:transform .1s ease,box-shadow .2s ease;
+  }
+  .qr:active{transform:scale(.99);}
+  .qr .hint{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:var(--green);background:#fff;border:1px solid #cfe6df;padding:4px 12px;border-radius:100px;}
+  .qr .box{
+    width:130px;height:130px;margin:0 auto 12px;background:#fff;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;border:1px dashed #b7cfc7;
+    color:#9fb4ad;font-size:12px;font-weight:600;overflow:hidden;
+  }
+  .qr .box img{width:100%;height:100%;object-fit:contain;display:none;}
+  .qr .box.loaded img{display:block;}
+  .qr .box.loaded{border:1px solid var(--line);}
+  .qr .box.loaded span{display:none;}
+  .qr p{font-size:13px;color:var(--green-d);font-weight:600;margin:0;}
+
+  footer{
+    background:var(--green-d);color:rgba(255,255,255,.85);text-align:center;
+    padding:28px 20px;font-size:12px;letter-spacing:1px;
+  }
+  footer .lg{font-size:15px;font-weight:800;letter-spacing:2px;color:#fff;margin-bottom:6px;}
+
+  .divider{height:1px;background:var(--line);margin:0 20px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="pill">💊 EIGHT PHARMACY</span>
+    <div class="greeting"><b id="rxName">고객</b>님을 위한 처방전</div>
+    <h1>건조 피부 &amp; 기미<br>맞춤 케어 레시피</h1>
+    <div class="sub">Pharmacist's Personalized Prescription</div>
+    <div class="rx">℞ 약사의 1:1 맞춤 처방</div>
+  </div>
+
+  <!-- ① SKIN ANALYSIS -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-no">1</div>
+      <div><p class="sec-en">Skin Analysis</p><p class="sec-ko">피부 고민 분석</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>대표 고민</h3>
+      <ul class="chk">
+        <li>건조 피부 (Dry Skin)</li>
+        <li>기미 · 색소 침착 (Melasma / Hyperpigmentation)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>건조 피부 상태 분석</h3>
+      <div class="an"><div class="t"><span class="n">1</span>피부 속보습 부족</div><div class="d">피부 속 수분이 부족해 당김과 거칠음이 발생합니다.</div></div>
+      <div class="an"><div class="t"><span class="n">2</span>피부 장벽 손상</div><div class="d">외부 자극에 민감해지고 피부 회복력이 떨어집니다.</div></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>기미 상태 분석</h3>
+      <div class="an"><div class="t"><span class="n">1</span>멜라닌 생성 증가</div><div class="d">자외선과 염증 자극으로 멜라닌 생성이 증가합니다.</div></div>
+      <div class="an"><div class="t"><span class="n">2</span>멜라닌 축적</div><div class="d">생성된 멜라닌이 피부에 남아 기미와 색소침착을 만듭니다.</div></div>
+    </div>
+
+    <div class="highlight">
+      건조 피부에서 기미 치료를 시작할 경우, 피부 장벽이 약한 상태에서 자극적인 미백 성분을 사용하면 오히려 피부가 더 예민해질 수 있습니다.
+      <div class="flow-note">속보습 회복 → 피부 장벽 강화 → 멜라닌 억제 → 자외선 차단</div>
+    </div>
+  </section>
+
+  <!-- ② CARE GOAL -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-no">2</div>
+      <div><p class="sec-en">Care Goal</p><p class="sec-ko">이번 케어의 목표</p></div>
+    </div>
+    <div class="card">
+      <ul class="chk">
+        <li>피부 속보습 회복</li>
+        <li>피부 장벽 강화</li>
+        <li>멜라닌 생성 억제</li>
+        <li>색소 침착 개선</li>
+        <li>피부 턴오버 정상화</li>
+        <li>자외선에 의한 재발 예방</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ③ DAILY ROUTINE -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-no">3</div>
+      <div><p class="sec-en">Daily Routine</p><p class="sec-ko">데일리 루틴</p></div>
+    </div>
+
+    <!-- INNER -->
+    <div class="routine inner">
+      <p class="rt-title">💊 INNER CARE</p>
+      <p class="rt-sub">먹는 케어로 안에서부터 미백 · 항산화</p>
+      <div class="step"><span class="idx">1</span><span><span class="nm">유한 비타민 C</span><span class="tg">멜라닌 억제 · 항산화 · 콜라겐 합성</span></span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">2</span><span><span class="nm">의약품 등급 글루타치온</span><span class="tg">검은 멜라닌 감소 · 밝은 피부톤</span></span></div>
+      <div class="tip">
+        <div class="lb">💡 약사의 TIP</div>
+        <p>건조한 피부는 고농도 바르는 비타민 C가 자극이 될 수 있습니다. 먹는 비타민 C로 항산화와 미백을 함께 관리하는 것을 권장합니다.</p>
+      </div>
+    </div>
+
+    <!-- AM -->
+    <div class="routine am">
+      <p class="rt-title">☀️ MORNING CARE</p>
+      <p class="rt-sub">보습 · 장벽 보호 · 자외선 차단</p>
+      <div class="step"><span class="idx">1</span><span class="nm">노드라나액</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">2</span><span class="nm">시카멜라</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">3</span><span class="nm">레비온 수분 선크림</span></div>
+      <div class="point">
+        <div class="pt-lb">MORNING POINT</div>
+        <ul><li>피부 속보습 회복</li><li>피부 장벽 보호</li><li>자외선 차단으로 기미 재발 예방</li></ul>
+      </div>
+    </div>
+
+    <!-- PM -->
+    <div class="routine pm">
+      <p class="rt-title">🌙 NIGHT CARE</p>
+      <p class="rt-sub">재생 · 진정 · 기미 집중 치료</p>
+      <div class="step"><span class="idx">1</span><span class="nm">노드라나액</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">2</span><span class="nm">시카멜라</span></div>
+      <div class="arrow">↓</div>
+      <div class="step"><span class="idx">3</span><span><span class="nm">하이드로퀴논</span><span class="tg">기미 부위에만 국소 도포</span></span></div>
+      <div class="point">
+        <div class="pt-lb">NIGHT POINT</div>
+        <ul><li>피부 재생</li><li>피부 진정</li><li>멜라닌 생성 억제</li><li>기미 집중 치료</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ PRODUCT GUIDE -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-no">4</div>
+      <div><p class="sec-en">Product Guide</p><p class="sec-ko">제품 가이드</p></div>
+    </div>
+
+    <!-- 노드라나액 -->
+    <div class="card prod-card">
+      <div class="prod-img" data-img="노드라나액"><img alt="노드라나액"><div class="ph"><span class="ic">🧴</span>제품 이미지<br><code>노드라나액.jpg</code></div></div>
+      <h3><span class="dot"></span>노드라나액<span class="badge">보습</span></h3>
+      <ul class="why"><li>피부 속보습 치료</li><li>건조한 피부의 수분 회복</li><li>피부 당김 개선</li></ul>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>건조 피부는 겉만 보습하는 것으로는 부족합니다. 노드라나액으로 속부터 충분한 수분을 공급하고, 아침·저녁 모두 꾸준히 사용하세요.</p></div>
+    </div>
+
+    <!-- 시카멜라 -->
+    <div class="card prod-card">
+      <div class="prod-img" data-img="시카멜라"><img alt="시카멜라"><div class="ph"><span class="ic">🧴</span>제품 이미지<br><code>시카멜라.jpg</code></div></div>
+      <h3><span class="dot"></span>시카멜라<span class="badge">진정·장벽</span></h3>
+      <ul class="why"><li>피부 진정</li><li>피부 장벽 회복</li><li>피부 턴오버 정상화</li><li>하이드로퀴논 사용 시 자극 완화</li></ul>
+      <h4>핵심 성분</h4>
+      <div class="ing"><span>저농도 니아신아마이드</span><span>병풀추출물 (CICA)</span><span>판테놀</span><span>알란토인</span></div>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>고농도(4% 이상) 니아신아마이드는 유분을 감소시켜 건조함을 악화시킬 수 있습니다. 건조한 피부에는 저농도 니아신아마이드가 더 적합합니다.</p></div>
+    </div>
+
+    <!-- 유한 비타민 C -->
+    <div class="card prod-card">
+      <div class="prod-img" data-img="유한비타민C"><img alt="유한 비타민 C"><div class="ph"><span class="ic">💊</span>제품 이미지<br><code>유한비타민C.jpg</code></div></div>
+      <h3><span class="dot"></span>유한 비타민 C<span class="badge inner">이너케어</span></h3>
+      <ul class="why"><li>멜라닌 생성 억제</li><li>항산화</li><li>안티에이징</li></ul>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>건조 피부에서는 바르는 비타민 C보다 먹는 비타민 C를 우선 추천합니다. 가성비까지 고려하면 유한 비타민 C가 좋은 선택입니다.</p></div>
+    </div>
+
+    <!-- 글루타치온 -->
+    <div class="card prod-card">
+      <div class="prod-img" data-img="글루타치온"><img alt="의약품 등급 글루타치온"><div class="ph"><span class="ic">💊</span>제품 이미지<br><code>글루타치온.jpg</code></div></div>
+      <h3><span class="dot"></span>의약품 등급 글루타치온<span class="badge inner">이너케어</span></h3>
+      <ul class="why"><li>검은 멜라닌 생성 억제</li><li>피부톤 개선</li></ul>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>글루타치온은 반드시 의약품 등급 제품을 선택하는 것이 좋습니다.</p></div>
+    </div>
+
+    <!-- 하이드로퀴논 -->
+    <div class="card prod-card">
+      <div class="prod-img" data-img="하이드로퀴논"><img alt="하이드로퀴논"><div class="ph"><span class="ic">🧪</span>제품 이미지<br><code>하이드로퀴논.jpg</code></div></div>
+      <h3><span class="dot"></span>하이드로퀴논<span class="badge spot">스팟</span></h3>
+      <ul class="why"><li>기미 치료</li><li>멜라닌 생성 억제</li></ul>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>취침 전 기미 부위에만 국소적으로 도포합니다.</p></div>
+    </div>
+
+    <!-- 레비온 수분 선크림 -->
+    <div class="card prod-card">
+      <div class="prod-img" data-img="레비온선크림"><img alt="레비온 수분 선크림"><div class="ph"><span class="ic">☀️</span>제품 이미지<br><code>레비온선크림.jpg</code></div></div>
+      <h3><span class="dot"></span>레비온 수분 선크림<span class="badge">자외선 차단</span></h3>
+      <ul class="why"><li>자외선 차단</li><li>재색소침착 예방</li><li>촉촉한 수분감</li></ul>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>기미 치료는 선크림을 얼마나 꾸준히 사용하는지가 결과를 좌우합니다.</p></div>
+    </div>
+  </section>
+
+  <!-- ⑤ OPTIONAL CARE -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-no">5</div>
+      <div><p class="sec-en">Optional Care</p><p class="sec-ko">선택 케어</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="라키라마스크팩"><img alt="라키라 하이드로겔 수면 마스크팩"><div class="ph"><span class="ic">🌙</span>제품 이미지<br><code>라키라마스크팩.jpg</code></div></div>
+      <h3><span class="dot"></span>라키라 하이드로겔 수면 마스크팩<span class="badge">주 2~3회</span></h3>
+      <ul class="why"><li>밤 동안 피부 수분 유지</li><li>피부 장벽 회복 보조</li><li>건조로 인한 피부 당김 완화</li><li>다음 날 피부 컨디션 개선</li></ul>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>건조함이 심한 날에는 주 2~3회, 저녁 스킨케어 마지막 단계에서 사용하면 더욱 촉촉한 피부 유지에 도움이 됩니다.</p></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot"></span>🎯 스팟 집중 케어</h3>
+      <div class="prod-img" data-img="TXA크림"><img alt="TXA 크림"><div class="ph"><span class="ic">🎯</span>제품 이미지<br><code>TXA크림.jpg</code></div></div>
+      <h4>TXA (트라넥삼산) 크림</h4>
+      <p class="muted">기미 · 색소 부위 집중 관리</p>
+      <div class="prod-img" data-img="레티놀크림" style="margin-top:16px;"><img alt="레티놀 크림"><div class="ph"><span class="ic">🎯</span>제품 이미지<br><code>레티놀크림.jpg</code></div></div>
+      <h4>레티놀 크림</h4>
+      <p class="muted">피부 턴오버 촉진 · 피부결 및 색소 관리</p>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>기미가 진한 부위에만 국소적으로 사용하는 것을 권장합니다.</p></div>
+    </div>
+  </section>
+
+  <!-- ⑥ SUMMARY -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-no">6</div>
+      <div><p class="sec-en">Summary</p><p class="sec-ko">한눈에 보는 처방</p></div>
+    </div>
+
+    <div class="sum-block inner">
+      <p class="sb-t">💊 INNER</p>
+      <div class="chain">
+        <div class="it">유한 비타민 C</div><div class="ar">↓</div>
+        <div class="it">의약품 등급 글루타치온</div>
+      </div>
+    </div>
+
+    <div class="sum-block am">
+      <p class="sb-t">☀️ AM</p>
+      <div class="chain">
+        <div class="it">노드라나액</div><div class="ar">↓</div>
+        <div class="it">시카멜라</div><div class="ar">↓</div>
+        <div class="it">레비온 수분 선크림</div>
+      </div>
+    </div>
+
+    <div class="sum-block pm">
+      <p class="sb-t">🌙 PM</p>
+      <div class="chain">
+        <div class="it">노드라나액</div><div class="ar">↓</div>
+        <div class="it">시카멜라</div><div class="ar">↓</div>
+        <div class="it">하이드로퀴논</div>
+      </div>
+    </div>
+
+    <div class="sum-block opt">
+      <p class="sb-t">✨ OPTIONAL</p>
+      <ul>
+        <li>TXA 크림 (스팟)</li>
+        <li>레티놀 크림 (스팟)</li>
+        <li>라키라 하이드로겔 수면 마스크팩 (주 2~3회)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ⑦ PHARMACIST'S NOTE -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-no">7</div>
+      <div><p class="sec-en">Pharmacist's Note</p><p class="sec-ko">약사의 한마디</p></div>
+    </div>
+    <div class="highlight">
+      기미는 미백 성분만으로 해결되지 않습니다. 건조한 피부는 먼저 속보습과 피부 장벽을 회복해야 자극을 줄이면서 효과적인 색소 관리가 가능합니다. 꾸준한 자외선 차단까지 함께 실천하는 것이 건강하고 맑은 피부를 만드는 가장 중요한 습관입니다.
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3><span class="dot"></span>건조 피부를 위한 자극 최소화 처방</h3>
+      <ul class="why">
+        <li>건조한 피부는 자극에 예민하기 때문에, 하이드로퀴논은 <b>4% 대신 저자극 2% 제품</b>을 추천드렸습니다.</li>
+        <li>레티놀 크림과 TXA 크림은 효과적이지만 <b>자극이 될 수 있어 필수가 아닌 선택(옵션) 케어</b>로 구성했습니다.</li>
+        <li>피부 장벽이 안정된 후 단계적으로 도입하면 자극 없이 꾸준한 색소 관리를 이어갈 수 있습니다.</li>
+      </ul>
+      <div class="tip"><div class="lb">💡 약사의 TIP</div><p>무엇보다 지금은 피부 장벽을 안정시키는 것이 우선입니다. 자극 요소는 최소화하고, 피부 컨디션이 좋아진 뒤 선택 케어를 하나씩 더해보세요.</p></div>
+    </div>
+  </section>
+
+  <!-- ⑧ CAUTION & QR -->
+  <section>
+    <div class="sec-head">
+      <div class="sec-no">8</div>
+      <div><p class="sec-en">Caution &amp; QR</p><p class="sec-ko">사용 시 주의사항</p></div>
+    </div>
+    <div class="card">
+      <ul class="caution">
+        <li>하이드로퀴논은 취침 전 기미 부위에만 사용하세요.</li>
+        <li>낮에는 반드시 자외선 차단제를 사용하세요.</li>
+        <li>피부 자극이 지속되면 사용을 중단하고 약사와 상담하세요.</li>
+        <li>의약품은 권장 사용 기간을 준수하세요.</li>
+        <li>더 많은 맞춤 제품은 아래 QR(에피리스)에서 확인하실 수 있습니다.</li>
+      </ul>
+      <a class="qr" href="https://8pharmacy.kr/epiris.html" target="_blank" rel="noopener">
+        <div class="box" data-img="qr"><img alt="에피리스 QR 코드"><span>QR 코드<br>자리</span></div>
+        <p>📱 스캔하거나 탭하면 에피리스에서<br>더 많은 맞춤 제품을 찾을 수 있어요</p>
+        <span class="hint">👆 탭하면 바로 이동</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="lg">💊 EIGHT PHARMACY</div>
+    본 내용은 약사의 맞춤 상담 안내이며,<br>개인 피부 상태에 따라 달라질 수 있습니다.
+  </footer>
+
+</div>
+
+<script>
+  // 링크 뒤에 ?name=홍길동 을 붙이면 상단에 받는 분 이름이 자동으로 들어갑니다
+  (function(){
+    var n = new URLSearchParams(location.search).get('name');
+    if(n && n.trim()){
+      n = n.trim();
+      var el = document.getElementById('rxName');
+      if(el) el.textContent = n;
+      document.title = n + '님을 위한 맞춤 처방 | EIGHT PHARMACY';
+    }
+  })();
+  // 같은 폴더의 제품이름.jpg / .png 를 자동으로 찾아 표시
+  document.querySelectorAll('.prod-img, .qr .box').forEach(function(box){
+    var base = box.getAttribute('data-img');
+    if(!base) return;
+    var img = box.querySelector('img');
+    var exts = ['jpg','png','jpeg','webp','JPG','PNG'];
+    var i = 0;
+    function tryNext(){
+      if(i >= exts.length){ return; } // 이미지 없으면 자리 표시 유지
+      img.src = base + '.' + exts[i++];
+    }
+    img.onload = function(){ box.classList.add('loaded'); };
+    img.onerror = function(){ tryNext(); };
+    tryNext();
+  });
+</script>
+</body>
+</html>
