@@ -702,19 +702,29 @@ function matchKeywordToTag(kw){
   // 포함 매칭 (차선) — 단, 우연한 글자 겹침 방지
   //  · 2글자 이하의 짧은 조각은 부분매칭 금지 (예: "살"이 "몸살"에, "약"이 "간장약"에 걸리는 문제)
   //  · 태그명이 검색어에 포함되는 경우도 태그명이 2글자 이상일 때만 인정
-  return Object.keys(TAG_MASTER).find(id=>{
+  const incl = Object.keys(TAG_MASTER).find(id=>{
     const t=TAG_MASTER[id];
     const cand=[...Object.values(t.names||{}),...(t.synonyms||[])]
       .map(s=>(s||"").toLowerCase()).filter(Boolean);
     return cand.some(n=>{
       if(n===k) return true;
-      // 검색어가 태그명을 포함: 태그명이 2글자 이상이어야 (짧은 태그의 오매칭 방지)
       if(n.length>=2 && k.includes(n)) return true;
-      // 태그명이 검색어를 포함: 검색어가 2글자 이상이어야
       if(k.length>=2 && n.includes(k)) return true;
       return false;
     });
-  }) || null;
+  });
+  if(incl) return incl;
+
+  // 코멘트 매칭 (최후) — 약사가 단 코멘트에 이 검색어가 등장하면 그 태그로
+  //  예: "뱃살" 검색 → 체중 코멘트에 "뱃살"이 있으면 체중 태그로 연결
+  if(k.length>=2){
+    const byComment = Object.keys(TAG_MASTER).find(id=>{
+      const cm=(TAG_MASTER[id].comment||"").toLowerCase();
+      return cm && cm.includes(k);
+    });
+    if(byComment) return byComment;
+  }
+  return null;
 }
 
 // 검색 결과 표시 — 좁히는 도구(키워드)를 먼저, 제품을 아래로 (드릴다운 화면과 동일한 순서)
