@@ -73,16 +73,25 @@ async function checkRecipient(recipient) {
     if (nRec.includes(nOur) || nOur.includes(nRec)) return;
     if (recipientAliases.some(a => a && (nRec.includes(a) || a.includes(nRec)))) return;
 
-    const ok = confirm(
-        `이 명세서의 받는 곳(수신)이 '${rec}'로 읽혔습니다.\n우리 약국이 맞나요?\n\n[확인] 우리 약국 맞음 (앞으로 이 이름은 경고 안 함)\n[취소] 다른 약국일 수 있음 — 명세서 다시 확인`
+    // 수정 가능한 창: 잘못 읽힌 이름을 그 자리에서 고쳐 넣을 수 있게 함(학습됨).
+    const answer = prompt(
+        `받는 곳(수신)이 '${rec}'로 읽혔습니다.\n` +
+        `우리 약국이 맞으면, 아래 이름을 올바르게 고친 뒤 확인을 누르세요.\n` +
+        `('${rec}'도 우리 약국으로 기억해 다음부턴 안 물어봐요.)\n` +
+        `우리 약국이 아니면 취소를 누르세요.`,
+        ourPharmacyName || rec   // 기본값: 우리 약국 정식 이름
     );
-    if (ok) {
-        recipientAliases.push(nRec);
-        try {
-            await db.collection("settings").doc("pharmacy_info")
-                .update({ recipientAliases: firebase.firestore.FieldValue.arrayUnion(nRec) });
-        } catch (e) { console.error("별칭 저장 실패:", e); }
-    }
+    if (answer === null) return;   // 취소 = 다른 약국일 수 있음
+
+    // 잘못 읽힌 원래 이름 + (고친 이름)을 우리 약국 별칭으로 기억 → 다음엔 통과
+    const aliases = [nRec];
+    const nFix = normalizeName((answer || "").trim());
+    if (nFix && nFix !== nOur && !aliases.includes(nFix)) aliases.push(nFix);
+    aliases.forEach(a => { if (a && !recipientAliases.includes(a)) recipientAliases.push(a); });
+    try {
+        await db.collection("settings").doc("pharmacy_info")
+            .update({ recipientAliases: firebase.firestore.FieldValue.arrayUnion(...aliases) });
+    } catch (e) { console.error("별칭 저장 실패:", e); }
 }
 
 // 거래처 지침 텍스트 로드 (없으면 "")
