@@ -9,6 +9,7 @@ let currentRotation = 0;
 let currentSelectedDocId = null;
 let allVendors = []; // 🔥 전역 변수로 업체 목록 보관
 let cardNames = []; // 🔥 [카드연동] 등록된 카드명 목록
+let ourPharmacyName = ""; // 🏥 우리 약국 이름 (수신처 확인용)
 
 // 🔥 [카드연동] 카드 목록을 datalist에 채움
 async function loadCardsForDatalist() {
@@ -35,6 +36,141 @@ function togglePaymentField() {
         const c = document.getElementById('cardInput');
         if (c) c.value = '';
     }
+}
+
+// 상호명 정규화: (주)·공백·기호 제거 후 소문자 (유사도 비교용)
+function normalizeName(s) {
+    return String(s || "").toLowerCase()
+        .replace(/\(주\)|\(유\)|주식회사|㈜|유한회사|합자회사/g, "")
+        .replace(/[\s\-_.,·`'"()\[\]]/g, "")
+        .trim();
+}
+
+// AI가 읽은 거래처를 기존 목록(allVendors)과 매칭 (같으면 통일, 비슷하면 확인, 없으면 신규)
+function matchVendorName(aiVendor) {
+    const raw = (aiVendor || "").trim();
+    if (!raw || !allVendors || allVendors.length === 0) return raw;
+    const nAi = normalizeName(raw);
+    if (!nAi) return raw;
+    const exact = allVendors.find(v => normalizeName(v) === nAi);
+    if (exact) return exact;
+    const partial = allVendors.find(v => { const nv = normalizeName(v); return nv && (nv.includes(nAi) || nAi.includes(nv)); });
+    if (partial) {
+        return confirm(`AI가 읽은 거래처 '${raw}'가\n기존 거래처 '${partial}'와(과) 같아 보입니다.\n\n[확인] 기존 '${partial}'로 통일 (장부 합침)\n[취소] '${raw}' 신규로 등록`)
+            ? partial : raw;
+    }
+    return raw;
+}
+
+// 명세서 수신처가 우리 약국과 다르면 경고
+function checkRecipient(recipient) {
+    const rec = (recipient || "").trim();
+    if (!rec || !ourPharmacyName) return;
+    const nRec = normalizeName(rec), nOur = normalizeName(ourPharmacyName);
+    if (!nRec || !nOur) return;
+    if (nRec.includes(nOur) || nOur.includes(nRec)) return;
+    alert(`⚠️ 이 명세서의 받는 곳(수신)은 '${rec}'로,\n우리 약국 '${ourPharmacyName}'과(와) 달라 보입니다.\n\n혹시 다른 약국 명세서가 아닌지 확인하세요!`);
+}
+
+// 거래처 지침 텍스트 로드 (없으면 "")
+async function loadGuidelineFor(vendorName) {
+    const name = (vendorName || "").trim();
+    if (!name) return "";
+    try {
+        const doc = await db.collection("ai_learning").doc(`vendor_${name}`).get();
+        return (doc.exists && doc.data().customPrompt) ? doc.data().customPrompt.trim() : "";
+    } catch (e) { return ""; }
+}
+
+// 🤖 [AI 자동입력] 선택된 명세서를 서버로 판독 → 그리드 자동 채움
+// (1차: 거래처 파악 → 지침 있으면 자동 2차 재판독으로 지침 적용)
+async function aiAutoFill() {
+    const img = document.getElementById('docImage');
+    const imgUrl = img && img.src;
+    if (!currentSelectedDocId || !imgUrl || !imgUrl.startsWith('http')) {
+        return alert("먼저 왼쪽 대기목록에서 명세서를 선택하세요.");
+    }
+
+    const btn = document.getElementById('btnAiFill');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 판독 중...'; }
+
+    // 우리 약국 이름 확보 (수신처 확인용)
+    if (!ourPharmacyName) {
+        try { const d = await db.collection("settings").doc("pharmacy_info").get(); if (d.exists) ourPharmacyName = (d.data().pharmacyName || "").trim(); } catch (e) {}
+    }
+
+    try {
+        await runWriteScan(imgUrl, "", false);
+    } catch (e) {
+        const msg = (e && e.message) ? e.message : String(e);
+        alert("AI 자동입력 실패: " + msg);
+    } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = originalHtml; }
+    }
+}
+
+async function runWriteScan(imgUrl, vendorHint, isRetry) {
+    const scanFn = firebase.app().functions('us-central1').httpsCallable('scanInvoice');
+    const res = await scanFn({ imageUrl: imgUrl, vendor: vendorHint });
+    const data = res.data;
+    if (!data || !data.ok) throw new Error("판독 결과가 비어 있습니다.");
+
+    if (data.date) document.getElementById('dateInput').value = data.date;
+
+    let finalVendor;
+    if (isRetry) {
+        finalVendor = vendorHint; // 1차에서 이미 매칭·확정
+    } else {
+        checkRecipient(data.recipient);
+        finalVendor = matchVendorName(data.vendor || "");
+        document.getElementById('vendorInput').value = finalVendor;
+    }
+
+    fillGridFromItems(data.items || [], data.rows || []);
+
+    if (!isRetry) {
+        const guideline = await loadGuidelineFor(finalVendor);
+        if (guideline) {
+            const btn = document.getElementById('btnAiFill');
+            if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 지침 적용 중...';
+            await runWriteScan(imgUrl, finalVendor, true); // 지침 적용 재판독
+            return;
+        }
+    }
+
+    if (!data.allArithmeticOk && (data.items || []).length > 0) {
+        alert("AI가 읽어왔습니다.\n다만 '공급가+세액≠합계'인 항목이 있어요(빨간 칸). 확인·수정 후 저장하세요.");
+    }
+}
+
+// AI가 읽은 품목들을 입력 그리드에 채우기 (산수 불일치 행은 합계 칸 빨강 강조)
+function fillGridFromItems(items, rows) {
+    rows = rows || [];
+    const tbody = document.getElementById('itemTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    if (!items.length) { addNewRow(); return; }
+
+    items.forEach((it, i) => {
+        addNewRow();
+        const tr = tbody.lastElementChild;
+        tr.querySelector('.in-memo').value = it.memo || '';
+        tr.querySelector('.in-qty').value = Number(it.qty) || 0;
+        tr.querySelector('.in-supply').value = (Number(it.supply) || 0).toLocaleString();
+        tr.querySelector('.in-vat').value = (Number(it.vat) || 0).toLocaleString();
+        tr.querySelector('.in-total').value = (Number(it.total) || 0).toLocaleString();
+
+        if (rows[i] && rows[i].ok === false) {
+            const t = tr.querySelector('.in-total');
+            t.style.background = '#fef2f2';
+            t.style.border = '2px solid #f87171';
+            t.style.color = '#dc2626';
+            t.title = '공급가+세액≠합계 — 확인 필요';
+        }
+    });
+    updateAllTotals();
 }
 
 async function loadRecentVendor() {

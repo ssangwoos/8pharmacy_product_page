@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>에이트약국 - AI Vision 자동입력 (직통 연동)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --border-color: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--bg-color); color: var(--text-main); padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
+        .header h1 { font-size: 24px; color: var(--primary-color); display: flex; align-items: center; gap: 10px; }
+        
+        .workspace { display: flex; gap: 25px; margin-bottom: 20px; }
+        .left-panel { flex: 1; display: flex; flex-direction: column; gap: 15px; min-width: 450px; }
+        .right-panel { flex: 2; }
+
+        .upload-box { border: 2px dashed #cbd5e1; padding: 30px; text-align: center; border-radius: 8px; background: #f8fafc; cursor: pointer; transition: all 0.3s; }
+        .upload-box:hover { border-color: var(--primary-color); background: #eff6ff; }
+        .preview-img { max-width: 100%; max-height: 400px; border-radius: 6px; display: none; margin-top: 15px; box-shadow: 0 2px 4px rgb(0 0 0 / 0.05); }
+
+        .btn-group { display: flex; gap: 10px; }
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; transition: all 0.2s; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: #64748b; color: white; }
+        .btn-secondary:hover { background-color: #475569; }
+        .btn-success { background-color: #10b981; color: white; width: 100%; justify-content: center; font-size: 16px; padding: 15px; margin-top: 15px; }
+        .btn-success:hover { background-color: #059669; }
+
+        .key-box { background: #fff3cd; border: 1px solid #ffeba2; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .key-box input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-family: monospace; }
+
+        .prompt-box { background: #f8fafc; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; }
+        .prompt-box textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; resize: none; margin-top: 8px; font-family: inherit; font-size: 13px; }
+
+        .status-log { background: #0f172a; color: #38bdf8; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; height: 120px; overflow-y: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+
+        .meta-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 13px; font-weight: bold; color: #475569; }
+        .form-group input, .form-group select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+
+        .grid-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        .grid-table th { background: #f1f5f9; padding: 10px; font-size: 13px; font-weight: bold; border: 1px solid var(--border-color); color: #475569; }
+        .grid-table td { padding: 8px; border: 1px solid var(--border-color); text-align: center; }
+        .grid-table input { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; text-align: inherit; }
+        .grid-table td.left { text-align: left; }
+        .grid-table td.right { text-align: right; }
+        
+        .row-del-btn { color: #ef4444; border: none; background: none; cursor: pointer; font-size: 16px; }
+        .row-del-btn:hover { color: #dc2626; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-eye"></i> AI Vision 명세서 입고 관리 (독립 검수 탭)</h1>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="location.href='ledger.html'"><i class="fas fa-arrow-left"></i> 장부 화면 이동</button>
+        </div>
+    </div>
+
+    
+
+    <div class="workspace">
+        <div class="left-panel">
+            <div class="upload-box" onclick="document.getElementById('imageFileInput').click()">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 40px; color: #94a3b8; margin-bottom: 10px;"></i>
+                <p style="font-weight: 500; color: #64748b;">명세서 사진을 선택하거나 이 자리에 떨어뜨리세요</p>
+                <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+                <img id="imagePreview" class="preview-img" alt="명세서 미리보기">
+            </div>
+
+            <div class="prompt-box">
+                <label style="font-size: 13px; font-weight: bold; color: #475569; display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fas fa-brain"></i> 거래처별 AI 맞춤형 피드백 지침 (학습 데이터)</span>
+                    <button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="saveCustomGuideline()"><i class="fas fa-save"></i> 지침 저장</button>
+                </label>
+                <textarea id="customGuidelineInput" placeholder="거래처를 선택하거나 인식하면 해당 거래처만의 특이 양식 오답노트 지침이 여기에 자동으로 불러와집니다. 자유롭게 수정 후 저장하세요."></textarea>
+            </div>
+
+            <div class="btn-group">
+                <button id="btnStartScan" class="btn btn-primary" style="flex: 1; justify-content: center;" onclick="startAiVisionScan()" disabled>
+                    <i class="fas fa-robot"></i> 🤖 AI Vision 자동 스캔 시작
+                </button>
+            </div>
+
+            <div class="status-log" id="statusLog">
+                [SYSTEM] 명세서 이미지 파일을 업로드해 주세요...
+            </div>
+            <div class="card" style="margin-top: 15px; border: 2px solid #6366f1; background: #f8fafc;">
+                <div class="card-header" style="background: #6366f1; color: white; font-weight: bold;">
+                    <i class="fas fa-brain"></i> Cloud AI 백그라운드 자가 복습 대시보드
+                </div>
+                <div class="card-body" style="padding: 15px;">
+                    <p style="font-size: 12px; color: #475569; margin-bottom: 10px;">
+                        컴퓨터를 꺼도 구글 서버가 과거 수천 개의 완벽한 장부 정답 데이터를 1번부터 차례대로 호출해 AI 비전을 모의시험하고, 오답노트를 스스로 생성하여 진화합니다.
+                    </p>
+                    
+                    <div style="background: #e2e8f0; border-radius: 8px; height: 20px; width: 100%; overflow: hidden; position: relative; margin-bottom: 10px;">
+                        <div id="cloudProgressBar" style="background: linear-gradient(90deg, #6366f1, #3b82f6); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+                        <div id="cloudProgressText" style="position: absolute; width: 100%; text-align: center; top: 1px; font-size: 11px; font-weight: bold; color: #1e293b;">준비 완료 (0%)</div>
+                    </div>
+
+                    <button id="btnStartCloudLearning" onclick="triggerCloudLearning()" style="width: 100%; background: #4f46e5; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                        <i class="fas fa-play-circle"></i> 과거 전체 데이터 기반 자가 복습 개시 (컴퓨터 OFF 가능)
+                    </button>
+
+                    <textarea id="liveServerLogBox" readonly style="width: 100%; height: 180px; margin-top: 10px; background: #0f172a; color: #4ade80; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 6px; resize: none; line-height: 1.5;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="meta-inputs">
+                <div class="form-group">
+                    <label>거래일자</label>
+                    <input type="date" id="metaDate">
+                </div>
+                <div class="form-group">
+                    <label>구분</label>
+                    <select id="metaType">
+                        <option value="buy" selected>입고 (매입)</option>
+                        <option value="sell">출고 (반품/지출)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>거래처명</label>
+                    <input type="text" id="metaVendor" placeholder="AI가 자동으로 인식합니다" onchange="loadCustomGuideline(this.value)">
+                </div>
+            </div>
+
+            <div id="arithBanner" style="display:none; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600; margin-bottom:12px;"></div>
+
+            <h3 style="font-size: 16px; color: #475569; margin-bottom: 10px;"><i class="fas fa-list-ul"></i> 추출된 품목 리스트 검수 및 수정</h3>
+            <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px; max-height: 450px;">
+                <table class="grid-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">적요(품목명)</th>
+                            <th style="width: 10%;">수량</th>
+                            <th style="width: 15%;">공급가</th>
+                            <th style="width: 15%;">세액</th>
+                            <th style="width: 15%;">합계(입고액)</th>
+                            <th style="width: 5%;">삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gridTbody">
+                        <tr id="emptyRow"><td colspan="6" style="color: #94a3b8; padding: 40px;">인식된 품목 데이터가 없습니다. 사진을 스캔해 주세요.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <button class="btn btn-success" id="btnCommit" onclick="commitInspectedData()" disabled>
+                <i class="fas fa-check-circle"></i> 검수 완료 - 실제 장부(transactions)에 최종 입력 시키기
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+
+<script src="firebase-config.js"></script> 
+<script src="logic-ai-vision.js"></script>
+</body>
+</html>
