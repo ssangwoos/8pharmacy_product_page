@@ -10,6 +10,8 @@ let currentSelectedDocId = null;
 let allVendors = []; // 🔥 전역 변수로 업체 목록 보관
 let cardNames = []; // 🔥 [카드연동] 등록된 카드명 목록
 let ourPharmacyName = ""; // 🏥 우리 약국 이름 (수신처 확인용)
+let recipientAliases = []; // 우리 약국으로 인정한 수신처 별칭(정규화) 목록
+let lastAiResult = null;   // 🎓 마지막 AI 판독 결과 {vendor, items} — 저장 시 정확도 비교용
 
 // 🔥 [카드연동] 카드 목록을 datalist에 채움
 async function loadCardsForDatalist() {
@@ -62,14 +64,25 @@ function matchVendorName(aiVendor) {
     return raw;
 }
 
-// 명세서 수신처가 우리 약국과 다르면 경고
-function checkRecipient(recipient) {
+// 명세서 수신처가 우리 약국과 다르면 확인창 (맞으면 별칭으로 기억해 다음부턴 통과)
+async function checkRecipient(recipient) {
     const rec = (recipient || "").trim();
     if (!rec || !ourPharmacyName) return;
     const nRec = normalizeName(rec), nOur = normalizeName(ourPharmacyName);
     if (!nRec || !nOur) return;
     if (nRec.includes(nOur) || nOur.includes(nRec)) return;
-    alert(`⚠️ 이 명세서의 받는 곳(수신)은 '${rec}'로,\n우리 약국 '${ourPharmacyName}'과(와) 달라 보입니다.\n\n혹시 다른 약국 명세서가 아닌지 확인하세요!`);
+    if (recipientAliases.some(a => a && (nRec.includes(a) || a.includes(nRec)))) return;
+
+    const ok = confirm(
+        `이 명세서의 받는 곳(수신)이 '${rec}'로 읽혔습니다.\n우리 약국이 맞나요?\n\n[확인] 우리 약국 맞음 (앞으로 이 이름은 경고 안 함)\n[취소] 다른 약국일 수 있음 — 명세서 다시 확인`
+    );
+    if (ok) {
+        recipientAliases.push(nRec);
+        try {
+            await db.collection("settings").doc("pharmacy_info")
+                .update({ recipientAliases: firebase.firestore.FieldValue.arrayUnion(nRec) });
+        } catch (e) { console.error("별칭 저장 실패:", e); }
+    }
 }
 
 // 거래처 지침 텍스트 로드 (없으면 "")
@@ -80,6 +93,38 @@ async function loadGuidelineFor(vendorName) {
         const doc = await db.collection("ai_learning").doc(`vendor_${name}`).get();
         return (doc.exists && doc.data().customPrompt) ? doc.data().customPrompt.trim() : "";
     } catch (e) { return ""; }
+}
+
+// 🎓 [자동학습] 품목 서명 및 비교 (명세서 단위: 한 건도 안 고치면 clean)
+function itemSig(it) {
+    return `${String(it.memo || "").trim()}|${Number(it.qty) || 0}|${Number(it.supply) || 0}|${Number(it.vat) || 0}|${Number(it.total) || 0}`;
+}
+function signaturesEqual(a, b) {
+    const sa = (a || []).filter(x => String(x.memo || "").trim()).map(itemSig).sort();
+    const sb = (b || []).filter(x => String(x.memo || "").trim()).map(itemSig).sort();
+    return sa.length === sb.length && sa.every((s, i) => s === sb[i]);
+}
+
+// 🎓 [자동학습] AI 원본 vs 사람이 저장한 최종본 비교 → 거래처 정확도·예시 기록
+async function recordLearning(vendor, savedItems) {
+    if (!lastAiResult) return;                                   // AI로 채운 게 아니면 스킵
+    if (normalizeName(vendor) !== normalizeName(lastAiResult.vendor)) { lastAiResult = null; return; } // 거래처 바뀌면 스킵
+    const clean = signaturesEqual(lastAiResult.items, savedItems);
+    try {
+        const ref = db.collection("ai_learning").doc(`vendor_${vendor}`);
+        const doc = await ref.get();
+        const d = doc.exists ? doc.data() : {};
+        const scanned = (d.scanned || 0) + 1;
+        const cleanCnt = (d.clean || 0) + (clean ? 1 : 0);
+        const recent = (Array.isArray(d.recent) ? d.recent.slice(-29) : []);
+        recent.push(clean ? 1 : 0);
+        const examples = (Array.isArray(d.examples) ? d.examples.slice(-2) : []);
+        examples.push({ items: savedItems });                   // 사람이 확정한 최종본을 예시로 축적
+        await ref.set({ vendor, scanned, clean: cleanCnt, recent, examples, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        const acc = Math.round(cleanCnt / scanned * 100);
+        console.log(`[자동학습] '${vendor}' 정확도 ${acc}% (${cleanCnt}/${scanned}) · 이번 ${clean ? "무수정 통과 ✅" : "수정됨 ✏️"}`);
+    } catch (e) { console.error("학습 기록 실패:", e); }
+    lastAiResult = null;
 }
 
 // 🤖 [AI 자동입력] 선택된 명세서를 서버로 판독 → 그리드 자동 채움
@@ -95,9 +140,15 @@ async function aiAutoFill() {
     const originalHtml = btn ? btn.innerHTML : '';
     if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 판독 중...'; }
 
-    // 우리 약국 이름 확보 (수신처 확인용)
+    // 우리 약국 이름·별칭 확보 (수신처 확인용)
     if (!ourPharmacyName) {
-        try { const d = await db.collection("settings").doc("pharmacy_info").get(); if (d.exists) ourPharmacyName = (d.data().pharmacyName || "").trim(); } catch (e) {}
+        try {
+            const d = await db.collection("settings").doc("pharmacy_info").get();
+            if (d.exists) {
+                ourPharmacyName = (d.data().pharmacyName || "").trim();
+                recipientAliases = Array.isArray(d.data().recipientAliases) ? d.data().recipientAliases : [];
+            }
+        } catch (e) {}
     }
 
     try {
@@ -122,7 +173,7 @@ async function runWriteScan(imgUrl, vendorHint, isRetry) {
     if (isRetry) {
         finalVendor = vendorHint; // 1차에서 이미 매칭·확정
     } else {
-        checkRecipient(data.recipient);
+        await checkRecipient(data.recipient);
         finalVendor = matchVendorName(data.vendor || "");
         document.getElementById('vendorInput').value = finalVendor;
     }
@@ -138,6 +189,9 @@ async function runWriteScan(imgUrl, vendorHint, isRetry) {
             return;
         }
     }
+
+    // 🎓 [자동학습] 최종 AI 결과 기억 (저장 시 사람이 고친 것과 비교)
+    lastAiResult = { vendor: finalVendor, items: (data.items || []).map(x => ({ memo: x.memo, qty: x.qty, supply: x.supply, vat: x.vat, total: x.total })) };
 
     if (!data.allArithmeticOk && (data.items || []).length > 0) {
         alert("AI가 읽어왔습니다.\n다만 '공급가+세액≠합계'인 항목이 있어요(빨간 칸). 확인·수정 후 저장하세요.");
@@ -507,13 +561,18 @@ async function saveAllItems() {
     try {
         const batch = db.batch();
         let saveCount = 0; // 실제로 저장되는 줄 수 카운트
+        const savedItems = []; // 🎓 [자동학습] 최종 저장 품목 (AI 원본과 비교용)
 
         rows.forEach(row => {
             const memo = row.querySelector('.in-memo').value.trim();
-            
+
             // 내용이 있는 줄만 트랜잭션 데이터로 생성 ㅡㅡ^
             if (memo) {
-                const docRef = db.collection("transactions").doc(); 
+                const qtyN = Number(row.querySelector('.in-qty').value.replace(/,/g, '')) || 0;
+                const supplyN = Number(row.querySelector('.in-supply').value.replace(/,/g, '')) || 0;
+                const vatN = Number(row.querySelector('.in-vat').value.replace(/,/g, '')) || 0;
+                const totalN = Number(row.querySelector('.in-total').value.replace(/,/g, '')) || 0;
+                const docRef = db.collection("transactions").doc();
                 batch.set(docRef, {
                     date,
                     vendor,
@@ -522,18 +581,19 @@ async function saveAllItems() {
                     memo: memo,
                     img: currentImgUrl,
                     rotation: typeof currentRotation !== 'undefined' ? currentRotation : 0,
-                    qty: Number(row.querySelector('.in-qty').value.replace(/,/g, '')) || 0,
-                    supply: Number(row.querySelector('.in-supply').value.replace(/,/g, '')) || 0,
-                    vat: Number(row.querySelector('.in-vat').value.replace(/,/g, '')) || 0,
-                    total: Number(row.querySelector('.in-total').value.replace(/,/g, '')) || 0,
+                    qty: qtyN, supply: supplyN, vat: vatN, total: totalN,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                savedItems.push({ memo, qty: qtyN, supply: supplyN, vat: vatN, total: totalN });
                 saveCount++;
             }
         });
 
         // 4. DB에 쓰기 작업 수행
         await batch.commit();
+
+        // 🎓 [자동학습] AI로 채운 건이면, 사람이 고친 정도를 거래처 정확도로 기록
+        await recordLearning(vendor, savedItems);
 
         // 🔥 [삭제 로직] 저장이 성공(commit)한 직후에만 대기열에서 지웁니다. ㅡㅡ^
         if (currentSelectedDocId) {

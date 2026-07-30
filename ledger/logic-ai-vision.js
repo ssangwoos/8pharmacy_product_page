@@ -3,7 +3,9 @@
 currentFile = null;
 uploadedImgUrl = "";
 let ourPharmacyName = "";     // 우리 약국 이름 (수신처 확인용)
+let recipientAliases = [];    // 우리 약국으로 인정한 수신처 별칭(정규화) 목록
 let existingVendors = [];     // 기존 거래처 목록 (중복 방지 매칭용)
+let lastAiResult = null;      // 🎓 마지막 AI 판독 결과 {vendor, items} — 저장 시 정확도 비교용
 
 document.addEventListener("DOMContentLoaded", async () => {
     logMessage("[SYSTEM] 독립 검수 탭 부팅 완료. 스캔은 서버(Cloud Function)에서 안전하게 처리됩니다.");
@@ -15,7 +17,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function loadOurPharmacyName() {
     try {
         const d = await db.collection("settings").doc("pharmacy_info").get();
-        if (d.exists) ourPharmacyName = (d.data().pharmacyName || "").trim();
+        if (d.exists) {
+            ourPharmacyName = (d.data().pharmacyName || "").trim();
+            recipientAliases = Array.isArray(d.data().recipientAliases) ? d.data().recipientAliases : [];
+        }
     } catch (e) { console.error("약국명 로드 실패:", e); }
 }
 
@@ -69,18 +74,63 @@ function matchVendorName(aiVendor) {
     return raw;
 }
 
-// 명세서 수신처가 우리 약국과 다르면 경고 (다른 약국 명세서 오인 방지)
-function checkRecipient(recipient) {
+// 🎓 [자동학습] 품목 서명 및 비교 (명세서 단위: 한 건도 안 고치면 clean)
+function itemSig(it) {
+    return `${String(it.memo || "").trim()}|${Number(it.qty) || 0}|${Number(it.supply) || 0}|${Number(it.vat) || 0}|${Number(it.total) || 0}`;
+}
+function signaturesEqual(a, b) {
+    const sa = (a || []).filter(x => String(x.memo || "").trim()).map(itemSig).sort();
+    const sb = (b || []).filter(x => String(x.memo || "").trim()).map(itemSig).sort();
+    return sa.length === sb.length && sa.every((s, i) => s === sb[i]);
+}
+
+// 🎓 [자동학습] AI 원본 vs 사람이 저장한 최종본 비교 → 거래처 정확도·예시 기록
+async function recordLearning(vendor, savedItems) {
+    if (!lastAiResult) return;
+    if (normalizeName(vendor) !== normalizeName(lastAiResult.vendor)) { lastAiResult = null; return; }
+    const clean = signaturesEqual(lastAiResult.items, savedItems);
+    try {
+        const ref = db.collection("ai_learning").doc(`vendor_${vendor}`);
+        const doc = await ref.get();
+        const d = doc.exists ? doc.data() : {};
+        const scanned = (d.scanned || 0) + 1;
+        const cleanCnt = (d.clean || 0) + (clean ? 1 : 0);
+        const recent = (Array.isArray(d.recent) ? d.recent.slice(-29) : []);
+        recent.push(clean ? 1 : 0);
+        const examples = (Array.isArray(d.examples) ? d.examples.slice(-2) : []);
+        examples.push({ items: savedItems });
+        await ref.set({ vendor, scanned, clean: cleanCnt, recent, examples, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        const acc = Math.round(cleanCnt / scanned * 100);
+        logMessage(`[자동학습] '${vendor}' 정확도 ${acc}% (${cleanCnt}/${scanned}) · 이번 ${clean ? "무수정 통과 ✅" : "수정됨 ✏️"}`);
+    } catch (e) { console.error("학습 기록 실패:", e); }
+    lastAiResult = null;
+}
+
+// 명세서 수신처가 우리 약국과 다르면 확인창 (맞으면 별칭으로 기억해 다음부턴 통과)
+async function checkRecipient(recipient) {
     const rec = (recipient || "").trim();
     if (!rec || !ourPharmacyName) return;   // 못 읽었거나 약국명 없으면 스킵
     const nRec = normalizeName(rec);
     const nOur = normalizeName(ourPharmacyName);
     if (!nRec || !nOur) return;
-    // 포함 관계면 같은 약국으로 간주 (예: "충무로에이트약국" ⊇ "에이트약국")
+
+    // 우리 약국명 또는 등록된 별칭과 포함관계면 통과 (예: "충무로에이트약국" ⊇ "에이트약국")
     if (nRec.includes(nOur) || nOur.includes(nRec)) return;
-    // 완전히 다르면 경고
-    logMessage(`[⚠️ 수신처 불일치] 명세서 수신='${rec}' vs 우리약국='${ourPharmacyName}'`);
-    alert(`⚠️ 이 명세서의 받는 곳(수신)은 '${rec}'로,\n우리 약국 '${ourPharmacyName}'과(와) 달라 보입니다.\n\n혹시 다른 약국 명세서가 아닌지 확인하세요!`);
+    if (recipientAliases.some(a => a && (nRec.includes(a) || a.includes(nRec)))) return;
+
+    // 불일치 → 사용자 확인
+    logMessage(`[수신처 확인] 명세서 수신='${rec}' vs 우리약국='${ourPharmacyName}'`);
+    const ok = confirm(
+        `이 명세서의 받는 곳(수신)이 '${rec}'로 읽혔습니다.\n우리 약국이 맞나요?\n\n[확인] 우리 약국 맞음 (앞으로 이 이름은 경고 안 함)\n[취소] 다른 약국일 수 있음 — 명세서 다시 확인`
+    );
+    if (ok) {
+        recipientAliases.push(nRec);
+        try {
+            await db.collection("settings").doc("pharmacy_info")
+                .update({ recipientAliases: firebase.firestore.FieldValue.arrayUnion(nRec) });
+            logMessage(`[학습] '${rec}'을(를) 우리 약국 별칭으로 저장 (다음부턴 통과).`);
+        } catch (e) { console.error("별칭 저장 실패:", e); }
+    }
 }
 
 function logMessage(msg) {
@@ -213,7 +263,7 @@ async function runScanPass(vendorHint, isRetry) {
         // 2차: 1차에서 이미 매칭·확정된 거래처 사용 (재매칭/재확인/수신처경고 생략)
         finalVendor = vendorHint;
     } else {
-        checkRecipient(data.recipient); // 수신처 경고는 1차에만
+        await checkRecipient(data.recipient); // 수신처 확인은 1차에만
         finalVendor = matchVendorName(data.vendor || "");
         document.getElementById("metaVendor").value = finalVendor;
     }
@@ -231,6 +281,9 @@ async function runScanPass(vendorHint, isRetry) {
             return; // 최종 완료 로그는 2차에서 출력
         }
     }
+
+    // 🎓 [자동학습] 최종 AI 결과 기억 (검수 저장 시 사람이 고친 것과 비교)
+    lastAiResult = { vendor: finalVendor, items: (data.items || []).map(x => ({ memo: x.memo, qty: x.qty, supply: x.supply, vat: x.vat, total: x.total })) };
 
     logMessage(`[완료] 🎉 판독 완료! 거래처: [${finalVendor}] · 산수검증: ${data.allArithmeticOk ? "전 품목 일치 ✅" : "⚠️ 불일치 항목 있음(빨강 표시) — 확인 필요"}${isRetry ? " · 지침 적용됨" : ""}`);
     document.getElementById("btnCommit").disabled = false;
@@ -364,25 +417,30 @@ async function commitInspectedData() {
         logMessage("[장부 저장] 파이어스토어 대량 입고 배치 처리 중...");
 
         const batch = db.batch();
+        const savedItems = []; // 🎓 [자동학습] 최종 저장 품목
 
         rows.forEach(row => {
-            const docRef = db.collection("transactions").doc(); 
+            const memo = row.querySelector(".cell-memo").value;
+            const qty = Number(row.querySelector(".cell-qty").value) || 0;
+            const supply = Number(row.querySelector(".cell-supply").value) || 0;
+            const vat = Number(row.querySelector(".cell-vat").value) || 0;
+            const total = Number(row.querySelector(".cell-total").value) || 0;
+            const docRef = db.collection("transactions").doc();
             batch.set(docRef, {
-                date: date,
-                type: type,
-                vendor: vendor,
-                memo: row.querySelector(".cell-memo").value,
-                qty: Number(row.querySelector(".cell-qty").value) || 0,
-                supply: Number(row.querySelector(".cell-supply").value) || 0,
-                vat: Number(row.querySelector(".cell-vat").value) || 0,
-                total: Number(row.querySelector(".cell-total").value) || 0,
+                date: date, type: type, vendor: vendor,
+                memo: memo, qty: qty, supply: supply, vat: vat, total: total,
                 img: uploadedImgUrl,
                 rotation: 0,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            savedItems.push({ memo, qty, supply, vat, total });
         });
 
         await batch.commit();
+
+        // 🎓 [자동학습] AI로 채운 건이면 사람이 고친 정도를 거래처 정확도로 기록
+        await recordLearning(vendor, savedItems);
+
         logMessage(`[성공 완료] 총 ${rows.length}건이 완벽히 장부에 기록되었습니다!`);
         alert("🎉 검수 완료된 데이터가 실제 장부에 영구 기록되었습니다.");
         
