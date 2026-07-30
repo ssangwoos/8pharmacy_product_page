@@ -90,7 +90,7 @@ async function loadGuidelineFor(vendorName) {
     const name = (vendorName || "").trim();
     if (!name) return "";
     try {
-        const doc = await db.collection("ai_learning").doc(`vendor_${name}`).get();
+        const doc = await centralDb.collection("ai_learning").doc(centralVendorKey(name)).get();
         return (doc.exists && doc.data().customPrompt) ? doc.data().customPrompt.trim() : "";
     } catch (e) { return ""; }
 }
@@ -111,7 +111,7 @@ async function recordLearning(vendor, savedItems) {
     if (normalizeName(vendor) !== normalizeName(lastAiResult.vendor)) { lastAiResult = null; return; } // 거래처 바뀌면 스킵
     const clean = signaturesEqual(lastAiResult.items, savedItems);
     try {
-        const ref = db.collection("ai_learning").doc(`vendor_${vendor}`);
+        const ref = centralDb.collection("ai_learning").doc(centralVendorKey(vendor));
         const doc = await ref.get();
         const d = doc.exists ? doc.data() : {};
         const scanned = (d.scanned || 0) + 1;
@@ -162,7 +162,7 @@ async function aiAutoFill() {
 }
 
 async function runWriteScan(imgUrl, vendorHint, isRetry) {
-    const scanFn = firebase.app().functions('us-central1').httpsCallable('scanInvoice');
+    const scanFn = centralScanFn(); // 🧠 중앙 허브의 스캔 함수 호출
     const res = await scanFn({ imageUrl: imgUrl, vendor: vendorHint });
     const data = res.data;
     if (!data || !data.ok) throw new Error("판독 결과가 비어 있습니다.");

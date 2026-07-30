@@ -90,7 +90,7 @@ async function recordLearning(vendor, savedItems) {
     if (normalizeName(vendor) !== normalizeName(lastAiResult.vendor)) { lastAiResult = null; return; }
     const clean = signaturesEqual(lastAiResult.items, savedItems);
     try {
-        const ref = db.collection("ai_learning").doc(`vendor_${vendor}`);
+        const ref = centralDb.collection("ai_learning").doc(centralVendorKey(vendor));
         const doc = await ref.get();
         const d = doc.exists ? doc.data() : {};
         const scanned = (d.scanned || 0) + 1;
@@ -178,10 +178,10 @@ async function loadCustomGuideline(vendorName) {
     if (typeof db === 'undefined') return;
 
     try {
-        const doc = await db.collection("ai_learning").doc(`vendor_${name}`).get();
+        const doc = await centralDb.collection("ai_learning").doc(centralVendorKey(name)).get();
         if (doc.exists && doc.data().customPrompt) {
             textarea.value = doc.data().customPrompt;
-            logMessage(`[학습 데이터 로드] '${name}' 거래처 맞춤 지침 반영.`);
+            logMessage(`[학습 데이터 로드] '${name}' 거래처 맞춤 지침 반영 (중앙 공유).`);
         } else {
             textarea.value = "";   // 이 거래처는 지침이 없으므로 반드시 비움
             logMessage(`[신규 양식] '${name}'의 축적된 지침이 없습니다.`);
@@ -204,7 +204,7 @@ async function saveCustomGuideline() {
     if (typeof db === 'undefined') return;
 
     try {
-        await db.collection("ai_learning").doc(`vendor_${vendorName}`).set({
+        await centralDb.collection("ai_learning").doc(centralVendorKey(vendorName)).set({
             vendor: vendorName,
             customPrompt: guidelineText,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -251,7 +251,7 @@ async function runScanPass(vendorHint, isRetry) {
         ? `[재판독] '${vendorHint}' 거래처 지침을 적용해 다시 판독 중...`
         : "[2/3] 서버(Cloud Function)에 GPT-4o 판독 요청 중... (🔒 키는 브라우저에 노출되지 않음)");
 
-    const scanFn = firebase.app().functions('us-central1').httpsCallable('scanInvoice');
+    const scanFn = centralScanFn(); // 🧠 중앙 허브의 스캔 함수 호출
     const res = await scanFn({ imageUrl: uploadedImgUrl, vendor: vendorHint });
     const data = res.data;
     if (!data || !data.ok) throw new Error("서버가 유효한 결과를 반환하지 않았습니다.");
