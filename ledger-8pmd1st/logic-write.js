@@ -64,6 +64,25 @@ function matchVendorName(aiVendor) {
     return raw;
 }
 
+// 🎨 거래처 입력칸 색 표시: 기존 장부에 있는 거래처=파랑, 처음 보는 신규=빨강.
+// (기존 확인 팝업은 그대로. 여기선 색만 칠한다.)
+function markVendorStatus() {
+    const input = document.getElementById('vendorInput');
+    if (!input) return;
+    const val = (input.value || "").trim();
+    if (!val) { input.style.color = ''; input.style.fontWeight = ''; input.removeAttribute('title'); return; }
+    const nVal = normalizeName(val);
+    const isExisting = Array.isArray(allVendors) && allVendors.some(v => normalizeName(v) === nVal);
+    if (isExisting) {
+        input.style.color = '#2563eb';   // 파랑 = 기존 거래처 (장부에 있음)
+        input.title = '기존 거래처 (장부에 있음)';
+    } else {
+        input.style.color = '#dc2626';   // 빨강 = 신규 거래처 (처음 등록)
+        input.title = '신규 거래처 (처음 등록)';
+    }
+    input.style.fontWeight = 'bold';
+}
+
 // 명세서 수신처가 우리 약국과 다르면 확인창 (맞으면 별칭으로 기억해 다음부턴 통과)
 async function checkRecipient(recipient) {
     const rec = (recipient || "").trim();
@@ -185,6 +204,7 @@ async function runWriteScan(imgUrl, vendorHint, isRetry) {
         await checkRecipient(data.recipient);
         finalVendor = matchVendorName(data.vendor || "");
         document.getElementById('vendorInput').value = finalVendor;
+        markVendorStatus();   // 기존=파랑 / 신규=빨강
     }
 
     fillGridFromItems(data.items || [], data.rows || []);
@@ -711,6 +731,13 @@ document.addEventListener('DOMContentLoaded', async () => { // async 추가
     }
     // 4. 최근 거래처 1건 불러오기
     if (typeof loadRecentVendor === 'function') loadRecentVendor();
+
+    // 5. 거래처 직접 입력할 때도 실시간으로 기존(파랑)/신규(빨강) 표시
+    const vIn = document.getElementById('vendorInput');
+    if (vIn) {
+        vIn.addEventListener('input', markVendorStatus);
+        vIn.addEventListener('change', markVendorStatus);
+    }
 });
 
 /* 금액 합계 업데이트 함수 */
@@ -830,6 +857,7 @@ function searchVendor(isFullShow = false) {
             div.onclick = () => {
                 input.value = name;
                 listCustom.style.display = 'none';
+                markVendorStatus();   // 목록에서 고른 건 기존 → 파랑
             };
 
             // 마우스 호버 효과
