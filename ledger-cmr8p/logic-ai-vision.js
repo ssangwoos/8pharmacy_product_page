@@ -148,12 +148,52 @@ function logMessage(msg) {
     logBox.scrollTop = logBox.scrollHeight;
 }
 
-// 1. 파일 선택 및 미리보기 처리
-function handleFileSelect(event) {
+// 📸 [핵심] 원본 사진을 '화면 캡처본'과 똑같은 상태로 브라우저에서 한 번 굽는다.
+// 손으로 스크린샷 찍어 올리면 잘 읽히는 이유 = 브라우저가 그린(방향·색·해상도 정리된) 픽셀을 다시 저장하기 때문.
+// createImageBitmap(...,{imageOrientation:'from-image'}) 로 EXIF 방향까지 적용해 캔버스에 그리고 JPEG로 다시 뽑는다.
+// => 업로드되는 파일 자체가 이미 '캡처본'. 서버·AI는 이걸 그대로 받아 더 빠르고 정확하게 읽는다.
+async function bakeImageLikeScreenshot(file, maxSide = 2600) {
+    // 1) 방향 적용해서 디코드 (createImageBitmap 우선, 안되면 <img> 폴백)
+    let src, srcW, srcH, revoke = null;
+    try {
+        src = await createImageBitmap(file, { imageOrientation: "from-image" });
+        srcW = src.width; srcH = src.height;
+    } catch (e) {
+        src = await new Promise((res, rej) => {
+            const url = URL.createObjectURL(file);
+            revoke = url;
+            const im = new Image();
+            im.onload = () => res(im);
+            im.onerror = () => rej(new Error("이미지 로드 실패"));
+            im.src = url;
+        });
+        srcW = src.naturalWidth; srcH = src.naturalHeight;
+    }
+    if (!srcW || !srcH) throw new Error("이미지 크기를 읽지 못함");
+
+    // 2) 너무 크면만 축소 (긴 변 maxSide) — 화면 전체보기 캡처와 비슷한 해상도
+    const scale = Math.min(1, maxSide / Math.max(srcW, srcH));
+    const cw = Math.max(1, Math.round(srcW * scale));
+    const ch = Math.max(1, Math.round(srcH * scale));
+
+    // 3) 캔버스에 그려서(=화면에 그리는 것과 동일) JPEG로 다시 저장
+    const canvas = document.createElement("canvas");
+    canvas.width = cw; canvas.height = ch;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(src, 0, 0, cw, ch);
+    if (revoke) URL.revokeObjectURL(revoke);
+    if (src.close) src.close();
+
+    const blob = await new Promise((res, rej) =>
+        canvas.toBlob(b => b ? res(b) : rej(new Error("캡처본 생성 실패")), "image/jpeg", 0.92)
+    );
+    return blob;
+}
+
+// 1. 파일 선택 → 캡처본으로 변환 → 미리보기
+async function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
-
-    currentFile = file;
 
     // 🔄 새 명세서 선택 시 이전 판독값 초기화 (거래처·지침·날짜·품목 잔상 제거)
     uploadedImgUrl = "";   // 새 파일이므로 재업로드 필요
@@ -164,15 +204,26 @@ function handleFileSelect(event) {
     const banner = document.getElementById("arithBanner");
     if (banner) banner.style.display = "none";
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const imgElement = document.getElementById("imagePreview");
-        imgElement.src = e.target.result;
-        imgElement.style.display = "block";
-        logMessage(`[파일 선택 완료] ${file.name} (${Math.round(file.size/1024)} KB)`);
-        document.getElementById("btnStartScan").disabled = false;
+    const btn = document.getElementById("btnStartScan");
+    if (btn) btn.disabled = true;
+    logMessage(`[파일 선택] ${file.name} (${Math.round(file.size/1024)} KB) → 캡처본으로 변환 중...`);
+
+    // 📸 업로드 전에 캡처본으로 변환. 실패하면 원본 그대로 사용(차선).
+    try {
+        const blob = await bakeImageLikeScreenshot(file);
+        const baseName = (file.name || "scan").replace(/\.[^.]+$/, "");
+        currentFile = new File([blob], baseName + ".jpg", { type: "image/jpeg" });
+        logMessage(`[변환 완료] 캡처본 ${Math.round(currentFile.size/1024)} KB 로 업로드 준비 (원본 대신 사용)`);
+    } catch (e) {
+        currentFile = file;
+        logMessage(`[변환 실패 → 원본 사용] ${e.message}`);
     }
-    reader.readAsDataURL(file);
+
+    // 미리보기는 실제로 업로드될 이미지(캡처본)를 보여줌
+    const imgElement = document.getElementById("imagePreview");
+    imgElement.src = URL.createObjectURL(currentFile);
+    imgElement.style.display = "block";
+    if (btn) btn.disabled = false;
 }
 
 // 2. 거래처별 오답노트 가이드 지침 불러오기
