@@ -160,6 +160,40 @@ function updateDashboardSummary() {
 }
 
 
+// 📸 [핵심] 폰 사진을 '화면 캡처본'과 똑같은 상태로 브라우저에서 한 번 굽는다.
+// (원본 파일은 AI가 잘 못 읽는데, 브라우저가 다시 그린 픽셀=캡처본은 잘 읽힘.
+//  사용자가 '업로드된 이미지 우클릭 저장 → 재업로드'하면 잘 되던 것과 동일한 원리를 자동화.)
+// createImageBitmap(...,{imageOrientation:'from-image'})로 EXIF 방향까지 적용해 캔버스에 그리고 JPEG로 다시 뽑는다.
+async function bakeImageLikeScreenshot(file, maxSide = 2600) {
+    let src, srcW, srcH, revoke = null;
+    try {
+        src = await createImageBitmap(file, { imageOrientation: "from-image" });
+        srcW = src.width; srcH = src.height;
+    } catch (e) {
+        src = await new Promise((res, rej) => {
+            const url = URL.createObjectURL(file);
+            revoke = url;
+            const im = new Image();
+            im.onload = () => res(im);
+            im.onerror = () => rej(new Error("이미지 로드 실패"));
+            im.src = url;
+        });
+        srcW = src.naturalWidth; srcH = src.naturalHeight;
+    }
+    if (!srcW || !srcH) throw new Error("이미지 크기를 읽지 못함");
+    const scale = Math.min(1, maxSide / Math.max(srcW, srcH));
+    const cw = Math.max(1, Math.round(srcW * scale));
+    const ch = Math.max(1, Math.round(srcH * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = cw; canvas.height = ch;
+    canvas.getContext("2d").drawImage(src, 0, 0, cw, ch);
+    if (revoke) URL.revokeObjectURL(revoke);
+    if (src.close) src.close();
+    return await new Promise((res, rej) =>
+        canvas.toBlob(b => b ? res(b) : rej(new Error("캡처본 생성 실패")), "image/jpeg", 0.92)
+    );
+}
+
 // 카메라/갤러리 파일 선택 시 처리
 /* [추가] 인덱스 페이지 이미지 업로드 로직 */
 /* [수정] 가장 확실한 업로드 함수 */
@@ -170,7 +204,7 @@ async function handleFileUpload(input) {
 
     const total = files.length;
     
-    // 1. 로딩 레이어 생성 (기존과 동일)
+    // 1. 로딩 레이어 생성
     const loader = document.createElement('div');
     loader.id = 'uploadLoader';
     loader.innerHTML = `
@@ -186,32 +220,43 @@ async function handleFileUpload(input) {
     const loaderText = document.getElementById('loaderText');
 
     try {
-        // [수정] 한국 시간 기준으로 오늘 날짜 미리 계산 ㅡㅡ^
-        const now = new Date();
-        const kstOffset = 9 * 60 * 60 * 1000; // 한국 시간은 UTC+9
-        const kstDate = new Date(now.getTime() + kstOffset).toISOString().split('T')[0];
-
         for (let i = 0; i < total; i++) {
+            // 진행 상태 표시
             loaderText.innerText = `명세서 업로드 중... (${i + 1} / ${total})`;
 
             const file = files[i];
-            const fileName = `${Date.now()}_${file.name}`;
-            
+
+            // 📸 업로드 전에 '캡처본'으로 변환 (방향 보정 + 재인코딩). 실패하면 원본 그대로.
+            let toUpload = file;
+            try {
+                loaderText.innerText = `캡처본 변환 중... (${i + 1} / ${total})`;
+                const blob = await bakeImageLikeScreenshot(file);
+                const baseName = (file.name || "scan").replace(/\.[^.]+$/, "");
+                toUpload = new File([blob], baseName + ".jpg", { type: "image/jpeg" });
+            } catch (e) {
+                console.warn("캡처본 변환 실패 → 원본 업로드:", e && e.message);
+                toUpload = file;
+            }
+
+            const fileName = `${Date.now()}_${toUpload.name}`;
+
+            // Storage 저장
+            loaderText.innerText = `명세서 업로드 중... (${i + 1} / ${total})`;
             const storageRef = firebase.storage().ref().child("pending_uploads/" + fileName);
-            const uploadTask = await storageRef.put(file);
+            const uploadTask = await storageRef.put(toUpload);
             const downloadURL = await uploadTask.ref.getDownloadURL();
 
             // Firestore 저장
             await db.collection("pending_uploads").add({
                 img: downloadURL,
                 fileName: fileName,
-                // [변경] 가짜 영국 날짜 대신, 계산된 한국 날짜(kstDate)를 넣습니다! ㅡㅡ^
-                date: kstDate, 
+                date: new Date().toISOString().split('T')[0],
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 status: "pending"
             });
         }
 
+        // 2. [변경] 이동하지 않고 로더만 제거 후 완료 알림
         if (document.getElementById('uploadLoader')) {
             document.body.removeChild(loader);
         }
@@ -224,7 +269,7 @@ async function handleFileUpload(input) {
         }
         alert("업로드 도중 오류가 발생했습니다: " + e.message);
     } finally {
-        input.value = ""; 
+        input.value = ""; // 파일 선택창 리셋
     }
 }
 
