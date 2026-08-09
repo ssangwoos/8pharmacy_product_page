@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>💊 EIGHT PHARMACY | 美容鍼アフターケア ハリ&シワ集中ケア</title>
+<style>
+  :root{
+    --green:#3a8f7a; --green-d:#2c6c5c; --green-l:#e7f4f0; --mint:#f2faf7;
+    --gold:#c8a15a; --ink:#2a3330; --sub:#657069; --line:#e3ebe8; --card:#ffffff;
+    --am:#f0f7fb; --am-ac:#5b9bc9; --pm:#f3f0fa; --pm-ac:#8674bd;
+    --spot:#d98a6a; --spot-l:#fbeee7;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic','Noto Sans JP',system-ui,sans-serif;background:#eef3f1;color:var(--ink);line-height:1.75;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:480px;margin:0 auto;background:var(--mint);min-height:100vh;overflow:hidden;}
+
+  .hero{background:linear-gradient(160deg,var(--green) 0%,var(--green-d) 100%);color:#fff;padding:44px 26px 40px;text-align:center;position:relative;}
+  .hero .pill{display:inline-block;font-size:12px;letter-spacing:3px;font-weight:700;background:rgba(255,255,255,.15);padding:6px 16px;border-radius:100px;margin-bottom:18px;}
+  .hero h1{font-size:24px;font-weight:800;margin:0 0 10px;line-height:1.5;letter-spacing:-.5px;}
+  .hero .greeting{font-size:14px;font-weight:600;margin-bottom:12px;opacity:.95;letter-spacing:.3px;}
+  .hero .greeting b{font-size:19px;font-weight:800;color:#fff;border-bottom:2px solid var(--gold);padding:0 3px 3px;}
+  .hero .sub{font-size:13px;opacity:.9;font-weight:500;letter-spacing:1px;}
+  .hero .rx{margin-top:22px;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--gold);background:rgba(0,0,0,.12);padding:8px 18px;border-radius:100px;letter-spacing:1px;font-weight:600;}
+
+  section{padding:34px 20px;}
+  section:nth-child(even){background:#fff;}
+  .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .sec-no{flex:0 0 auto;width:38px;height:38px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;box-shadow:0 4px 10px rgba(58,143,122,.25);}
+  .sec-en{font-size:11px;letter-spacing:2px;color:var(--gold);font-weight:700;margin:0;text-transform:uppercase;}
+  .sec-ko{font-size:19px;font-weight:800;margin:2px 0 0;letter-spacing:-.3px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 6px 18px rgba(44,108,92,.05);}
+  section:nth-child(even) .card{background:var(--mint);}
+  .card h3{font-size:16px;font-weight:800;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:0 0 auto;}
+  .card h4{font-size:14px;font-weight:700;color:var(--green-d);margin:16px 0 8px;}
+  .card p{margin:0 0 6px;font-size:14px;color:var(--ink);}
+  .muted{color:var(--sub);font-size:13.5px;}
+  .proc{display:inline-block;font-size:13px;font-weight:800;color:var(--green-d);background:var(--green-l);padding:8px 16px;border-radius:100px;margin-bottom:6px;}
+
+  .chk{list-style:none;padding:0;margin:0;}
+  .chk li{position:relative;padding:8px 0 8px 30px;font-size:14.5px;font-weight:600;border-bottom:1px dashed var(--line);}
+  .chk li:last-child{border-bottom:none;}
+  .chk li:before{content:"✓";position:absolute;left:0;top:8px;width:20px;height:20px;border-radius:6px;background:var(--green-l);color:var(--green);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+
+  .an{margin:0 0 14px;}
+  .an .t{font-size:14px;font-weight:700;display:flex;gap:8px;align-items:flex-start;}
+  .an .t .n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .an .d{font-size:13.5px;color:var(--sub);padding-left:30px;margin-top:3px;}
+
+  .highlight{background:linear-gradient(135deg,var(--green-l),#dff0ea);border-left:4px solid var(--green);border-radius:12px;padding:18px;font-size:14px;line-height:1.8;color:var(--green-d);font-weight:600;}
+  .flow-note{margin-top:12px;text-align:center;font-weight:800;color:var(--green);font-size:13px;letter-spacing:-.3px;}
+
+  .tip{background:#fff8ec;border:1px solid #f0e0bf;border-radius:12px;padding:14px 16px;margin-top:12px;}
+  .tip .lb{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:1px;display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+  .tip p{font-size:13.5px;color:#6b5a34;margin:0;line-height:1.75;}
+
+  /* routine */
+  .routine{border-radius:18px;padding:22px 18px;margin-bottom:16px;}
+  .routine.now{background:linear-gradient(160deg,#fff,#fbeee7);border:1px solid #f0d8cc;}
+  .routine.daily{background:linear-gradient(160deg,#fff,#f3f9f6);border:1px solid var(--line);}
+  .routine .rt-title{font-size:16px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+  .routine.now .rt-title{color:var(--spot);}
+  .routine.daily .rt-title{color:var(--green-d);}
+  .routine .rt-sub{font-size:12.5px;color:var(--sub);margin:0 0 16px;}
+  .step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 3px 8px rgba(0,0,0,.03);margin-bottom:10px;}
+  .step:last-child{margin-bottom:0;}
+  .step .idx{flex:0 0 auto;width:26px;height:26px;border-radius:50%;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;background:var(--green);}
+  .routine.now .step .idx{background:var(--spot);}
+  .step .nm{font-size:14.5px;font-weight:700;}
+  .step .tg{font-size:11.5px;color:var(--sub);display:block;font-weight:500;margin-top:1px;}
+  .step .zone{flex:0 0 auto;font-size:11px;font-weight:800;color:#fff;background:var(--green);padding:4px 10px;border-radius:100px;margin-left:auto;}
+  .step .zone.spot{background:var(--spot);}
+  .step .zone.eye{background:var(--pm-ac);}
+
+  .point{margin-top:14px;background:rgba(255,255,255,.6);border-radius:12px;padding:12px 14px;}
+  .point .pt-lb{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--sub);margin-bottom:6px;}
+  .point ul{list-style:none;margin:0;padding:0;}
+  .point li{font-size:13px;padding:3px 0 3px 20px;position:relative;font-weight:600;}
+  .point li:before{content:"✔";position:absolute;left:0;color:var(--green);font-weight:900;}
+
+  /* product */
+  .prod-img{width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:repeating-linear-gradient(45deg,#f4f8f6,#f4f8f6 12px,#eef4f1 12px,#eef4f1 24px);display:flex;align-items:center;justify-content:center;margin-bottom:14px;border:1px dashed #cdddd7;position:relative;}
+  .prod-img img{width:100%;height:100%;object-fit:cover;display:none;}
+  .prod-img.loaded img{display:block;}
+  .prod-img.loaded{border:1px solid var(--line);background:#fff;}
+  .prod-img .ph{text-align:center;color:#9fb4ad;font-size:12px;font-weight:600;padding:10px;}
+  .prod-img.loaded .ph{display:none;}
+  .prod-img .ph .ic{font-size:26px;display:block;margin-bottom:4px;opacity:.6;}
+  .prod-img .ph code{font-size:11px;color:#b0c0ba;background:#f0f5f3;padding:2px 6px;border-radius:5px;}
+  .prod-card h3 .badge{font-size:10px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--green);padding:3px 9px;border-radius:100px;margin-left:auto;}
+  .prod-card h3 .badge.spot{background:var(--spot);}
+  .prod-card h3 .badge.eye{background:var(--pm-ac);}
+  .why{list-style:none;padding:0;margin:0 0 4px;}
+  .why li{font-size:14px;padding:5px 0 5px 22px;position:relative;font-weight:600;}
+  .why li:before{content:"•";position:absolute;left:4px;color:var(--green);font-weight:900;font-size:16px;top:3px;}
+  .ing{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 4px;}
+  .ing span{font-size:12px;font-weight:700;color:var(--green-d);background:var(--green-l);padding:5px 11px;border-radius:100px;}
+  .pick{background:#fff8ec;border:1px solid #f0e0bf;border-radius:12px;padding:12px 15px;font-size:13px;font-weight:700;color:#6b5a34;margin-bottom:14px;}
+
+  /* summary */
+  .sum-block{border-radius:16px;padding:18px;margin-bottom:14px;}
+  .sum-block.now{background:var(--spot-l);border:1px solid #f0d8cc;}
+  .sum-block.daily{background:#f3f9f6;border:1px solid var(--line);}
+  .sum-block .sb-t{font-size:14px;font-weight:800;margin:0 0 10px;display:flex;gap:7px;align-items:center;}
+  .sum-block.now .sb-t{color:var(--spot);}
+  .sum-block.daily .sb-t{color:var(--green-d);}
+  .sum-block .row{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700;background:#fff;border-radius:10px;padding:11px 14px;border:1px solid rgba(0,0,0,.04);margin-bottom:8px;}
+  .sum-block .row:last-child{margin-bottom:0;}
+  .sum-block .row .z{flex:0 0 auto;font-size:11px;font-weight:800;color:#fff;background:var(--green);padding:3px 9px;border-radius:100px;}
+  .sum-block .row .z.spot{background:var(--spot);}
+  .sum-block .row .z.eye{background:var(--pm-ac);}
+
+  .caution li{list-style:none;position:relative;padding:10px 0 10px 30px;font-size:13.5px;border-bottom:1px solid var(--line);color:var(--sub);font-weight:500;}
+  .caution{padding:0;margin:0;}
+  .caution li:last-child{border-bottom:none;}
+  .caution li:before{content:"!";position:absolute;left:2px;top:9px;width:20px;height:20px;border-radius:50%;background:#fbe9df;color:var(--spot);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;}
+
+  .qr{display:block;text-decoration:none;text-align:center;margin-top:22px;background:var(--green-l);border-radius:16px;padding:24px;cursor:pointer;transition:transform .1s ease;}
+  .qr:active{transform:scale(.99);}
+  .qr .box{width:130px;height:130px;margin:0 auto 12px;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;border:1px dashed #b7cfc7;color:#9fb4ad;font-size:12px;font-weight:600;overflow:hidden;}
+  .qr .box img{width:100%;height:100%;object-fit:contain;display:none;}
+  .qr .box.loaded img{display:block;}
+  .qr .box.loaded{border:1px solid var(--line);}
+  .qr .box.loaded span{display:none;}
+  .qr p{font-size:13px;color:var(--green-d);font-weight:600;margin:0;}
+  .qr .hint{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:var(--green);background:#fff;border:1px solid #cfe6df;padding:4px 12px;border-radius:100px;}
+
+  footer{background:var(--green-d);color:rgba(255,255,255,.85);text-align:center;padding:28px 20px;font-size:12px;letter-spacing:1px;}
+  footer .lg{font-size:15px;font-weight:800;letter-spacing:2px;color:#fff;margin-bottom:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="pill">💊 EIGHT PHARMACY</span>
+    <div class="greeting"><b id="rxName">KISHIYA NAOMI 様</b>のための処方箋</div>
+    <h1>美容鍼アフターケア<br>ハリ &amp; シワ 集中レシピ</h1>
+    <div class="sub">施術効果を長く保つ、あなただけのケア</div>
+    <div class="rx">℞ 薬剤師のオーダーメイド処方</div>
+  </div>
+
+  <!-- ① ANALYSIS -->
+  <section>
+    <div class="sec-head"><div class="sec-no">1</div><div><p class="sec-en">Skin Analysis</p><p class="sec-ko">お悩み分析</p></div></div>
+    <div class="card">
+      <span class="proc">施術：美容鍼</span>
+      <h3><span class="dot"></span>代表的なお悩み</h3>
+      <ul class="chk">
+        <li>肌のハリ低下</li>
+        <li>ほうれい線・口元のたるみ</li>
+        <li>目元のたるみ</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="dot"></span>状態分析</h3>
+      <div class="an"><div class="t"><span class="n">1</span>施術直後の微細な刺激</div><div class="d">美容鍼は真皮を刺激してハリを引き上げますが、直後は内出血（あざ）・むくみが出ることがあり、まず鎮静と回復が必要です。</div></div>
+      <div class="an"><div class="t"><span class="n">2</span>ハリ低下・ほうれい線</div><div class="d">しぼんだボリュームとコラーゲンの減少が原因。PDRN・PDLLAでハリとボリュームを補うケアを重ねると効果が長持ちします。</div></div>
+      <div class="an"><div class="t"><span class="n">3</span>目元のたるみ</div><div class="d">皮膚が薄くたるみが目立ちやすい部分。レチナールまたはアイパッチで集中ケアを。</div></div>
+    </div>
+    <div class="highlight">
+      美容鍼のハリ効果は「施術後のケア」で完成します。鎮静 → 全体のハリ → ボリューム補充 → 目元集中の順で整えましょう。
+      <div class="flow-note">鎮静 → ハリ → ボリューム → 目元ケア</div>
+    </div>
+  </section>
+
+  <!-- ② GOAL -->
+  <section>
+    <div class="sec-head"><div class="sec-no">2</div><div><p class="sec-en">Care Goal</p><p class="sec-ko">今回のケアの目標</p></div></div>
+    <div class="card">
+      <ul class="chk">
+        <li>施術部位の鎮静・あざの早い回復</li>
+        <li>顔全体のハリ強化</li>
+        <li>ほうれい線・口元のボリューム補充</li>
+        <li>目元のたるみ集中ケア</li>
+        <li>美容鍼の効果を長くキープ</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ③ ROUTINE -->
+  <section>
+    <div class="sec-head"><div class="sec-no">3</div><div><p class="sec-en">Care Routine</p><p class="sec-ko">ケアルーティン</p></div></div>
+
+    <div class="routine now">
+      <p class="rt-title">🩹 施術直後ケア</p>
+      <p class="rt-sub">あざ・刺激のある部分に</p>
+      <div class="step"><span class="idx">✓</span><span><span class="nm">オールインワンK クリーム</span><span class="tg">あざ・刺激を鎮静し、回復をサポート</span></span><span class="zone spot">施術部位</span></div>
+    </div>
+
+    <div class="routine daily">
+      <p class="rt-title">☀️🌙 デイリーケア（朝・夜）</p>
+      <p class="rt-sub">ハリ・ボリューム・目元を毎日ケア</p>
+      <div class="step"><span class="idx">1</span><span><span class="nm">DS PDRN2000+ クリーム</span><span class="tg">顔全体に塗布してハリチャージ</span></span><span class="zone">全体</span></div>
+      <div class="step"><span class="idx">2</span><span><span class="nm">ジュベクル（PDLLA）</span><span class="tg">ほうれい線・口元のボリューム補充</span></span><span class="zone spot">スポット</span></div>
+      <div class="step"><span class="idx">3</span><span><span class="nm">レチナールクリーム or アイパッチ</span><span class="tg">目元に集中ケア（どちらか1つ）</span></span><span class="zone eye">目元</span></div>
+      <div class="step"><span class="idx">4</span><span><span class="nm">オールインワンK クリーム</span><span class="tg">施術部位はスポットで鎮静を継続</span></span><span class="zone spot">施術部位</span></div>
+      <div class="point">
+        <div class="pt-lb">POINT</div>
+        <ul><li>全体はPDRN、スポットはPDLLA</li><li>目元はレチナールクリーム／アイパッチのどちらか1つ</li><li>アイパッチは寝る前に</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ PRODUCT GUIDE -->
+  <section>
+    <div class="sec-head"><div class="sec-no">4</div><div><p class="sec-en">Product Guide</p><p class="sec-ko">製品ガイド</p></div></div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="1"><img alt="オールインワンK クリーム"><div class="ph"><span class="ic">🧴</span>製品イメージ<br><code>1.jpg</code></div></div>
+      <h3><span class="dot"></span>オールインワンK クリーム<span class="badge spot">鎮静</span></h3>
+      <ul class="why"><li>施術部位のスポットケア</li><li>あざ・刺激の鎮静と回復</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>美容鍼の直後から、あざや刺激のある部分に。継続して使うと回復がスムーズです。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="2"><img alt="DS PDRN2000+ クリーム"><div class="ph"><span class="ic">🧴</span>製品イメージ<br><code>2.jpg</code></div></div>
+      <h3><span class="dot"></span>DS PDRN2000+ クリーム<span class="badge">全体・ハリ</span></h3>
+      <ul class="why"><li>顔全体のハリケアのベース</li><li>ハリエネルギーを肌の奥まで届ける</li></ul>
+      <div class="ing"><span>PDRN</span><span>特許トランソーム原料</span><span>吸収5倍</span></div>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>特許取得の「トランソーム」原料で吸収率が約5倍に。ハリエネルギーを肌の奥深くまで届けます。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="3"><img alt="ジュベクル PDLLA クリーム"><div class="ph"><span class="ic">🧴</span>製品イメージ<br><code>3.jpg</code></div></div>
+      <h3><span class="dot"></span>ジュベクル（PDLLA）<span class="badge spot">スポット</span></h3>
+      <ul class="why"><li>ほうれい線・口元などボリュームが落ちた部分に</li><li>しぼんだボリュームを満たすのをサポート</li></ul>
+      <div class="ing"><span>最高含有 PDLLA</span></div>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>もっとも高含有のPDLLAクリーム。スポットで使うと、しぼんだボリュームを満たすのに役立ちます。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="4"><img alt="ドクターディファレント レチナールクリーム"><div class="ph"><span class="ic">🧴</span>製品イメージ<br><code>4.jpg</code></div></div>
+      <h3><span class="dot"></span>ドクターディファレント<br>レチナールクリーム<span class="badge eye">目元</span></h3>
+      <ul class="why"><li>目元のたるみ・小ジワ集中ケア</li><li>レチナール含有量がもっとも高いタイプ</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>目元に薄くなじませて。日中は必ず日焼け止めを併用してください。</p></div>
+    </div>
+
+    <div class="card prod-card">
+      <div class="prod-img" data-img="5"><img alt="センテリアン アイパッチ"><div class="ph"><span class="ic">👁️</span>製品イメージ<br><code>5.jpg</code></div></div>
+      <h3><span class="dot"></span>センテリアン アイパッチ<span class="badge eye">目元</span></h3>
+      <ul class="why"><li>PDRN + レチナール成分配合</li><li>寝る前に目元へ。レチナールクリームの代わりにもおすすめ</li></ul>
+      <div class="tip"><div class="lb">💡 薬剤師のTIP</div><p>レチナールクリームとアイパッチは、どちらか1つでOK。手軽に続けたい方はアイパッチを。</p></div>
+    </div>
+
+    <div class="pick">※ 目元ケアの ④レチナールクリーム と ⑤アイパッチ は、どちらか1つを選んでください。</div>
+  </section>
+
+  <!-- ⑤ SUMMARY -->
+  <section>
+    <div class="sec-head"><div class="sec-no">5</div><div><p class="sec-en">Summary</p><p class="sec-ko">ひと目でわかる処方</p></div></div>
+    <div class="sum-block now">
+      <p class="sb-t">🩹 施術直後</p>
+      <div class="row"><span class="z spot">施術部位</span>オールインワンK クリーム</div>
+    </div>
+    <div class="sum-block daily">
+      <p class="sb-t">☀️🌙 デイリー</p>
+      <div class="row"><span class="z">全体</span>DS PDRN2000+ クリーム</div>
+      <div class="row"><span class="z spot">スポット</span>ジュベクル（PDLLA）</div>
+      <div class="row"><span class="z eye">目元</span>レチナールクリーム or アイパッチ（1つ）</div>
+      <div class="row"><span class="z spot">施術部位</span>オールインワンK クリーム</div>
+    </div>
+  </section>
+
+  <!-- ⑥ NOTE -->
+  <section>
+    <div class="sec-head"><div class="sec-no">6</div><div><p class="sec-en">Pharmacist's Note</p><p class="sec-ko">薬剤師からひとこと</p></div></div>
+    <div class="highlight">
+      美容鍼のハリ効果は、施術後のケアで完成します。施術部位はオールインワンKで鎮静し、PDRNで全体のハリを、PDLLAでしぼんだボリュームを補い、目元はレチナールまたはアイパッチで集中ケアを。続けることがリフト効果を長く保ついちばんの鍵です。
+    </div>
+  </section>
+
+  <!-- ⑦ CAUTION & QR -->
+  <section>
+    <div class="sec-head"><div class="sec-no">7</div><div><p class="sec-en">Caution &amp; QR</p><p class="sec-ko">ご使用上の注意</p></div></div>
+    <div class="card">
+      <ul class="caution">
+        <li>施術直後で刺激が強い日は、オールインワンKで鎮静を優先してください。</li>
+        <li>レチナール製品は少量から。使用後の日中は必ず日焼け止めを。</li>
+        <li>目元ケア（レチナールクリーム／アイパッチ）は重ねず、どちらか1つに。</li>
+        <li>刺激が続く場合は使用を中止し、薬剤師にご相談ください。</li>
+        <li>もっと多くのおすすめ製品は、下のQR（エピリス）からご確認いただけます。</li>
+      </ul>
+      <a class="qr" href="https://8pharmacy.kr/epiris.html" target="_blank" rel="noopener">
+        <div class="box" data-img="qr"><img alt="エピリス QRコード"><span>QRコード<br>スペース</span></div>
+        <p>📱 スキャンまたはタップで、エピリスで<br>もっと多くのおすすめ製品が見つかります</p>
+        <span class="hint">👆 タップで移動</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="lg">💊 EIGHT PHARMACY</div>
+    本内容は薬剤師によるカウンセリング案内であり、<br>個人の肌状態により異なる場合があります。
+  </footer>
+
+</div>
+
+<script>
+  // リンクの末尾に ?name=お名前 を付けると、上部に宛名が自動で入ります
+  (function(){
+    var n = new URLSearchParams(location.search).get('name');
+    if(n && n.trim()){
+      n = n.trim();
+      var el = document.getElementById('rxName');
+      if(el) el.textContent = n + '様';
+      document.title = n + '様のための処方箋 | EIGHT PHARMACY';
+    }
+  })();
+  document.querySelectorAll('.prod-img, .qr .box').forEach(function(box){
+    var base = box.getAttribute('data-img');
+    if(!base) return;
+    var img = box.querySelector('img');
+    var bases = Array.from(new Set([base, base.toLowerCase(), base.toUpperCase()]));
+    var exts = ['jpg','png','jpeg','webp','JPG','PNG'];
+    var cands = [];
+    bases.forEach(function(b){ exts.forEach(function(e){ cands.push(b + '.' + e); }); });
+    var i = 0;
+    function tryNext(){ if(i >= cands.length){ return; } img.src = cands[i++]; }
+    img.onload = function(){ box.classList.add('loaded'); };
+    img.onerror = function(){ tryNext(); };
+    tryNext();
+  });
+</script>
+</body>
+</html>
