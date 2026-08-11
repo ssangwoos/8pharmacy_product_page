@@ -62,6 +62,17 @@ async function loadLedgerData(page = false) {
         const snapshot = await query.orderBy("date", "asc").orderBy("createdAt", "asc").get();
         allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+        // 📌 순서 뒤틀림 수정: 한 명세서의 여러 품목은 createdAt이 모두 같아 Firestore가 랜덤 문서ID로 정렬함.
+        //    날짜 → 저장시각 → seq(입력순서) 로 안정 정렬해 입력한 순서를 그대로 보존한다.
+        const ms = (v) => (v && typeof v.toMillis === 'function') ? v.toMillis() : 0;
+        allData.sort((a, b) => {
+            const da = a.date || '', dbb = b.date || '';
+            if (da !== dbb) return da < dbb ? -1 : 1;
+            const ca = ms(a.createdAt), cb = ms(b.createdAt);
+            if (ca !== cb) return ca - cb;
+            return (a.seq || 0) - (b.seq || 0);   // 같은 명세서 내 품목은 입력 순서대로
+        });
+
         // [페이지 고정] 수정 후 현재 페이지 유지 로직
         if (page) {
             currentPage = page; 
