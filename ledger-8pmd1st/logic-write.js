@@ -585,7 +585,7 @@ async function saveAllItems() {
         let saveCount = 0; // 실제로 저장되는 줄 수 카운트
         const savedItems = []; // 🎓 [자동학습] 최종 저장 품목 (AI 원본과 비교용)
 
-        rows.forEach(row => {
+        rows.forEach((row, rowIndex) => {
             const memo = row.querySelector('.in-memo').value.trim();
 
             // 내용이 있는 줄만 트랜잭션 데이터로 생성 ㅡㅡ^
@@ -604,7 +604,8 @@ async function saveAllItems() {
                     img: currentImgUrl,
                     rotation: typeof currentRotation !== 'undefined' ? currentRotation : 0,
                     qty: qtyN, supply: supplyN, vat: vatN, total: totalN,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    seq: rowIndex   // 📌 입력 순서 보존: batch 저장 시 createdAt이 모두 같아 생기는 순서 뒤틀림 방지
                 });
                 savedItems.push({ memo, qty: qtyN, supply: supplyN, vat: vatN, total: totalN });
                 saveCount++;
