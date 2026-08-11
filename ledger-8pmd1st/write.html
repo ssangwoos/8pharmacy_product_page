@@ -3,10 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 캐시 방지: 파일 바꾸면 새로고침 시 바로 반영되게 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>명세서 상세 입력</title>
     
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="style-write.css">
+    <!-- 🔧 결제카드 칸만 좁게: 전체 text input에 걸린 min-width:400px !important 를 이 칸만 해제 -->
+    <style>
+        #cardGroupWrap { flex: 0 0 160px !important; min-width: 160px !important; max-width: 160px !important; }
+        #cardInput { min-width: 0 !important; width: 100% !important; max-width: 160px !important; }
+    </style>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
@@ -62,26 +71,26 @@
 
         <section class="form-section-bottom">
             <div class="center-paper">
-                <div class="common-info-bar" style="display: flex; gap: 20px; align-items: flex-end; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                <div class="common-info-bar" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
                     <button type="button" id="btnAiFill" onclick="aiAutoFill()"
                         style="height:42px; padding:0 18px; background:#4f46e5; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:8px; flex-shrink:0;">
                         <i class="fas fa-robot"></i> AI 자동입력
                     </button>
-                    <div class="c-group" style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="c-group" style="flex: 0 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: 8px;">
                         <label style="font-size: 0.85rem; color: #64748b; font-weight: bold;">날짜</label>
-                        <input type="date" id="dateInput" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
+                        <input type="date" id="dateInput" style="width: 170px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
                     </div>
 
-                    <div class="c-group" style="width: 130px; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="c-group" style="flex: 0 0 160px; min-width: 160px; display: flex; flex-direction: column; align-items: stretch; gap: 8px;">
                         <label style="font-size: 0.85rem; color: #64748b; font-weight: bold;">구분</label>
-                        <select id="typeSelect" onchange="togglePaymentField()" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
+                        <select id="typeSelect" onchange="togglePaymentField()" style="width: 100%; min-width: 150px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font-size: 0.95rem; height: 42px; box-sizing: border-box;">
                             <option value="buy" selected>입고(매입)</option>
                             <option value="pay">결제(지출)</option>
                             <option value="return">반품(지출)</option>
                         </select>
                     </div>
 
-                    <div class="c-group vendor-group" style="flex: 1.5; display: flex; flex-direction: column; gap: 8px; position: relative;">
+                    <div class="c-group vendor-group" style="flex: 1.5; min-width: 0; display: flex; flex-direction: column; gap: 8px; position: relative;">
                     <label style="font-size: 0.85rem; color: #64748b; font-weight: bold;">거래처</label>
                     
                     <input type="text" id="vendorInput" 
@@ -95,11 +104,11 @@
                     <div id="vendorListCustom" style="position: absolute; top: 75px; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; border-radius: 8px; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
                 </div>
 
-                    <div class="c-group card-group" id="cardGroupWrap" style="display:none; flex-direction: column; gap: 8px;">
+                    <div class="c-group card-group" id="cardGroupWrap" style="display:flex; flex: 0 0 160px; width: 160px; max-width: 160px; min-width: 160px; flex-direction: column; gap: 8px;">
                         <label style="font-size: 0.85rem; color: #6d28d9; font-weight: bold;">💳 결제 카드</label>
                         <input type="text" id="cardInput" list="cardList" autocomplete="off"
-                            placeholder="카드 검색/선택"
-                            style="width: 220px; padding: 10px; border: 1px solid #a78bfa; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box; color:#6d28d9; font-weight:600;">
+                            placeholder="카드 선택"
+                            style="width: 100%; max-width: 160px; min-width: 0; padding: 10px; border: 1px solid #a78bfa; border-radius: 8px; font-size: 0.95rem; height: 42px; box-sizing: border-box; color:#6d28d9; font-weight:600;">
                     </div>
                 </div>
 
