@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 캐시 방지: 파일 바꾸면 새로고침 시 바로 반영되게 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>장부 상세 조회</title>
     <link rel="stylesheet" href="common.css">       <link rel="stylesheet" href="style-ledger.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -35,24 +39,30 @@
         <div class="ledger-paper">
 
             <div class="ledger-header-control">
-                <div class="filter-group">
+                <div class="filter-group" style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <select id="vendorFilter" onchange="filterLedger()" 
-        style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 220px; font-size: 0.9rem;">
+                            style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 220px; font-size: 0.9rem;">
                         <option value="all">전체 거래처</option>
                     </select>
                     
-                    <div class="date-range-picker" style="display:inline-flex; align-items:center; gap:5px; margin-left:10px;">
+                    <div class="date-range-picker" style="display:inline-flex; align-items:center; gap:5px;">
                         <input type="date" id="startDate" onchange="filterLedger()">
                         <span>~</span>
                         <input type="date" id="endDate" onchange="filterLedger()">
                     </div>
-                    <div class="search-container" style="margin-left: 10px; display: inline-block;">
+
+                    <div class="search-container" style="display: inline-flex; align-items: center; gap: 10px;">
                         <input type="text" id="searchInput" placeholder="거래처 또는 품목명 검색" 
                             onkeyup="renderLedger()" 
                             style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 250px;">
+                        
+                        <label style="display: flex; align-items: center; gap: 5px; font-size: 0.85rem; color: #475569; cursor: pointer; white-space: nowrap; background: #f8fafc; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <input type="checkbox" id="totalBalanceFullMode" onchange="renderLedger()" style="width: 16px; height: 16px; cursor: pointer;">
+                            <span>이 기간만 잔액계산 (기본: 전체 누적)</span>
+                        </label>
                     </div>
                 </div>
-                </div>
+            </div>
 
             <div class="ledger-summary-bar">
                 <div class="summary-item blue">
@@ -112,7 +122,7 @@
                             </td>
                             <td style="width: 120px;"><input type="text" id="qVendor" placeholder="거래처" list="vendorList"></td>
                             
-                            <td style="min-width: 250px;"><input type="text" id="qMemo" placeholder="내용(적요)" style="width: 100%;"></td>
+                            <td style="min-width: 250px;"><input type="text" id="qMemo" placeholder="내용(적요)" autocomplete="off" style="width: 100%;"></td>
                             
                             <td style="width: 60px;"><input type="number" id="qQty" placeholder="0"></td>
                             <td style="width: 90px;"><input type="text" id="qSupply" class="money-input" placeholder="공급가" onkeyup="formatCurrency(this); calcQuickSupply();"></td>
@@ -143,7 +153,7 @@
             <div><label style="display:block; font-size:0.8rem; margin-bottom:5px;">날짜</label>
                  <input type="date" id="editDate" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"></div>
             <div><label style="display:block; font-size:0.8rem; margin-bottom:5px;">구분</label>
-                 <select id="editType" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; background:white;">
+                 <select id="editType" onchange="toggleEditPaymentField()" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; background:white;">
                     <option value="buy">입고(매입)</option>
                     <option value="pay">결제(지불)</option>
                     <option value="return">반품</option>
@@ -155,6 +165,12 @@
         <div style="margin-bottom:25px;">
             <label style="display:block; font-size:0.8rem; margin-bottom:5px;">적요(메모)</label>
             <input type="text" id="editMemo" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;">
+        </div>
+
+        <div id="editCardWrap" style="display:none; margin-bottom:25px; flex-direction:column;">
+            <label style="display:block; font-size:0.8rem; margin-bottom:5px; color:#6d28d9;">💳 결제 카드</label>
+            <input type="text" id="editCard" list="cardList" autocomplete="off" placeholder="카드 검색/선택"
+                   style="width:100%; padding:10px; border:1px solid #a78bfa; border-radius:6px; color:#6d28d9; font-weight:600; box-sizing:border-box;">
         </div>
 
         <div class="split-amount-row">
@@ -185,6 +201,8 @@
     pointer-events: none;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
 </div>
+<datalist id="cardList"></datalist>
+
 <script src="firebase-config.js"></script>
 <script src="logic-ledger.js"></script>
 
