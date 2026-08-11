@@ -86,7 +86,8 @@ function renderLedger() {
     const start = document.getElementById('startDate')?.value || '';
     const end = document.getElementById('endDate')?.value || '';
     const searchKeyword = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    const isFullMode = document.getElementById('totalBalanceFullMode')?.checked || false;
+    // 체크 해제(기본) = 전체 누적 잔액(실물 거래장과 대조용) / 체크 = 이 기간만 계산
+    const periodOnly = document.getElementById('totalBalanceFullMode')?.checked || false;
 
     // 2. 누적 계산용 변수 (전체용/기간용 분리)
     let runningGrandTotal = 0;  // 내부 계산용 (태초부터 지금까지 전체 잔액)
@@ -128,7 +129,8 @@ function renderLedger() {
                 displayList.push({
                     ...item,
                     subItem,
-                    currentBalance: runningPeriodTotal, 
+                    currentBalance: runningPeriodTotal,      // 이 기간 내 잔액
+                    cumulativeBalance: runningGrandTotal,    // 전체 누적 잔액(태초부터 이 행까지)
                     isBuy: isBuy,
                     amount: amount
                 });
@@ -146,6 +148,8 @@ function renderLedger() {
     // 5. HTML 테이블 생성 (10개씩만 가볍게 출력)
     let html = '';
     currentPageData.forEach((row) => {
+        // 기본(체크 해제)=전체 누적 잔액 / 체크=이 기간 내 잔액
+        const shownBalance = periodOnly ? row.currentBalance : row.cumulativeBalance;
         const isRealImg = row.img && row.img.startsWith('http') && !row.img.includes('write.html');
         const groupId = isRealImg ? row.img : row.id;
         
@@ -182,7 +186,7 @@ function renderLedger() {
                 <td style="text-align:right;">${(Number(row.subItem.vat) || 0).toLocaleString()}</td>
                 <td style="color:#2563eb; font-weight:bold; text-align:right;">${row.isBuy ? row.amount.toLocaleString() : ''}</td>
                 <td style="color:#dc2626; font-weight:bold; text-align:right;">${!row.isBuy ? row.amount.toLocaleString() : ''}</td>
-                <td style="font-weight:700; text-align:right; background:#f9fafb;">${row.currentBalance.toLocaleString()}</td>
+                <td style="font-weight:700; text-align:right; background:#f9fafb;">${shownBalance.toLocaleString()}</td>
                 <td style="text-align:center;">${proofIcon}</td>
                 <td style="text-align:center;">
                     <div style="display: flex; justify-content: center; gap: 8px;">
@@ -203,7 +207,7 @@ function renderLedger() {
     if(document.getElementById('sumPay')) document.getElementById('sumPay').innerText = totalPay.toLocaleString();
     
     if(document.getElementById('sumBalance')) {
-        const finalSumBalance = isFullMode ? runningGrandTotal : (totalBuy - totalPay);
+        const finalSumBalance = periodOnly ? (totalBuy - totalPay) : runningGrandTotal;
         document.getElementById('sumBalance').innerText = finalSumBalance.toLocaleString();
     }
 }
@@ -391,10 +395,32 @@ function filterLedger() {
     loadLedgerData(); 
 }
 
+// 📌 카드 드롭다운(datalist) 버그 수정: 값이 있으면 클릭해도 목록이 안 열리는 문제.
+//    포커스/클릭 시 값을 잠깐 비워 전체 목록이 뜨게 하고, 안 고르고 나가면 원래 값 복구.
+function setupDatalistReopen(inputId) {
+    const el = document.getElementById(inputId);
+    if (!el || el.dataset.reopenBound) return;
+    el.dataset.reopenBound = '1';
+    // ⚠️ list(datalist) 속성이 붙어 있을 때만 비운다.
+    //    (qMemo처럼 평소엔 일반 적요칸이고 '결제'일 때만 카드칸이 되는 경우, 일반칸에선 안 건드림)
+    const clearForList = () => {
+        if (el.hasAttribute('list') && el.value) { el.dataset.prevVal = el.value; el.value = ''; }
+    };
+    el.addEventListener('focus', clearForList);
+    el.addEventListener('mousedown', clearForList);
+    el.addEventListener('blur', () => {
+        if (!el.value && el.dataset.prevVal) el.value = el.dataset.prevVal;
+        delete el.dataset.prevVal;
+    });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const now = new Date();
     const past = new Date();
-    past.setDate(now.getDate() - 360); 
+    past.setDate(now.getDate() - 180);
+
+    setupDatalistReopen('editCard');   // 장부 수정창 카드칸 드롭다운 재열림 버그 수정
+    setupDatalistReopen('qMemo');      // 빠른입력 '결제'일 때 적요=카드검색칸 드롭다운 재열림 버그 수정
 
     const toYmd = (date) => {
         const y = date.getFullYear();

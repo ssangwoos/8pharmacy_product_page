@@ -28,16 +28,9 @@ async function loadCardsForDatalist() {
 
 // 🔥 [카드연동] 구분이 '결제'일 때만 카드 입력칸 표시
 function togglePaymentField() {
-    const type = document.getElementById('typeSelect')?.value;
+    // 결제 카드 칸은 구분과 무관하게 '항상' 표시한다 (사용자 요청). 값도 지우지 않는다.
     const wrap = document.getElementById('cardGroupWrap');
-    if (!wrap) return;
-    if (type === 'pay') {
-        wrap.style.display = 'flex';
-    } else {
-        wrap.style.display = 'none';
-        const c = document.getElementById('cardInput');
-        if (c) c.value = '';
-    }
+    if (wrap) wrap.style.setProperty('display', 'flex', 'important');
 }
 
 // 상호명 정규화: (주)·공백·기호 제거 후 소문자 (유사도 비교용)
@@ -738,7 +731,29 @@ document.addEventListener('DOMContentLoaded', async () => { // async 추가
         vIn.addEventListener('input', markVendorStatus);
         vIn.addEventListener('change', markVendorStatus);
     }
+
+    // 📌 카드 드롭다운(datalist) 버그 수정: 값이 이미 있으면 클릭해도 목록이 안 열림.
+    //    포커스 때 값을 잠깐 비워 전체 목록이 뜨게 하고, 안 고르고 나가면 원래 값 복구.
+    setupDatalistReopen('cardInput');
 });
+
+// datalist 입력칸을 '값이 있어도 클릭하면 목록이 다시 열리게' 만든다.
+function setupDatalistReopen(inputId) {
+    const el = document.getElementById(inputId);
+    if (!el || el.dataset.reopenBound) return;
+    el.dataset.reopenBound = '1';
+    // 포커스/클릭 시: 현재 값을 잠시 치워서 datalist가 전체 목록을 보이게 함
+    const clearForList = () => {
+        if (el.value) { el.dataset.prevVal = el.value; el.value = ''; }
+    };
+    el.addEventListener('focus', clearForList);
+    el.addEventListener('mousedown', clearForList);
+    // 포커스 벗어날 때: 새로 고른 게 없으면(빈 값) 원래 카드 복구
+    el.addEventListener('blur', () => {
+        if (!el.value && el.dataset.prevVal) el.value = el.dataset.prevVal;
+        delete el.dataset.prevVal;
+    });
+}
 
 /* 금액 합계 업데이트 함수 */
 function updateTotals() {
