@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="8약국 지점 안내 — 네이버지도·구글맵·인스타그램·틱톡 링크">
+<meta name="theme-color" content="#ECF1EA">
+<title>8약국 지점 안내</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@600;900&display=swap">
+
+<style>
+/* ── 팔레트 (라이트) ───────────────────────────────────── */
+:root{
+  --ground:#ECF1EA;
+  --surface:#FFFFFF;
+  --surface-2:#F5F8F3;
+  --ink:#101E17;
+  --muted:#5C6E62;
+  --faint:#8A9A90;
+  --line:#DCE5DA;
+  --accent:#17603E;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#D5E6DA;
+  --open:#1F7A4C;
+  --open-bg:#DFF0E4;
+  --warn:#8A5E06;
+  --warn-bg:#F6EBD2;
+  --shut:#7C6A5E;
+  --shut-bg:#EDE7E1;
+  --shadow:0 1px 2px rgba(16,30,23,.05), 0 8px 24px -12px rgba(16,30,23,.18);
+  --radius:18px;
+}
+/* ── 팔레트 (다크) ─────────────────────────────────────── */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0C1310;
+    --surface:#151E19;
+    --surface-2:#1B2620;
+    --ink:#E7EFE9;
+    --muted:#9BAFA2;
+    --faint:#728579;
+    --line:#26332C;
+    --accent:#63C48D;
+    --accent-ink:#08150E;
+    --accent-soft:#1E3527;
+    --open:#7ED4A2;
+    --open-bg:#173225;
+    --warn:#E0B45E;
+    --warn-bg:#33290F;
+    --shut:#B3A092;
+    --shut-bg:#2A2420;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0C1310;
+  --surface:#151E19;
+  --surface-2:#1B2620;
+  --ink:#E7EFE9;
+  --muted:#9BAFA2;
+  --faint:#728579;
+  --line:#26332C;
+  --accent:#63C48D;
+  --accent-ink:#08150E;
+  --accent-soft:#1E3527;
+  --open:#7ED4A2;
+  --open-bg:#173225;
+  --warn:#E0B45E;
+  --warn-bg:#33290F;
+  --shut:#B3A092;
+  --shut-bg:#2A2420;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.6;
+  word-break:keep-all;
+  overflow-wrap:anywhere;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+
+.wrap{
+  max-width:448px;
+  margin:0 auto;
+  padding:0 18px 56px;
+}
+
+/* ── 히어로 ───────────────────────────────────────────── */
+.hero{
+  position:relative;
+  padding:34px 4px 26px;
+  overflow:hidden;
+}
+.hero-mark{
+  position:absolute;
+  right:-24px; top:-92px;
+  font-family:"Noto Serif KR",serif;
+  font-weight:900;
+  font-size:220px;
+  line-height:1;
+  color:var(--accent-soft);
+  user-select:none;
+  pointer-events:none;
+  z-index:0;
+}
+.hero > *:not(.hero-mark){position:relative;z-index:1}
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin:0 0 12px;
+}
+.brand{
+  font-family:"Noto Serif KR",serif;
+  font-weight:900;
+  font-size:40px;
+  line-height:1.15;
+  letter-spacing:-.02em;
+  margin:0 0 10px;
+  text-wrap:balance;
+}
+.tagline{
+  margin:0;
+  color:var(--muted);
+  font-size:14.5px;
+  max-width:30ch;
+}
+
+/* ── 대표 SNS 줄 ──────────────────────────────────────── */
+.chain-links{
+  display:flex;
+  gap:8px;
+  margin:22px 0 0;
+  padding:0;
+  list-style:none;
+}
+.chain-links a{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:9px 14px 9px 11px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:999px;
+  font-size:13px;
+  font-weight:500;
+  transition:border-color .16s, transform .16s;
+}
+.chain-links a:hover{border-color:var(--accent);transform:translateY(-1px)}
+.chain-links svg{width:15px;height:15px;flex:none}
+
+/* ── 섹션 라벨 ────────────────────────────────────────── */
+.section-label{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  margin:38px 4px 14px;
+}
+.section-label h2{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--faint);
+  margin:0;
+}
+.section-label .rule{flex:1;height:1px;background:var(--line)}
+.section-label .count{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;
+  color:var(--faint);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ── 지점 카드 ────────────────────────────────────────── */
+.branches{display:flex;flex-direction:column;gap:14px}
+.branch{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:18px 17px 15px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.branch-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.branch-name{
+  font-family:"Noto Serif KR",serif;
+  font-weight:600;
+  font-size:20px;
+  line-height:1.3;
+  margin:0 0 4px;
+  letter-spacing:-.01em;
+}
+.branch-addr{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+.status{
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 10px 5px 8px;
+  border-radius:999px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;
+  font-weight:500;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+  margin-top:2px;
+}
+.status .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.status.is-open{color:var(--open);background:var(--open-bg)}
+.status.is-soon{color:var(--warn);background:var(--warn-bg)}
+.status.is-shut{color:var(--shut);background:var(--shut-bg)}
+
+.hours{
+  margin:0;
+  padding:11px 12px;
+  background:var(--surface-2);
+  border-radius:12px;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:3px 14px;
+  font-size:12.5px;
+}
+.hours dt{color:var(--faint);font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.04em}
+.hours dd{margin:0;color:var(--muted);font-variant-numeric:tabular-nums}
+.hours dd.is-off{color:var(--faint)}
+
+.links{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.links a{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  font-size:13px;
+  font-weight:500;
+  background:var(--surface);
+  transition:border-color .16s, background .16s;
+}
+.links a:hover{border-color:var(--accent);background:var(--surface-2)}
+.links svg{width:17px;height:17px;flex:none}
+
+.call{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:12px;
+  border-radius:12px;
+  background:var(--accent);
+  color:var(--accent-ink);
+  font-weight:600;
+  font-size:14px;
+  font-variant-numeric:tabular-nums;
+  transition:opacity .16s;
+}
+.call:hover{opacity:.88}
+.call svg{width:15px;height:15px}
+
+/* ── 푸터 ─────────────────────────────────────────────── */
+footer{
+  margin-top:34px;
+  padding-top:20px;
+  border-top:1px solid var(--line);
+  text-align:center;
+  color:var(--faint);
+  font-size:12px;
+}
+footer p{margin:0 0 4px}
+footer .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important;animation:none !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-mark" aria-hidden="true">8</div>
+    <p class="eyebrow" id="chain-count">PHARMACY NETWORK</p>
+    <h1 class="brand">8약국</h1>
+    <p class="tagline">가까운 지점을 찾아보세요. 지도 · 채널 링크를 한 곳에 모았습니다.</p>
+    <ul class="chain-links" id="chain-links"></ul>
+  </header>
+
+  <div class="section-label">
+    <h2>지점 안내</h2>
+    <span class="rule"></span>
+    <span class="count" id="branch-count"></span>
+  </div>
+
+  <main class="branches" id="branches"></main>
+
+  <footer>
+    <p>문의 <a href="mailto:hello@8pharmacy.kr" style="text-decoration:underline">hello@8pharmacy.kr</a></p>
+    <p class="mono">© 8PHARMACY</p>
+  </footer>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   ▼▼▼ 여기만 수정하면 됩니다 ▼▼▼
+   · 지점 추가: BRANCHES 배열에 { } 하나를 그대로 복사해 붙여넣기
+   · 링크가 없으면 "" (빈 문자열)로 두면 버튼이 자동으로 숨겨집니다
+   · hours 는 "09:00-22:00" 형식, 휴무일은 null
+   · 아래 주소 / 전화번호 / URL 은 전부 예시입니다. 실제 값으로 교체하세요.
+   ══════════════════════════════════════════════════════════ */
+
+const CHAIN = {
+  instagram: "https://www.instagram.com/8pharmacy",
+  tiktok:    "https://www.tiktok.com/@8pharmacy",
+  kakao:     ""   // 카카오톡 채널 (선택)
+};
+
+const BRANCHES = [
+  {
+    name: "본점",
+    address: "서울 강남구 테헤란로 8길 8, 1층",
+    phone: "02-000-0008",
+    hours: { weekday: "09:00-22:00", sat: "09:00-18:00", sun: null },
+    naver:     "https://map.naver.com/",
+    google:    "https://maps.google.com/",
+    instagram: "https://www.instagram.com/8pharmacy",
+    tiktok:    "https://www.tiktok.com/@8pharmacy"
+  },
+  {
+    name: "강남역점",
+    address: "서울 강남구 강남대로 396, 지하 1층",
+    phone: "02-000-0018",
+    hours: { weekday: "08:30-23:00", sat: "09:00-20:00", sun: "10:00-18:00" },
+    naver:     "https://map.naver.com/",
+    google:    "https://maps.google.com/",
+    instagram: "https://www.instagram.com/8pharmacy",
+    tiktok:    ""
+  },
+  {
+    name: "판교점",
+    address: "경기 성남시 분당구 판교역로 166, 2층",
+    phone: "031-000-0028",
+    hours: { weekday: "09:00-21:00", sat: "10:00-16:00", sun: null },
+    naver:     "https://map.naver.com/",
+    google:    "https://maps.google.com/",
+    instagram: "https://www.instagram.com/8pharmacy",
+    tiktok:    "https://www.tiktok.com/@8pharmacy"
+  },
+  {
+    name: "부산서면점",
+    address: "부산 부산진구 중앙대로 668, 1층",
+    phone: "051-000-0038",
+    hours: { weekday: "09:00-22:00", sat: "09:00-19:00", sun: "11:00-17:00" },
+    naver:     "https://map.naver.com/",
+    google:    "https://maps.google.com/",
+    instagram: "",
+    tiktok:    "https://www.tiktok.com/@8pharmacy"
+  }
+];
+
+/* ▲▲▲ 수정 영역 끝 ▲▲▲ */
+
+
+/* ── 아이콘 ─────────────────────────────────────────── */
+const ICON = {
+  naver: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#03C75A"/><path d="M13.6 12.3 10.2 7H7v10h3.3v-5.3L13.8 17H17V7h-3.4z" fill="#fff"/></svg>',
+  google: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21.5s7-6.4 7-11.2A7 7 0 0 0 5 10.3c0 4.8 7 11.2 7 11.2Z" fill="#EA4335"/><circle cx="12" cy="10" r="2.7" fill="#fff"/></svg>',
+  instagram: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5.4" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.1" stroke="currentColor" stroke-width="1.7"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/></svg>',
+  tiktok: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14.3 3v10.9a3.1 3.1 0 1 1-2.6-3.05" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M14.3 3c.3 2.3 2 4 4.3 4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  kakao: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4c4.4 0 8 2.7 8 6.1 0 3.4-3.6 6.1-8 6.1-.6 0-1.2 0-1.7-.1L6.4 18.6l.8-2.9C5.3 14.6 4 12.9 4 10.1 4 6.7 7.6 4 12 4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.2 4h3l1.5 3.7-2 1.4a11 11 0 0 0 5.2 5.2l1.4-2 3.7 1.5v3a1.7 1.7 0 0 1-1.9 1.7C10.4 17.8 6.2 13.6 4.5 5.9A1.7 1.7 0 0 1 6.2 4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>'
+};
+
+const LINK_META = [
+  ["naver",     "네이버지도"],
+  ["google",    "구글맵"],
+  ["instagram", "인스타그램"],
+  ["tiktok",    "틱톡"]
+];
+
+/* ── 영업 상태 계산 (한국 시간 기준) ─────────────────── */
+function nowSeoul(){
+  const s = new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" });
+  return new Date(s);
+}
+function toMin(hhmm){
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+function todayRange(hours, day){
+  if (day === 0) return hours.sun;
+  if (day === 6) return hours.sat;
+  return hours.weekday;
+}
+function statusOf(hours){
+  const now = nowSeoul();
+  const range = todayRange(hours, now.getDay());
+  if (!range) return { cls: "is-shut", label: "오늘 휴무" };
+
+  const [openStr, closeStr] = range.split("-");
+  const open = toMin(openStr);
+  const close = toMin(closeStr);
+  const mins = now.getHours() * 60 + now.getMinutes();
+
+  if (mins < open)  return { cls: "is-shut", label: openStr + " 오픈" };
+  if (mins >= close) return { cls: "is-shut", label: "영업 종료" };
+  if (close - mins <= 60) return { cls: "is-soon", label: "곧 마감 " + closeStr };
+  return { cls: "is-open", label: "영업중 · " + closeStr + " 마감" };
+}
+
+/* ── 렌더 ───────────────────────────────────────────── */
+function esc(s){
+  return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+}
+function hoursRows(h){
+  const row = (label, val) => val
+    ? `<dt>${label}</dt><dd>${esc(val.replace("-", " – "))}</dd>`
+    : `<dt>${label}</dt><dd class="is-off">휴무</dd>`;
+  return row("평일", h.weekday) + row("토", h.sat) + row("일", h.sun);
+}
+
+document.getElementById("branches").innerHTML = BRANCHES.map(b => {
+  const st = statusOf(b.hours);
+  const links = LINK_META
+    .filter(([key]) => b[key])
+    .map(([key, label]) =>
+      `<a href="${esc(b[key])}" target="_blank" rel="noopener">${ICON[key]}<span>${label}</span></a>`)
+    .join("");
+  const call = b.phone
+    ? `<a class="call" href="tel:${esc(b.phone.replace(/-/g, ""))}">${ICON.phone}<span>${esc(b.phone)}</span></a>`
+    : "";
+  return `<article class="branch">
+    <div class="branch-head">
+      <div>
+        <h3 class="branch-name">${esc(b.name)}</h3>
+        <p class="branch-addr">${esc(b.address)}</p>
+      </div>
+      <span class="status ${st.cls}"><span class="dot"></span>${esc(st.label)}</span>
+    </div>
+    <dl class="hours">${hoursRows(b.hours)}</dl>
+    <div class="links">${links}</div>
+    ${call}
+  </article>`;
+}).join("");
+
+document.getElementById("branch-count").textContent =
+  String(BRANCHES.length).padStart(2, "0") + " 지점";
+
+const CHAIN_META = [["instagram","인스타그램"],["tiktok","틱톡"],["kakao","카카오톡"]];
+document.getElementById("chain-links").innerHTML = CHAIN_META
+  .filter(([key]) => CHAIN[key])
+  .map(([key, label]) =>
+    `<li><a href="${esc(CHAIN[key])}" target="_blank" rel="noopener">${ICON[key]}<span>${label}</span></a></li>`)
+  .join("");
+</script>
+</body>
+</html>
