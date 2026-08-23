@@ -334,6 +334,7 @@ button,select{font:inherit;color:inherit}
   display:flex;align-items:flex-end;justify-content:space-between;gap:8px;
   padding:12px;
 }
+.branch-banner.has-photo{height:180px}
 .branch-banner.has-photo::after{
   content:"";position:absolute;inset:0;
   background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(15,36,28,.72));
