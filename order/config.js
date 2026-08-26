@@ -20,3 +20,12 @@ export const firebaseConfig = {
     messagingSenderId: "713414389922",
     appId: "1:713414389922:web:606452de8b27fe847ca7fb"
 };
+
+export const LEDGER_CONFIG = {
+    apiKey: "AIzaSyBcMCqu39hwSw1Osm8Kd4GS5KMTG6BEgYA",
+    authDomain: "pharmacy-ledger-fbca7.firebaseapp.com",
+    projectId: "pharmacy-ledger-fbca7",
+    storageBucket: "pharmacy-ledger-fbca7.firebasestorage.app",
+    messagingSenderId: "243652172908",
+    appId: "1:243652172908:web:a801ea5d71cdfec01fcc49"
+};
