@@ -1,0 +1,1498 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FreeMeet — 무료 화상회의 · 실시간 자막 · 자동 대본</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎙️</text></svg>">
+<style>:root {
+  --bg: #0d0f14;
+  --bg-2: #141821;
+  --bg-3: #1b2029;
+  --line: #262c38;
+  --fg: #e8ecf3;
+  --fg-dim: #98a2b3;
+  --accent: #6d8cff;
+  --accent-2: #4f6ce0;
+  --ok: #3ecf8e;
+  --danger: #ef5b5b;
+  --radius: 12px;
+  --sidebar-w: 340px;
+}
+
+* { box-sizing: border-box; }
+
+/* .lobby{display:grid} / .panel{display:flex} 가 UA의 [hidden] 규칙을 덮어쓰는 문제 방지 */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo",
+               "Malgun Gothic", Segoe UI, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select { font: inherit; color: inherit; }
+
+/* ───────── 공통 버튼 ───────── */
+.btn {
+  border: 1px solid var(--line);
+  background: var(--bg-3);
+  color: var(--fg);
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .05s;
+}
+.btn:hover { background: #232a36; }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #0b0e14; font-weight: 600; }
+.btn.primary:hover { background: var(--accent-2); }
+.btn.ghost { background: transparent; }
+.btn.big { width: 100%; padding: 14px; font-size: 1.05rem; }
+.btn.tiny { padding: 6px 10px; font-size: .82rem; border-radius: 8px; }
+
+/* ───────── 로비 ───────── */
+.lobby {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(900px 500px at 15% -10%, #1d2740 0%, transparent 60%),
+    radial-gradient(700px 500px at 110% 20%, #2a1f3d 0%, transparent 55%),
+    var(--bg);
+}
+.lobby-card {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 26px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+.brand { display: flex; gap: 14px; align-items: center; margin-bottom: 22px; }
+.brand-mark { font-size: 2.1rem; }
+.brand h1 { margin: 0; font-size: 1.5rem; letter-spacing: -.02em; }
+.tagline { margin: 4px 0 0; color: var(--fg-dim); font-size: .84rem; line-height: 1.5; }
+
+.field { display: block; margin-bottom: 14px; }
+.field > span { display: block; font-size: .8rem; color: var(--fg-dim); margin-bottom: 6px; }
+.field input, .field select {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 12px;
+  outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.room-row { display: flex; gap: 8px; }
+.room-row input { flex: 1; }
+
+.preview-wrap { position: relative; margin: 8px 0 18px; }
+#previewVideo {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  border-radius: var(--radius);
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+.preview-toggles { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 6px; }
+.chip {
+  border: 1px solid var(--line);
+  background: rgba(13,15,20,.75);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: .78rem;
+  cursor: pointer;
+  opacity: .5;
+}
+.chip.on { opacity: 1; border-color: var(--accent); }
+
+.me-row { display: flex; gap: 10px; }
+.me-row .field { margin-bottom: 14px; }
+.me-row .field.flex { flex: 1; }
+.me-row select { width: auto; }
+
+/* ── 방 목록 ── */
+.rooms-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin: 18px 0 8px; font-size: .9rem;
+}
+.rooms { display: flex; flex-direction: column; gap: 8px; }
+.room-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.room-card:hover:not(:disabled) { border-color: var(--accent); background: #232a36; }
+.room-card:disabled { opacity: .45; cursor: not-allowed; }
+.rc-no {
+  width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px;
+  background: var(--bg-2); border: 1px solid var(--line);
+  display: grid; place-items: center; font-size: .82rem; color: var(--fg-dim);
+}
+.room-card.busy .rc-no { background: rgba(109,140,255,.18); border-color: var(--accent); color: var(--fg); }
+.rc-body { flex: 1; min-width: 0; display: block; }
+.rc-title {
+  display: block; font-size: .92rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rc-title .lock { font-size: .78rem; margin-left: 5px; }
+.rc-sub { display: block; font-size: .76rem; color: var(--fg-dim); margin-top: 3px; }
+.rc-state { display: block; font-size: .76rem; color: var(--fg-dim); white-space: nowrap; text-align: right; }
+.room-card.busy .rc-state { color: var(--ok); }
+.pips { display: inline-flex; gap: 3px; margin-left: 7px; vertical-align: middle; }
+.pip { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+.pip.on { background: var(--ok); }
+
+/* ── 입장 모달 ── */
+.modal {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center;
+  background: rgba(5,7,11,.72); backdrop-filter: blur(4px); padding: 20px;
+}
+.modal-card {
+  width: min(380px, 100%);
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 16px; padding: 22px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.6);
+}
+.modal-card h2 { margin: 0 0 6px; font-size: 1.15rem; }
+.modal-desc { margin: 0 0 16px; font-size: .82rem; color: var(--fg-dim); line-height: 1.55; }
+.modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+.modal-actions .btn { flex: 1; }
+.hint { font-style: normal; color: var(--fg-dim); font-weight: 400; }
+
+.error { color: var(--danger); font-size: .85rem; margin: 10px 0 0; }
+.how { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.how summary { cursor: pointer; font-size: .84rem; color: var(--fg-dim); }
+.how p { font-size: .82rem; color: var(--fg-dim); line-height: 1.65; }
+
+/* ───────── 회의실 레이아웃 ───────── */
+.room {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr var(--sidebar-w);
+  grid-template-rows: 52px 1fr 78px;
+  grid-template-areas:
+    "top    side"
+    "stage  side"
+    "ctrl   side";
+}
+.room.no-panel { grid-template-columns: 1fr 0; }
+.room.no-panel .sidebar { display: none; }
+
+.topbar {
+  grid-area: top;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-2);
+}
+.room-id { display: flex; align-items: center; gap: 10px; font-size: .9rem; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--fg-dim); }
+.dot.live { background: var(--ok); box-shadow: 0 0 0 3px rgba(62,207,142,.18); }
+.top-right { display: flex; gap: 8px; align-items: center; }
+.badge {
+  font-size: .76rem; color: var(--fg-dim);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px;
+}
+.badge.rec { color: var(--danger); border-color: rgba(239,91,91,.4); }
+
+.stage { grid-area: stage; position: relative; padding: 12px; overflow: hidden; }
+.grid {
+  height: 100%;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-content: center;
+}
+/* 인원수에 맞춰 격자 모양을 바꿉니다 (4명이면 2×2) */
+.grid[data-n="1"] { grid-template-columns: minmax(0, 1fr); max-width: 900px; margin: 0 auto; }
+.grid[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 1000px; margin: 0 auto; }
+
+.tile {
+  position: relative;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 16/9;
+}
+.tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile.self video { transform: scaleX(-1); }
+.tile.self.sharing video { transform: none; }
+.tile .label {
+  position: absolute; left: 8px; bottom: 8px;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+  padding: 4px 9px; border-radius: 8px; font-size: .78rem;
+  display: flex; align-items: center; gap: 6px;
+}
+.tile.speaking { border-color: var(--ok); box-shadow: 0 0 0 2px rgba(62,207,142,.35); }
+.tile .avatar {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  background: linear-gradient(140deg, #232a3a, #171b24);
+  font-size: 2rem; font-weight: 600; color: var(--fg-dim);
+}
+.tile.camon .avatar { display: none; }
+
+.caption-bar {
+  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+  max-width: min(820px, 92%);
+  background: rgba(0,0,0,.72); backdrop-filter: blur(10px);
+  border-radius: 12px; padding: 10px 16px;
+  font-size: 1.05rem; line-height: 1.5; text-align: center;
+  pointer-events: none;
+}
+.caption-bar b { color: var(--accent); font-weight: 600; margin-right: 6px; }
+
+/* ───────── 사이드바 ───────── */
+.sidebar {
+  grid-area: side;
+  border-left: 1px solid var(--line);
+  background: var(--bg-2);
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tab {
+  flex: 1; background: none; border: 0; padding: 13px 0;
+  color: var(--fg-dim); cursor: pointer; border-bottom: 2px solid transparent;
+}
+.tab.active { color: var(--fg); border-bottom-color: var(--accent); }
+.panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.panel-tools { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.panel-tools input {
+  flex: 1; background: var(--bg-3); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 10px; font-size: .84rem; outline: none;
+}
+.muted { color: var(--fg-dim); font-size: .78rem; white-space: nowrap; }
+
+.script-list { flex: 1; overflow-y: auto; padding: 12px; }
+.script-list .empty { color: var(--fg-dim); font-size: .84rem; text-align: center; margin-top: 40px; }
+.line { margin-bottom: 12px; font-size: .88rem; line-height: 1.6; }
+.line .meta { display: flex; gap: 8px; align-items: baseline; margin-bottom: 2px; }
+.line .who { font-weight: 600; font-size: .82rem; }
+.line .time { color: var(--fg-dim); font-size: .72rem; font-variant-numeric: tabular-nums; }
+.line .text { color: #d5dbe6; word-break: break-word; }
+.line mark { background: rgba(109,140,255,.35); color: inherit; border-radius: 3px; }
+.line.hidden { display: none; }
+
+.panel-actions { display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--line); }
+.panel-actions .btn { flex: 0 0 auto; }
+.panel-actions .btn.primary { flex: 1; }
+
+.chat-form { display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--line); }
+.chat-form input {
+  flex: 1; background: var(--bg-3); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; outline: none; font-size: .86rem;
+}
+
+/* ───────── 하단 컨트롤 ───────── */
+.controls {
+  grid-area: ctrl;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  border-top: 1px solid var(--line); background: var(--bg-2);
+}
+.ctrl {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 72px; padding: 8px 10px;
+  background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px;
+  cursor: pointer; opacity: .55; transition: opacity .15s, background .15s;
+}
+.ctrl span { font-size: 1.15rem; line-height: 1; }
+.ctrl em { font-style: normal; font-size: .68rem; color: var(--fg-dim); }
+.ctrl.on { opacity: 1; border-color: var(--accent); }
+.ctrl.on em { color: var(--fg); }
+.ctrl:hover { opacity: 1; }
+.ctrl.danger { background: rgba(239,91,91,.15); border-color: rgba(239,91,91,.45); opacity: 1; }
+.ctrl.danger span { transform: rotate(135deg); }
+
+/* ───────── 토스트 ───────── */
+.toast {
+  position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+  background: var(--bg-3); border: 1px solid var(--line);
+  padding: 10px 16px; border-radius: 10px; font-size: .86rem;
+  z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,.5);
+}
+
+/* ───────── 모바일 ───────── */
+@media (max-width: 860px) {
+  .room {
+    grid-template-columns: 1fr;
+    grid-template-rows: 48px minmax(0, 1fr) minmax(0, 40vh) 72px;
+    grid-template-areas: "top" "stage" "side" "ctrl";
+  }
+  .room.no-panel { grid-template-rows: 48px 1fr 0 72px; }
+  .sidebar { border-left: 0; border-top: 1px solid var(--line); }
+  .grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .ctrl { min-width: 58px; }
+  .ctrl em { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ 대기실 ══════════════ -->
+<section id="lobby" class="lobby">
+  <div class="lobby-card">
+    <div class="brand">
+      <span class="brand-mark">🎙️</span>
+      <div>
+        <h1>FreeMeet</h1>
+        <p class="tagline">시간 제한 없는 화상회의 · 실시간 자막 · 회의 끝나면 대본까지</p>
+      </div>
+    </div>
+
+    <div class="me-row">
+      <label class="field flex">
+        <span>이름</span>
+        <input id="nameInput" type="text" placeholder="회의에 표시될 이름" maxlength="32" autocomplete="name">
+      </label>
+      <label class="field">
+        <span>자막 언어</span>
+        <select id="langSelect">
+          <option value="ko-KR" selected>한국어</option>
+          <option value="en-US">English</option>
+          <option value="ja-JP">日本語</option>
+          <option value="zh-CN">中文</option>
+          <option value="es-ES">Español</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="preview-wrap">
+      <video id="previewVideo" autoplay playsinline muted></video>
+      <div class="preview-toggles">
+        <button id="preCam" class="chip on" type="button">📹 카메라</button>
+        <button id="preMic" class="chip on" type="button">🎤 마이크</button>
+      </div>
+    </div>
+
+    <div class="rooms-head">
+      <b>방 목록</b>
+      <span id="scanState" class="muted">확인 중…</span>
+    </div>
+    <div id="roomList" class="rooms"></div>
+
+    <p id="lobbyError" class="error" hidden></p>
+
+    <details class="how">
+      <summary>서버 없이 어떻게 되는 건가요?</summary>
+      <p>이 페이지 하나가 전부입니다. 영상·음성은 참가자 브라우저끼리 <b>P2P(WebRTC)</b>로 직접 오갑니다.
+      방 목록은 각 방에 미리 정해진 주소가 있어서, 대기실이 그 주소에 <b>노크해 보고</b> 응답이 오면 "사용 중"으로 표시하는 방식입니다.
+      비밀번호는 서버에 저장되는 게 아니라, 이미 방에 있는 사람들이 새로 들어온 사람에게 <b>암호 문제를 내서</b> 직접 확인합니다.
+      통과하기 전에는 영상도 자막도 전달되지 않습니다.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ══════════════ 입장 모달 ══════════════ -->
+<div id="modal" class="modal" hidden>
+  <div class="modal-card">
+    <h2 id="modalTitle">방 만들기</h2>
+    <p id="modalDesc" class="modal-desc"></p>
+    <label class="field" id="titleField">
+      <span>방 이름</span>
+      <input id="roomTitle" type="text" placeholder="예: 주간회의" maxlength="24">
+    </label>
+    <label class="field">
+      <span id="pwLabel">비밀번호 <em class="hint">— 비워 두면 누구나 입장</em></span>
+      <input id="roomPw" type="password" placeholder="비밀번호" maxlength="64" autocomplete="off">
+    </label>
+    <p id="modalError" class="error" hidden></p>
+    <div class="modal-actions">
+      <button id="modalCancel" class="btn ghost" type="button">취소</button>
+      <button id="modalOk" class="btn primary" type="button">입장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 회의실 ══════════════ -->
+<section id="room" class="room" hidden>
+  <header class="topbar">
+    <div class="room-id">
+      <span class="dot" id="connDot"></span>
+      <b id="roomLabel">room</b>
+      <span id="lockBadge" class="badge" hidden>🔒</span>
+    </div>
+    <div class="top-right">
+      <span id="peerCount" class="badge">1명</span>
+      <span id="recBadge" class="badge rec" hidden>● 기록 중</span>
+    </div>
+  </header>
+
+  <main class="stage">
+    <div id="grid" class="grid"></div>
+    <div id="captionBar" class="caption-bar" hidden></div>
+  </main>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="tabs">
+      <button class="tab active" data-tab="script" type="button">대본</button>
+      <button class="tab" data-tab="chat" type="button">채팅</button>
+    </div>
+
+    <div id="panel-script" class="panel">
+      <div class="panel-tools">
+        <input id="scriptSearch" type="search" placeholder="대본 검색…">
+        <span id="lineCount" class="muted">0줄</span>
+      </div>
+      <div id="scriptList" class="script-list">
+        <p class="empty">마이크를 켜고 말하면 여기에 대본이 쌓입니다.</p>
+      </div>
+      <div class="panel-actions">
+        <button id="dlTxt" class="btn tiny" type="button">TXT</button>
+        <button id="dlMd" class="btn tiny" type="button">MD</button>
+        <button id="dlSrt" class="btn tiny" type="button">SRT</button>
+        <button id="copyPrompt" class="btn tiny primary" type="button">📋 요약 프롬프트 복사</button>
+      </div>
+    </div>
+
+    <div id="panel-chat" class="panel" hidden>
+      <div id="chatList" class="script-list"><p class="empty">아직 메시지가 없습니다.</p></div>
+      <form id="chatForm" class="chat-form">
+        <input id="chatInput" type="text" placeholder="메시지 입력…" maxlength="2000" autocomplete="off">
+        <button class="btn tiny primary" type="submit">전송</button>
+      </form>
+    </div>
+  </aside>
+
+  <footer class="controls">
+    <button id="btnMic" class="ctrl on" type="button"><span>🎤</span><em>마이크</em></button>
+    <button id="btnCam" class="ctrl on" type="button"><span>📹</span><em>카메라</em></button>
+    <button id="btnShare" class="ctrl" type="button"><span>🖥️</span><em>화면공유</em></button>
+    <button id="btnStt" class="ctrl" type="button"><span>💬</span><em>자막</em></button>
+    <button id="btnPanel" class="ctrl on" type="button"><span>📄</span><em>대본</em></button>
+    <button id="btnLeave" class="ctrl danger" type="button"><span>📞</span><em>나가기</em></button>
+  </footer>
+</section>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>(()=>{function e(e,t,n,r){Object.defineProperty(e,t,{get:n,set:r,enumerable:!0,configurable:!0})}function t(e){return e&&e.__esModule?e.default:e}class n{constructor(){this.chunkedMTU=16300,this._dataCount=1,this.chunk=e=>{let t=[],n=e.byteLength,r=Math.ceil(n/this.chunkedMTU),i=0,s=0;for(;s<n;){let o=Math.min(n,s+this.chunkedMTU),a=e.slice(s,o),c={__peerData:this._dataCount,n:i,data:a,total:r};t.push(c),s=o,i++}return this._dataCount++,t}}}class r{append_buffer(e){this.flush(),this._parts.push(e)}append(e){this._pieces.push(e)}flush(){if(this._pieces.length>0){let e=new Uint8Array(this._pieces);this._parts.push(e),this._pieces=[]}}toArrayBuffer(){let e=[];for(let t of this._parts)e.push(t);return function(e){let t=0;for(let n of e)t+=n.byteLength;let n=new Uint8Array(t),r=0;for(let t of e){let e=new Uint8Array(t.buffer,t.byteOffset,t.byteLength);n.set(e,r),r+=t.byteLength}return n}(e).buffer}constructor(){this.encoder=new TextEncoder,this._pieces=[],this._parts=[]}}function i(e){return new o(e).unpack()}function s(e){let t=new a,n=t.pack(e);return n instanceof Promise?n.then(()=>t.getBuffer()):t.getBuffer()}class o{unpack(){let e,t=this.unpack_uint8();if(t<128)return t;if((224^t)<32)return(224^t)-32;if((e=160^t)<=15)return this.unpack_raw(e);if((e=176^t)<=15)return this.unpack_string(e);if((e=144^t)<=15)return this.unpack_array(e);if((e=128^t)<=15)return this.unpack_map(e);switch(t){case 192:return null;case 193:case 212:case 213:case 214:case 215:return;case 194:return!1;case 195:return!0;case 202:return this.unpack_float();case 203:return this.unpack_double();case 204:return this.unpack_uint8();case 205:return this.unpack_uint16();case 206:return this.unpack_uint32();case 207:return this.unpack_uint64();case 208:return this.unpack_int8();case 209:return this.unpack_int16();case 210:return this.unpack_int32();case 211:return this.unpack_int64();case 216:return e=this.unpack_uint16(),this.unpack_string(e);case 217:return e=this.unpack_uint32(),this.unpack_string(e);case 218:return e=this.unpack_uint16(),this.unpack_raw(e);case 219:return e=this.unpack_uint32(),this.unpack_raw(e);case 220:return e=this.unpack_uint16(),this.unpack_array(e);case 221:return e=this.unpack_uint32(),this.unpack_array(e);case 222:return e=this.unpack_uint16(),this.unpack_map(e);case 223:return e=this.unpack_uint32(),this.unpack_map(e)}}unpack_uint8(){let e=255&this.dataView[this.index];return this.index++,e}unpack_uint16(){let e=this.read(2),t=(255&e[0])*256+(255&e[1]);return this.index+=2,t}unpack_uint32(){let e=this.read(4),t=((256*e[0]+e[1])*256+e[2])*256+e[3];return this.index+=4,t}unpack_uint64(){let e=this.read(8),t=((((((256*e[0]+e[1])*256+e[2])*256+e[3])*256+e[4])*256+e[5])*256+e[6])*256+e[7];return this.index+=8,t}unpack_int8(){let e=this.unpack_uint8();return e<128?e:e-256}unpack_int16(){let e=this.unpack_uint16();return e<32768?e:e-65536}unpack_int32(){let e=this.unpack_uint32();return e<0x80000000?e:e-0x100000000}unpack_int64(){let e=this.unpack_uint64();return e<0x8000000000000000?e:e-0xffffffffffffffff}unpack_raw(e){if(this.length<this.index+e)throw Error(`BinaryPackFailure: index is out of range ${this.index} ${e} ${this.length}`);let t=this.dataBuffer.slice(this.index,this.index+e);return this.index+=e,t}unpack_string(e){let t,n,r=this.read(e),i=0,s="";for(;i<e;)(t=r[i])<160?(n=t,i++):(192^t)<32?(n=(31&t)<<6|63&r[i+1],i+=2):(224^t)<16?(n=(15&t)<<12|(63&r[i+1])<<6|63&r[i+2],i+=3):(n=(7&t)<<18|(63&r[i+1])<<12|(63&r[i+2])<<6|63&r[i+3],i+=4),s+=String.fromCodePoint(n);return this.index+=e,s}unpack_array(e){let t=Array(e);for(let n=0;n<e;n++)t[n]=this.unpack();return t}unpack_map(e){let t={};for(let n=0;n<e;n++)t[this.unpack()]=this.unpack();return t}unpack_float(){let e=this.unpack_uint32();return(0==e>>31?1:-1)*(8388607&e|8388608)*2**((e>>23&255)-127-23)}unpack_double(){let e=this.unpack_uint32(),t=this.unpack_uint32(),n=(e>>20&2047)-1023;return(0==e>>31?1:-1)*((1048575&e|1048576)*2**(n-20)+t*2**(n-52))}read(e){let t=this.index;if(t+e<=this.length)return this.dataView.subarray(t,t+e);throw Error("BinaryPackFailure: read index out of range")}constructor(e){this.index=0,this.dataBuffer=e,this.dataView=new Uint8Array(this.dataBuffer),this.length=this.dataBuffer.byteLength}}class a{getBuffer(){return this._bufferBuilder.toArrayBuffer()}pack(e){if("string"==typeof e)this.pack_string(e);else if("number"==typeof e)Math.floor(e)===e?this.pack_integer(e):this.pack_double(e);else if("boolean"==typeof e)!0===e?this._bufferBuilder.append(195):!1===e&&this._bufferBuilder.append(194);else if(void 0===e)this._bufferBuilder.append(192);else if("object"==typeof e)if(null===e)this._bufferBuilder.append(192);else{let t=e.constructor;if(e instanceof Array){let t=this.pack_array(e);if(t instanceof Promise)return t.then(()=>this._bufferBuilder.flush())}else if(e instanceof ArrayBuffer)this.pack_bin(new Uint8Array(e));else if("BYTES_PER_ELEMENT"in e)this.pack_bin(new Uint8Array(e.buffer,e.byteOffset,e.byteLength));else if(e instanceof Date)this.pack_string(e.toString());else if(e instanceof Blob)return e.arrayBuffer().then(e=>{this.pack_bin(new Uint8Array(e)),this._bufferBuilder.flush()});else if(t==Object||t.toString().startsWith("class")){let t=this.pack_object(e);if(t instanceof Promise)return t.then(()=>this._bufferBuilder.flush())}else throw Error(`Type "${t.toString()}" not yet supported`)}else throw Error(`Type "${typeof e}" not yet supported`);this._bufferBuilder.flush()}pack_bin(e){let t=e.length;if(t<=15)this.pack_uint8(160+t);else if(t<=65535)this._bufferBuilder.append(218),this.pack_uint16(t);else if(t<=0xffffffff)this._bufferBuilder.append(219),this.pack_uint32(t);else throw Error("Invalid length");this._bufferBuilder.append_buffer(e)}pack_string(e){let t=this._textEncoder.encode(e),n=t.length;if(n<=15)this.pack_uint8(176+n);else if(n<=65535)this._bufferBuilder.append(216),this.pack_uint16(n);else if(n<=0xffffffff)this._bufferBuilder.append(217),this.pack_uint32(n);else throw Error("Invalid length");this._bufferBuilder.append_buffer(t)}pack_array(e){let t=e.length;if(t<=15)this.pack_uint8(144+t);else if(t<=65535)this._bufferBuilder.append(220),this.pack_uint16(t);else if(t<=0xffffffff)this._bufferBuilder.append(221),this.pack_uint32(t);else throw Error("Invalid length");let n=r=>{if(r<t){let t=this.pack(e[r]);return t instanceof Promise?t.then(()=>n(r+1)):n(r+1)}};return n(0)}pack_integer(e){if(e>=-32&&e<=127)this._bufferBuilder.append(255&e);else if(e>=0&&e<=255)this._bufferBuilder.append(204),this.pack_uint8(e);else if(e>=-128&&e<=127)this._bufferBuilder.append(208),this.pack_int8(e);else if(e>=0&&e<=65535)this._bufferBuilder.append(205),this.pack_uint16(e);else if(e>=-32768&&e<=32767)this._bufferBuilder.append(209),this.pack_int16(e);else if(e>=0&&e<=0xffffffff)this._bufferBuilder.append(206),this.pack_uint32(e);else if(e>=-0x80000000&&e<=0x7fffffff)this._bufferBuilder.append(210),this.pack_int32(e);else if(e>=-0x8000000000000000&&e<=0x8000000000000000)this._bufferBuilder.append(211),this.pack_int64(e);else if(e>=0&&e<=0xffffffffffffffff)this._bufferBuilder.append(207),this.pack_uint64(e);else throw Error("Invalid integer")}pack_double(e){let t=0;e<0&&(t=1,e=-e);let n=Math.floor(Math.log(e)/Math.LN2),r=Math.floor((e/2**n-1)*0x10000000000000),i=t<<31|n+1023<<20|r/0x100000000&1048575;this._bufferBuilder.append(203),this.pack_int32(i),this.pack_int32(r%0x100000000)}pack_object(e){let t=Object.keys(e),n=t.length;if(n<=15)this.pack_uint8(128+n);else if(n<=65535)this._bufferBuilder.append(222),this.pack_uint16(n);else if(n<=0xffffffff)this._bufferBuilder.append(223),this.pack_uint32(n);else throw Error("Invalid length");let r=n=>{if(n<t.length){let i=t[n];if(e.hasOwnProperty(i)){this.pack(i);let t=this.pack(e[i]);if(t instanceof Promise)return t.then(()=>r(n+1))}return r(n+1)}};return r(0)}pack_uint8(e){this._bufferBuilder.append(e)}pack_uint16(e){this._bufferBuilder.append(e>>8),this._bufferBuilder.append(255&e)}pack_uint32(e){let t=0|e;this._bufferBuilder.append((0xff000000&t)>>>24),this._bufferBuilder.append((0xff0000&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t)}pack_uint64(e){let t=e/0x100000000,n=e%0x100000000;this._bufferBuilder.append((0xff000000&t)>>>24),this._bufferBuilder.append((0xff0000&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t),this._bufferBuilder.append((0xff000000&n)>>>24),this._bufferBuilder.append((0xff0000&n)>>>16),this._bufferBuilder.append((65280&n)>>>8),this._bufferBuilder.append(255&n)}pack_int8(e){this._bufferBuilder.append(255&e)}pack_int16(e){this._bufferBuilder.append((65280&e)>>8),this._bufferBuilder.append(255&e)}pack_int32(e){this._bufferBuilder.append(e>>>24&255),this._bufferBuilder.append((0xff0000&e)>>>16),this._bufferBuilder.append((65280&e)>>>8),this._bufferBuilder.append(255&e)}pack_int64(e){let t=Math.floor(e/0x100000000),n=e%0x100000000;this._bufferBuilder.append((0xff000000&t)>>>24),this._bufferBuilder.append((0xff0000&t)>>>16),this._bufferBuilder.append((65280&t)>>>8),this._bufferBuilder.append(255&t),this._bufferBuilder.append((0xff000000&n)>>>24),this._bufferBuilder.append((0xff0000&n)>>>16),this._bufferBuilder.append((65280&n)>>>8),this._bufferBuilder.append(255&n)}constructor(){this._bufferBuilder=new r,this._textEncoder=new TextEncoder}}"use strict";let c=!0,p=!0;function d(e,t,n){let r=e.match(t);return r&&r.length>=n&&parseInt(r[n],10)}function l(e,t,n){if(!e.RTCPeerConnection)return;let r=e.RTCPeerConnection.prototype,i=r.addEventListener;r.addEventListener=function(e,r){if(e!==t)return i.apply(this,arguments);let s=e=>{let t=n(e);t&&(r.handleEvent?r.handleEvent(t):r(t))};return this._eventMap=this._eventMap||{},this._eventMap[t]||(this._eventMap[t]=new Map),this._eventMap[t].set(r,s),i.apply(this,[e,s])};let s=r.removeEventListener;r.removeEventListener=function(e,n){if(e!==t||!this._eventMap||!this._eventMap[t]||!this._eventMap[t].has(n))return s.apply(this,arguments);let r=this._eventMap[t].get(n);return this._eventMap[t].delete(n),0===this._eventMap[t].size&&delete this._eventMap[t],0===Object.keys(this._eventMap).length&&delete this._eventMap,s.apply(this,[e,r])},Object.defineProperty(r,"on"+t,{get(){return this["_on"+t]},set(e){this["_on"+t]&&(this.removeEventListener(t,this["_on"+t]),delete this["_on"+t]),e&&this.addEventListener(t,this["_on"+t]=e)},enumerable:!0,configurable:!0})}function h(e){return"boolean"!=typeof e?Error("Argument type: "+typeof e+". Please use a boolean."):(c=e,e?"adapter.js logging disabled":"adapter.js logging enabled")}function u(e){return"boolean"!=typeof e?Error("Argument type: "+typeof e+". Please use a boolean."):(p=!e,"adapter.js deprecation warnings "+(e?"disabled":"enabled"))}function f(){"object"==typeof window&&(c||"undefined"!=typeof console&&"function"==typeof console.log&&console.log.apply(console,arguments))}function m(e,t){p&&console.warn(e+" is deprecated, please use "+t+" instead.")}function _(e){return"[object Object]"===Object.prototype.toString.call(e)}function g(e,t,n){let r=n?"outbound-rtp":"inbound-rtp",i=new Map;if(null===t)return i;let s=[];return e.forEach(e=>{"track"===e.type&&e.trackIdentifier===t.id&&s.push(e)}),s.forEach(t=>{e.forEach(n=>{n.type===r&&n.trackId===t.id&&function e(t,n,r){!n||r.has(n.id)||(r.set(n.id,n),Object.keys(n).forEach(i=>{i.endsWith("Id")?e(t,t.get(n[i]),r):i.endsWith("Ids")&&n[i].forEach(n=>{e(t,t.get(n),r)})}))}(e,n,i)})}),i}"use strict";var y={};function C(e,t){let n=e&&e.navigator;if(!n.mediaDevices)return;let r=function(e){if("object"!=typeof e||e.mandatory||e.optional)return e;let t={};return Object.keys(e).forEach(n=>{if("require"===n||"advanced"===n||"mediaSource"===n)return;let r="object"==typeof e[n]?e[n]:{ideal:e[n]};void 0!==r.exact&&"number"==typeof r.exact&&(r.min=r.max=r.exact);let i=function(e,t){return e?e+t.charAt(0).toUpperCase()+t.slice(1):"deviceId"===t?"sourceId":t};if(void 0!==r.ideal){t.optional=t.optional||[];let e={};"number"==typeof r.ideal?(e[i("min",n)]=r.ideal,t.optional.push(e),(e={})[i("max",n)]=r.ideal):e[i("",n)]=r.ideal,t.optional.push(e)}void 0!==r.exact&&"number"!=typeof r.exact?(t.mandatory=t.mandatory||{},t.mandatory[i("",n)]=r.exact):["min","max"].forEach(e=>{void 0!==r[e]&&(t.mandatory=t.mandatory||{},t.mandatory[i(e,n)]=r[e])})}),e.advanced&&(t.optional=(t.optional||[]).concat(e.advanced)),t},i=function(e,i){if(t.version>=61)return i(e);if((e=JSON.parse(JSON.stringify(e)))&&"object"==typeof e.audio){let t=function(e,t,n){t in e&&!(n in e)&&(e[n]=e[t],delete e[t])};t((e=JSON.parse(JSON.stringify(e))).audio,"autoGainControl","googAutoGainControl"),t(e.audio,"noiseSuppression","googNoiseSuppression"),e.audio=r(e.audio)}if(e&&"object"==typeof e.video){let s=e.video.facingMode;s=s&&("object"==typeof s?s:{ideal:s});let o=t.version<66;if(s&&("user"===s.exact||"environment"===s.exact||"user"===s.ideal||"environment"===s.ideal)&&!(n.mediaDevices.getSupportedConstraints&&n.mediaDevices.getSupportedConstraints().facingMode&&!o)){let t;if(delete e.video.facingMode,"environment"===s.exact||"environment"===s.ideal?t=["back","rear"]:("user"===s.exact||"user"===s.ideal)&&(t=["front"]),t)return n.mediaDevices.enumerateDevices().then(n=>{let o=(n=n.filter(e=>"videoinput"===e.kind)).find(e=>t.some(t=>e.label.toLowerCase().includes(t)));return!o&&n.length&&t.includes("back")&&(o=n[n.length-1]),o&&(e.video.deviceId=s.exact?{exact:o.deviceId}:{ideal:o.deviceId}),e.video=r(e.video),f("chrome: "+JSON.stringify(e)),i(e)})}e.video=r(e.video)}return f("chrome: "+JSON.stringify(e)),i(e)},s=function(e){return t.version>=64?e:{name:({PermissionDeniedError:"NotAllowedError",PermissionDismissedError:"NotAllowedError",InvalidStateError:"NotAllowedError",DevicesNotFoundError:"NotFoundError",ConstraintNotSatisfiedError:"OverconstrainedError",TrackStartError:"NotReadableError",MediaDeviceFailedDueToShutdown:"NotAllowedError",MediaDeviceKillSwitchOn:"NotAllowedError",TabCaptureError:"AbortError",ScreenCaptureError:"AbortError",DeviceCaptureError:"AbortError"})[e.name]||e.name,message:e.message,constraint:e.constraint||e.constraintName,toString(){return this.name+(this.message&&": ")+this.message}}};if(n.getUserMedia=(function(e,t,r){i(e,e=>{n.webkitGetUserMedia(e,t,e=>{r&&r(s(e))})})}).bind(n),n.mediaDevices.getUserMedia){let e=n.mediaDevices.getUserMedia.bind(n.mediaDevices);n.mediaDevices.getUserMedia=function(t){return i(t,t=>e(t).then(e=>{if(t.audio&&!e.getAudioTracks().length||t.video&&!e.getVideoTracks().length)throw e.getTracks().forEach(e=>{e.stop()}),new DOMException("","NotFoundError");return e},e=>Promise.reject(s(e))))}}}"use strict";function v(e){e.MediaStream=e.MediaStream||e.webkitMediaStream}function b(e){if("object"!=typeof e||!e.RTCPeerConnection||"ontrack"in e.RTCPeerConnection.prototype)l(e,"track",e=>(e.transceiver||Object.defineProperty(e,"transceiver",{value:{receiver:e.receiver}}),e));else{Object.defineProperty(e.RTCPeerConnection.prototype,"ontrack",{get(){return this._ontrack},set(e){this._ontrack&&this.removeEventListener("track",this._ontrack),this.addEventListener("track",this._ontrack=e)},enumerable:!0,configurable:!0});let t=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){return this._ontrackpoly||(this._ontrackpoly=t=>{t.stream.addEventListener("addtrack",n=>{let r;r=e.RTCPeerConnection.prototype.getReceivers?this.getReceivers().find(e=>e.track&&e.track.id===n.track.id):{track:n.track};let i=new Event("track");i.track=n.track,i.receiver=r,i.transceiver={receiver:r},i.streams=[t.stream],this.dispatchEvent(i)}),t.stream.getTracks().forEach(n=>{let r;r=e.RTCPeerConnection.prototype.getReceivers?this.getReceivers().find(e=>e.track&&e.track.id===n.id):{track:n};let i=new Event("track");i.track=n,i.receiver=r,i.transceiver={receiver:r},i.streams=[t.stream],this.dispatchEvent(i)})},this.addEventListener("addstream",this._ontrackpoly)),t.apply(this,arguments)}}}function T(e){if("object"==typeof e&&e.RTCPeerConnection&&!("getSenders"in e.RTCPeerConnection.prototype)&&"createDTMFSender"in e.RTCPeerConnection.prototype){let t=function(e,t){return{track:t,get dtmf(){return void 0===this._dtmf&&("audio"===t.kind?this._dtmf=e.createDTMFSender(t):this._dtmf=null),this._dtmf},_pc:e}};if(!e.RTCPeerConnection.prototype.getSenders){e.RTCPeerConnection.prototype.getSenders=function(){return this._senders=this._senders||[],this._senders.slice()};let n=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addTrack=function(e,r){let i=n.apply(this,arguments);return i||(i=t(this,e),this._senders.push(i)),i};let r=e.RTCPeerConnection.prototype.removeTrack;e.RTCPeerConnection.prototype.removeTrack=function(e){r.apply(this,arguments);let t=this._senders.indexOf(e);-1!==t&&this._senders.splice(t,1)}}let n=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(e){this._senders=this._senders||[],n.apply(this,[e]),e.getTracks().forEach(e=>{this._senders.push(t(this,e))})};let r=e.RTCPeerConnection.prototype.removeStream;e.RTCPeerConnection.prototype.removeStream=function(e){this._senders=this._senders||[],r.apply(this,[e]),e.getTracks().forEach(e=>{let t=this._senders.find(t=>t.track===e);t&&this._senders.splice(this._senders.indexOf(t),1)})}}else if("object"==typeof e&&e.RTCPeerConnection&&"getSenders"in e.RTCPeerConnection.prototype&&"createDTMFSender"in e.RTCPeerConnection.prototype&&e.RTCRtpSender&&!("dtmf"in e.RTCRtpSender.prototype)){let t=e.RTCPeerConnection.prototype.getSenders;e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e},Object.defineProperty(e.RTCRtpSender.prototype,"dtmf",{get(){return void 0===this._dtmf&&("audio"===this.track.kind?this._dtmf=this._pc.createDTMFSender(this.track):this._dtmf=null),this._dtmf}})}}function S(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender&&e.RTCRtpReceiver))return;if(!("getStats"in e.RTCRtpSender.prototype)){let t=e.RTCPeerConnection.prototype.getSenders;t&&(e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e});let n=e.RTCPeerConnection.prototype.addTrack;n&&(e.RTCPeerConnection.prototype.addTrack=function(){let e=n.apply(this,arguments);return e._pc=this,e}),e.RTCRtpSender.prototype.getStats=function(){let e=this;return this._pc.getStats().then(t=>g(t,e.track,!0))}}if(!("getStats"in e.RTCRtpReceiver.prototype)){let t=e.RTCPeerConnection.prototype.getReceivers;t&&(e.RTCPeerConnection.prototype.getReceivers=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e}),l(e,"track",e=>(e.receiver._pc=e.srcElement,e)),e.RTCRtpReceiver.prototype.getStats=function(){let e=this;return this._pc.getStats().then(t=>g(t,e.track,!1))}}if(!("getStats"in e.RTCRtpSender.prototype&&"getStats"in e.RTCRtpReceiver.prototype))return;let t=e.RTCPeerConnection.prototype.getStats;e.RTCPeerConnection.prototype.getStats=function(){if(arguments.length>0&&arguments[0]instanceof e.MediaStreamTrack){let e,t,n,r=arguments[0];return(this.getSenders().forEach(t=>{t.track===r&&(e?n=!0:e=t)}),this.getReceivers().forEach(e=>(e.track===r&&(t?n=!0:t=e),e.track===r)),n||e&&t)?Promise.reject(new DOMException("There are more than one sender or receiver for the track.","InvalidAccessError")):e?e.getStats():t?t.getStats():Promise.reject(new DOMException("There is no sender or receiver for the track.","InvalidAccessError"))}return t.apply(this,arguments)}}function k(e){e.RTCPeerConnection.prototype.getLocalStreams=function(){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},Object.keys(this._shimmedLocalStreams).map(e=>this._shimmedLocalStreams[e][0])};let t=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addTrack=function(e,n){if(!n)return t.apply(this,arguments);this._shimmedLocalStreams=this._shimmedLocalStreams||{};let r=t.apply(this,arguments);return this._shimmedLocalStreams[n.id]?-1===this._shimmedLocalStreams[n.id].indexOf(r)&&this._shimmedLocalStreams[n.id].push(r):this._shimmedLocalStreams[n.id]=[n,r],r};let n=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(e){this._shimmedLocalStreams=this._shimmedLocalStreams||{},e.getTracks().forEach(e=>{if(this.getSenders().find(t=>t.track===e))throw new DOMException("Track already exists.","InvalidAccessError")});let t=this.getSenders();n.apply(this,arguments);let r=this.getSenders().filter(e=>-1===t.indexOf(e));this._shimmedLocalStreams[e.id]=[e].concat(r)};let r=e.RTCPeerConnection.prototype.removeStream;e.RTCPeerConnection.prototype.removeStream=function(e){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},delete this._shimmedLocalStreams[e.id],r.apply(this,arguments)};let i=e.RTCPeerConnection.prototype.removeTrack;e.RTCPeerConnection.prototype.removeTrack=function(e){return this._shimmedLocalStreams=this._shimmedLocalStreams||{},e&&Object.keys(this._shimmedLocalStreams).forEach(t=>{let n=this._shimmedLocalStreams[t].indexOf(e);-1!==n&&this._shimmedLocalStreams[t].splice(n,1),1===this._shimmedLocalStreams[t].length&&delete this._shimmedLocalStreams[t]}),i.apply(this,arguments)}}function R(e,t){if(!e.RTCPeerConnection)return;if(e.RTCPeerConnection.prototype.addTrack&&t.version>=65)return k(e);let n=e.RTCPeerConnection.prototype.getLocalStreams;e.RTCPeerConnection.prototype.getLocalStreams=function(){let e=n.apply(this);return this._reverseStreams=this._reverseStreams||{},e.map(e=>this._reverseStreams[e.id])};let r=e.RTCPeerConnection.prototype.addStream;e.RTCPeerConnection.prototype.addStream=function(t){if(this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{},t.getTracks().forEach(e=>{if(this.getSenders().find(t=>t.track===e))throw new DOMException("Track already exists.","InvalidAccessError")}),!this._reverseStreams[t.id]){let n=new e.MediaStream(t.getTracks());this._streams[t.id]=n,this._reverseStreams[n.id]=t,t=n}r.apply(this,[t])};let i=e.RTCPeerConnection.prototype.removeStream;function s(e,t){let n=t.sdp;return Object.keys(e._reverseStreams||[]).forEach(t=>{let r=e._reverseStreams[t],i=e._streams[r.id];n=n.replace(RegExp(i.id,"g"),r.id)}),new RTCSessionDescription({type:t.type,sdp:n})}e.RTCPeerConnection.prototype.removeStream=function(e){this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{},i.apply(this,[this._streams[e.id]||e]),delete this._reverseStreams[this._streams[e.id]?this._streams[e.id].id:e.id],delete this._streams[e.id]},e.RTCPeerConnection.prototype.addTrack=function(t,n){if("closed"===this.signalingState)throw new DOMException("The RTCPeerConnection's signalingState is 'closed'.","InvalidStateError");let r=[].slice.call(arguments,1);if(1!==r.length||!r[0].getTracks().find(e=>e===t))throw new DOMException("The adapter.js addTrack polyfill only supports a single  stream which is associated with the specified track.","NotSupportedError");if(this.getSenders().find(e=>e.track===t))throw new DOMException("Track already exists.","InvalidAccessError");this._streams=this._streams||{},this._reverseStreams=this._reverseStreams||{};let i=this._streams[n.id];if(i)i.addTrack(t),Promise.resolve().then(()=>{this.dispatchEvent(new Event("negotiationneeded"))});else{let r=new e.MediaStream([t]);this._streams[n.id]=r,this._reverseStreams[r.id]=n,this.addStream(r)}return this.getSenders().find(e=>e.track===t)},["createOffer","createAnswer"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){let e=arguments,t=arguments.length&&"function"==typeof arguments[0];return t?n.apply(this,[t=>{let n=s(this,t);e[0].apply(null,[n])},t=>{e[1]&&e[1].apply(null,t)},arguments[2]]):n.apply(this,arguments).then(e=>s(this,e))}})[t]});let o=e.RTCPeerConnection.prototype.setLocalDescription;e.RTCPeerConnection.prototype.setLocalDescription=function(){var e,t;let n;return arguments.length&&arguments[0].type?(arguments[0]=(e=this,t=arguments[0],n=t.sdp,Object.keys(e._reverseStreams||[]).forEach(t=>{let r=e._reverseStreams[t],i=e._streams[r.id];n=n.replace(RegExp(r.id,"g"),i.id)}),new RTCSessionDescription({type:t.type,sdp:n})),o.apply(this,arguments)):o.apply(this,arguments)};let a=Object.getOwnPropertyDescriptor(e.RTCPeerConnection.prototype,"localDescription");Object.defineProperty(e.RTCPeerConnection.prototype,"localDescription",{get(){let e=a.get.apply(this);return""===e.type?e:s(this,e)}}),e.RTCPeerConnection.prototype.removeTrack=function(e){let t;if("closed"===this.signalingState)throw new DOMException("The RTCPeerConnection's signalingState is 'closed'.","InvalidStateError");if(!e._pc)throw new DOMException("Argument 1 of RTCPeerConnection.removeTrack does not implement interface RTCRtpSender.","TypeError");if(e._pc!==this)throw new DOMException("Sender was not created by this connection.","InvalidAccessError");this._streams=this._streams||{},Object.keys(this._streams).forEach(n=>{this._streams[n].getTracks().find(t=>e.track===t)&&(t=this._streams[n])}),t&&(1===t.getTracks().length?this.removeStream(this._reverseStreams[t.id]):t.removeTrack(e.track),this.dispatchEvent(new Event("negotiationneeded")))}}function P(e,t){!e.RTCPeerConnection&&e.webkitRTCPeerConnection&&(e.RTCPeerConnection=e.webkitRTCPeerConnection),e.RTCPeerConnection&&t.version<53&&["setLocalDescription","setRemoteDescription","addIceCandidate"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){return arguments[0]=new("addIceCandidate"===t?e.RTCIceCandidate:e.RTCSessionDescription)(arguments[0]),n.apply(this,arguments)}})[t]})}function w(e,t){l(e,"negotiationneeded",e=>{let n=e.target;if(!(t.version<72)&&(!n.getConfiguration||"plan-b"!==n.getConfiguration().sdpSemantics)||"stable"===n.signalingState)return e})}"use strict";e(y,"shimMediaStream",()=>v),e(y,"shimOnTrack",()=>b),e(y,"shimGetSendersWithDtmf",()=>T),e(y,"shimSenderReceiverGetStats",()=>S),e(y,"shimAddTrackRemoveTrackWithNative",()=>k),e(y,"shimAddTrackRemoveTrack",()=>R),e(y,"shimPeerConnection",()=>P),e(y,"fixNegotiationNeeded",()=>w),e(y,"shimGetUserMedia",()=>C);var E={};function x(e,t){let n=e&&e.navigator,r=e&&e.MediaStreamTrack;if(n.getUserMedia=function(e,t,r){m("navigator.getUserMedia","navigator.mediaDevices.getUserMedia"),n.mediaDevices.getUserMedia(e).then(t,r)},!(t.version>55&&"autoGainControl"in n.mediaDevices.getSupportedConstraints())){let e=function(e,t,n){t in e&&!(n in e)&&(e[n]=e[t],delete e[t])},t=n.mediaDevices.getUserMedia.bind(n.mediaDevices);if(n.mediaDevices.getUserMedia=function(n){return"object"==typeof n&&"object"==typeof n.audio&&(e((n=JSON.parse(JSON.stringify(n))).audio,"autoGainControl","mozAutoGainControl"),e(n.audio,"noiseSuppression","mozNoiseSuppression")),t(n)},r&&r.prototype.getSettings){let t=r.prototype.getSettings;r.prototype.getSettings=function(){let n=t.apply(this,arguments);return e(n,"mozAutoGainControl","autoGainControl"),e(n,"mozNoiseSuppression","noiseSuppression"),n}}if(r&&r.prototype.applyConstraints){let t=r.prototype.applyConstraints;r.prototype.applyConstraints=function(n){return"audio"===this.kind&&"object"==typeof n&&(e(n=JSON.parse(JSON.stringify(n)),"autoGainControl","mozAutoGainControl"),e(n,"noiseSuppression","mozNoiseSuppression")),t.apply(this,[n])}}}}"use strict";function D(e,t){e.navigator.mediaDevices&&"getDisplayMedia"in e.navigator.mediaDevices||e.navigator.mediaDevices&&(e.navigator.mediaDevices.getDisplayMedia=function(n){if(!(n&&n.video)){let e=new DOMException("getDisplayMedia without video constraints is undefined");return e.name="NotFoundError",e.code=8,Promise.reject(e)}return!0===n.video?n.video={mediaSource:t}:n.video.mediaSource=t,e.navigator.mediaDevices.getUserMedia(n)})}"use strict";function I(e){"object"==typeof e&&e.RTCTrackEvent&&"receiver"in e.RTCTrackEvent.prototype&&!("transceiver"in e.RTCTrackEvent.prototype)&&Object.defineProperty(e.RTCTrackEvent.prototype,"transceiver",{get(){return{receiver:this.receiver}}})}function M(e,t){if("object"!=typeof e||!(e.RTCPeerConnection||e.mozRTCPeerConnection))return;!e.RTCPeerConnection&&e.mozRTCPeerConnection&&(e.RTCPeerConnection=e.mozRTCPeerConnection),t.version<53&&["setLocalDescription","setRemoteDescription","addIceCandidate"].forEach(function(t){let n=e.RTCPeerConnection.prototype[t];e.RTCPeerConnection.prototype[t]=({[t](){return arguments[0]=new("addIceCandidate"===t?e.RTCIceCandidate:e.RTCSessionDescription)(arguments[0]),n.apply(this,arguments)}})[t]});let n={inboundrtp:"inbound-rtp",outboundrtp:"outbound-rtp",candidatepair:"candidate-pair",localcandidate:"local-candidate",remotecandidate:"remote-candidate"},r=e.RTCPeerConnection.prototype.getStats;e.RTCPeerConnection.prototype.getStats=function(){let[e,i,s]=arguments;return r.apply(this,[e||null]).then(e=>{if(t.version<53&&!i)try{e.forEach(e=>{e.type=n[e.type]||e.type})}catch(t){if("TypeError"!==t.name)throw t;e.forEach((t,r)=>{e.set(r,Object.assign({},t,{type:n[t.type]||t.type}))})}return e}).then(i,s)}}function O(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender)||e.RTCRtpSender&&"getStats"in e.RTCRtpSender.prototype)return;let t=e.RTCPeerConnection.prototype.getSenders;t&&(e.RTCPeerConnection.prototype.getSenders=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e});let n=e.RTCPeerConnection.prototype.addTrack;n&&(e.RTCPeerConnection.prototype.addTrack=function(){let e=n.apply(this,arguments);return e._pc=this,e}),e.RTCRtpSender.prototype.getStats=function(){return this.track?this._pc.getStats(this.track):Promise.resolve(new Map)}}function L(e){if(!("object"==typeof e&&e.RTCPeerConnection&&e.RTCRtpSender)||e.RTCRtpSender&&"getStats"in e.RTCRtpReceiver.prototype)return;let t=e.RTCPeerConnection.prototype.getReceivers;t&&(e.RTCPeerConnection.prototype.getReceivers=function(){let e=t.apply(this,[]);return e.forEach(e=>e._pc=this),e}),l(e,"track",e=>(e.receiver._pc=e.srcElement,e)),e.RTCRtpReceiver.prototype.getStats=function(){return this._pc.getStats(this.track)}}function A(e){!e.RTCPeerConnection||"removeStream"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.removeStream=function(e){m("removeStream","removeTrack"),this.getSenders().forEach(t=>{t.track&&e.getTracks().includes(t.track)&&this.removeTrack(t)})})}function j(e){e.DataChannel&&!e.RTCDataChannel&&(e.RTCDataChannel=e.DataChannel)}function B(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.addTransceiver;t&&(e.RTCPeerConnection.prototype.addTransceiver=function(){this.setParametersPromises=[];let e=arguments[1]&&arguments[1].sendEncodings;void 0===e&&(e=[]);let n=(e=[...e]).length>0;n&&e.forEach(e=>{if("rid"in e&&!/^[a-z0-9]{0,16}$/i.test(e.rid))throw TypeError("Invalid RID value provided.");if("scaleResolutionDownBy"in e&&!(parseFloat(e.scaleResolutionDownBy)>=1))throw RangeError("scale_resolution_down_by must be >= 1.0");if("maxFramerate"in e&&!(parseFloat(e.maxFramerate)>=0))throw RangeError("max_framerate must be >= 0.0")});let r=t.apply(this,arguments);if(n){let{sender:t}=r,n=t.getParameters();"encodings"in n&&(1!==n.encodings.length||0!==Object.keys(n.encodings[0]).length)||(n.encodings=e,t.sendEncodings=e,this.setParametersPromises.push(t.setParameters(n).then(()=>{delete t.sendEncodings}).catch(()=>{delete t.sendEncodings})))}return r})}function U(e){if(!("object"==typeof e&&e.RTCRtpSender))return;let t=e.RTCRtpSender.prototype.getParameters;t&&(e.RTCRtpSender.prototype.getParameters=function(){let e=t.apply(this,arguments);return"encodings"in e||(e.encodings=[].concat(this.sendEncodings||[{}])),e})}function F(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.createOffer;e.RTCPeerConnection.prototype.createOffer=function(){return this.setParametersPromises&&this.setParametersPromises.length?Promise.all(this.setParametersPromises).then(()=>t.apply(this,arguments)).finally(()=>{this.setParametersPromises=[]}):t.apply(this,arguments)}}function N(e){if(!("object"==typeof e&&e.RTCPeerConnection))return;let t=e.RTCPeerConnection.prototype.createAnswer;e.RTCPeerConnection.prototype.createAnswer=function(){return this.setParametersPromises&&this.setParametersPromises.length?Promise.all(this.setParametersPromises).then(()=>t.apply(this,arguments)).finally(()=>{this.setParametersPromises=[]}):t.apply(this,arguments)}}"use strict";e(E,"shimOnTrack",()=>I),e(E,"shimPeerConnection",()=>M),e(E,"shimSenderGetStats",()=>O),e(E,"shimReceiverGetStats",()=>L),e(E,"shimRemoveStream",()=>A),e(E,"shimRTCDataChannel",()=>j),e(E,"shimAddTransceiver",()=>B),e(E,"shimGetParameters",()=>U),e(E,"shimCreateOffer",()=>F),e(E,"shimCreateAnswer",()=>N),e(E,"shimGetUserMedia",()=>x),e(E,"shimGetDisplayMedia",()=>D);var z={};function $(e){if("object"==typeof e&&e.RTCPeerConnection){if("getLocalStreams"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.getLocalStreams=function(){return this._localStreams||(this._localStreams=[]),this._localStreams}),!("addStream"in e.RTCPeerConnection.prototype)){let t=e.RTCPeerConnection.prototype.addTrack;e.RTCPeerConnection.prototype.addStream=function(e){this._localStreams||(this._localStreams=[]),this._localStreams.includes(e)||this._localStreams.push(e),e.getAudioTracks().forEach(n=>t.call(this,n,e)),e.getVideoTracks().forEach(n=>t.call(this,n,e))},e.RTCPeerConnection.prototype.addTrack=function(e,...n){return n&&n.forEach(e=>{this._localStreams?this._localStreams.includes(e)||this._localStreams.push(e):this._localStreams=[e]}),t.apply(this,arguments)}}"removeStream"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.removeStream=function(e){this._localStreams||(this._localStreams=[]);let t=this._localStreams.indexOf(e);if(-1===t)return;this._localStreams.splice(t,1);let n=e.getTracks();this.getSenders().forEach(e=>{n.includes(e.track)&&this.removeTrack(e)})})}}function V(e){if("object"==typeof e&&e.RTCPeerConnection&&("getRemoteStreams"in e.RTCPeerConnection.prototype||(e.RTCPeerConnection.prototype.getRemoteStreams=function(){return this._remoteStreams?this._remoteStreams:[]}),!("onaddstream"in e.RTCPeerConnection.prototype))){Object.defineProperty(e.RTCPeerConnection.prototype,"onaddstream",{get(){return this._onaddstream},set(e){this._onaddstream&&(this.removeEventListener("addstream",this._onaddstream),this.removeEventListener("track",this._onaddstreampoly)),this.addEventListener("addstream",this._onaddstream=e),this.addEventListener("track",this._onaddstreampoly=e=>{e.streams.forEach(e=>{if(this._remoteStreams||(this._remoteStreams=[]),this._remoteStreams.includes(e))return;this._remoteStreams.push(e);let t=new Event("addstream");t.stream=e,this.dispatchEvent(t)})})}});let t=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){let e=this;return this._onaddstreampoly||this.addEventListener("track",this._onaddstreampoly=function(t){t.streams.forEach(t=>{if(e._remoteStreams||(e._remoteStreams=[]),e._remoteStreams.indexOf(t)>=0)return;e._remoteStreams.push(t);let n=new Event("addstream");n.stream=t,e.dispatchEvent(n)})}),t.apply(e,arguments)}}}function G(e){if("object"!=typeof e||!e.RTCPeerConnection)return;let t=e.RTCPeerConnection.prototype,n=t.createOffer,r=t.createAnswer,i=t.setLocalDescription,s=t.setRemoteDescription,o=t.addIceCandidate;t.createOffer=function(e,t){let r=arguments.length>=2?arguments[2]:arguments[0],i=n.apply(this,[r]);return t?(i.then(e,t),Promise.resolve()):i},t.createAnswer=function(e,t){let n=arguments.length>=2?arguments[2]:arguments[0],i=r.apply(this,[n]);return t?(i.then(e,t),Promise.resolve()):i};let a=function(e,t,n){let r=i.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r};t.setLocalDescription=a,t.setRemoteDescription=a=function(e,t,n){let r=s.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r},t.addIceCandidate=function(e,t,n){let r=o.apply(this,[e]);return n?(r.then(t,n),Promise.resolve()):r}}function J(e){let t=e&&e.navigator;if(t.mediaDevices&&t.mediaDevices.getUserMedia){let e=t.mediaDevices,n=e.getUserMedia.bind(e);t.mediaDevices.getUserMedia=e=>n(W(e))}!t.getUserMedia&&t.mediaDevices&&t.mediaDevices.getUserMedia&&(t.getUserMedia=(function(e,n,r){t.mediaDevices.getUserMedia(e).then(n,r)}).bind(t))}function W(e){return e&&void 0!==e.video?Object.assign({},e,{video:function e(t){return _(t)?Object.keys(t).reduce(function(n,r){let i=_(t[r]),s=i?e(t[r]):t[r],o=i&&!Object.keys(s).length;return void 0===s||o?n:Object.assign(n,{[r]:s})},{}):t}(e.video)}):e}function Y(e){if(!e.RTCPeerConnection)return;let t=e.RTCPeerConnection;e.RTCPeerConnection=function(e,n){if(e&&e.iceServers){let t=[];for(let n=0;n<e.iceServers.length;n++){let r=e.iceServers[n];void 0===r.urls&&r.url?(m("RTCIceServer.url","RTCIceServer.urls"),(r=JSON.parse(JSON.stringify(r))).urls=r.url,delete r.url,t.push(r)):t.push(e.iceServers[n])}e.iceServers=t}return new t(e,n)},e.RTCPeerConnection.prototype=t.prototype,"generateCertificate"in t&&Object.defineProperty(e.RTCPeerConnection,"generateCertificate",{get:()=>t.generateCertificate})}function H(e){"object"==typeof e&&e.RTCTrackEvent&&"receiver"in e.RTCTrackEvent.prototype&&!("transceiver"in e.RTCTrackEvent.prototype)&&Object.defineProperty(e.RTCTrackEvent.prototype,"transceiver",{get(){return{receiver:this.receiver}}})}function K(e){let t=e.RTCPeerConnection.prototype.createOffer;e.RTCPeerConnection.prototype.createOffer=function(e){if(e){void 0!==e.offerToReceiveAudio&&(e.offerToReceiveAudio=!!e.offerToReceiveAudio);let t=this.getTransceivers().find(e=>"audio"===e.receiver.track.kind);!1===e.offerToReceiveAudio&&t?"sendrecv"===t.direction?t.setDirection?t.setDirection("sendonly"):t.direction="sendonly":"recvonly"===t.direction&&(t.setDirection?t.setDirection("inactive"):t.direction="inactive"):!0!==e.offerToReceiveAudio||t||this.addTransceiver("audio",{direction:"recvonly"}),void 0!==e.offerToReceiveVideo&&(e.offerToReceiveVideo=!!e.offerToReceiveVideo);let n=this.getTransceivers().find(e=>"video"===e.receiver.track.kind);!1===e.offerToReceiveVideo&&n?"sendrecv"===n.direction?n.setDirection?n.setDirection("sendonly"):n.direction="sendonly":"recvonly"===n.direction&&(n.setDirection?n.setDirection("inactive"):n.direction="inactive"):!0!==e.offerToReceiveVideo||n||this.addTransceiver("video",{direction:"recvonly"})}return t.apply(this,arguments)}}function X(e){"object"!=typeof e||e.AudioContext||(e.AudioContext=e.webkitAudioContext)}e(z,"shimLocalStreamsAPI",()=>$),e(z,"shimRemoteStreamsAPI",()=>V),e(z,"shimCallbacksAPI",()=>G),e(z,"shimGetUserMedia",()=>J),e(z,"shimConstraints",()=>W),e(z,"shimRTCIceServerUrls",()=>Y),e(z,"shimTrackEventTransceiver",()=>H),e(z,"shimCreateOfferLegacy",()=>K),e(z,"shimAudioContext",()=>X);var Q={};"use strict";e(Q,"shimRTCIceCandidate",()=>ee),e(Q,"shimRTCIceCandidateRelayProtocol",()=>et),e(Q,"shimMaxMessageSize",()=>en),e(Q,"shimSendThrowTypeError",()=>er),e(Q,"shimConnectionState",()=>ei),e(Q,"removeExtmapAllowMixed",()=>es),e(Q,"shimAddIceCandidateNullOrEmpty",()=>eo),e(Q,"shimParameterlessSetLocalDescription",()=>ea);var q={};"use strict";let Z={};function ee(e){if(!e.RTCIceCandidate||e.RTCIceCandidate&&"foundation"in e.RTCIceCandidate.prototype)return;let n=e.RTCIceCandidate;e.RTCIceCandidate=function(e){if("object"==typeof e&&e.candidate&&0===e.candidate.indexOf("a=")&&((e=JSON.parse(JSON.stringify(e))).candidate=e.candidate.substring(2)),e.candidate&&e.candidate.length){let r=new n(e),i=t(q).parseCandidate(e.candidate);for(let e in i)e in r||Object.defineProperty(r,e,{value:i[e]});return r.toJSON=function(){return{candidate:r.candidate,sdpMid:r.sdpMid,sdpMLineIndex:r.sdpMLineIndex,usernameFragment:r.usernameFragment}},r}return new n(e)},e.RTCIceCandidate.prototype=n.prototype,l(e,"icecandidate",t=>(t.candidate&&Object.defineProperty(t,"candidate",{value:new e.RTCIceCandidate(t.candidate),writable:"false"}),t))}function et(e){!e.RTCIceCandidate||e.RTCIceCandidate&&"relayProtocol"in e.RTCIceCandidate.prototype||l(e,"icecandidate",e=>{if(e.candidate){let n=t(q).parseCandidate(e.candidate.candidate);"relay"===n.type&&(e.candidate.relayProtocol=({0:"tls",1:"tcp",2:"udp"})[n.priority>>24])}return e})}function en(e,n){if(!e.RTCPeerConnection)return;"sctp"in e.RTCPeerConnection.prototype||Object.defineProperty(e.RTCPeerConnection.prototype,"sctp",{get(){return void 0===this._sctp?null:this._sctp}});let r=function(e){if(!e||!e.sdp)return!1;let n=t(q).splitSections(e.sdp);return n.shift(),n.some(e=>{let n=t(q).parseMLine(e);return n&&"application"===n.kind&&-1!==n.protocol.indexOf("SCTP")})},i=function(e){let t=e.sdp.match(/mozilla...THIS_IS_SDPARTA-(\d+)/);if(null===t||t.length<2)return -1;let n=parseInt(t[1],10);return n!=n?-1:n},s=function(e){let t=65536;return"firefox"===n.browser&&(t=n.version<57?-1===e?16384:0x7ffffff5:n.version<60?57===n.version?65535:65536:0x7ffffff5),t},o=function(e,r){let i=65536;"firefox"===n.browser&&57===n.version&&(i=65535);let s=t(q).matchPrefix(e.sdp,"a=max-message-size:");return s.length>0?i=parseInt(s[0].substring(19),10):"firefox"===n.browser&&-1!==r&&(i=0x7ffffff5),i},a=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(){if(this._sctp=null,"chrome"===n.browser&&n.version>=76){let{sdpSemantics:e}=this.getConfiguration();"plan-b"===e&&Object.defineProperty(this,"sctp",{get(){return void 0===this._sctp?null:this._sctp},enumerable:!0,configurable:!0})}if(r(arguments[0])){let e,t=i(arguments[0]),n=s(t),r=o(arguments[0],t);e=0===n&&0===r?Number.POSITIVE_INFINITY:0===n||0===r?Math.max(n,r):Math.min(n,r);let a={};Object.defineProperty(a,"maxMessageSize",{get:()=>e}),this._sctp=a}return a.apply(this,arguments)}}function er(e){if(!(e.RTCPeerConnection&&"createDataChannel"in e.RTCPeerConnection.prototype))return;function t(e,t){let n=e.send;e.send=function(){let r=arguments[0],i=r.length||r.size||r.byteLength;if("open"===e.readyState&&t.sctp&&i>t.sctp.maxMessageSize)throw TypeError("Message too large (can send a maximum of "+t.sctp.maxMessageSize+" bytes)");return n.apply(e,arguments)}}let n=e.RTCPeerConnection.prototype.createDataChannel;e.RTCPeerConnection.prototype.createDataChannel=function(){let e=n.apply(this,arguments);return t(e,this),e},l(e,"datachannel",e=>(t(e.channel,e.target),e))}function ei(e){if(!e.RTCPeerConnection||"connectionState"in e.RTCPeerConnection.prototype)return;let t=e.RTCPeerConnection.prototype;Object.defineProperty(t,"connectionState",{get(){return({completed:"connected",checking:"connecting"})[this.iceConnectionState]||this.iceConnectionState},enumerable:!0,configurable:!0}),Object.defineProperty(t,"onconnectionstatechange",{get(){return this._onconnectionstatechange||null},set(e){this._onconnectionstatechange&&(this.removeEventListener("connectionstatechange",this._onconnectionstatechange),delete this._onconnectionstatechange),e&&this.addEventListener("connectionstatechange",this._onconnectionstatechange=e)},enumerable:!0,configurable:!0}),["setLocalDescription","setRemoteDescription"].forEach(e=>{let n=t[e];t[e]=function(){return this._connectionstatechangepoly||(this._connectionstatechangepoly=e=>{let t=e.target;if(t._lastConnectionState!==t.connectionState){t._lastConnectionState=t.connectionState;let n=new Event("connectionstatechange",e);t.dispatchEvent(n)}return e},this.addEventListener("iceconnectionstatechange",this._connectionstatechangepoly)),n.apply(this,arguments)}})}function es(e,t){if(!e.RTCPeerConnection||"chrome"===t.browser&&t.version>=71||"safari"===t.browser&&t.version>=605)return;let n=e.RTCPeerConnection.prototype.setRemoteDescription;e.RTCPeerConnection.prototype.setRemoteDescription=function(t){if(t&&t.sdp&&-1!==t.sdp.indexOf("\na=extmap-allow-mixed")){let n=t.sdp.split("\n").filter(e=>"a=extmap-allow-mixed"!==e.trim()).join("\n");e.RTCSessionDescription&&t instanceof e.RTCSessionDescription?arguments[0]=new e.RTCSessionDescription({type:t.type,sdp:n}):t.sdp=n}return n.apply(this,arguments)}}function eo(e,t){if(!(e.RTCPeerConnection&&e.RTCPeerConnection.prototype))return;let n=e.RTCPeerConnection.prototype.addIceCandidate;n&&0!==n.length&&(e.RTCPeerConnection.prototype.addIceCandidate=function(){return arguments[0]?("chrome"===t.browser&&t.version<78||"firefox"===t.browser&&t.version<68||"safari"===t.browser)&&arguments[0]&&""===arguments[0].candidate?Promise.resolve():n.apply(this,arguments):(arguments[1]&&arguments[1].apply(null),Promise.resolve())})}function ea(e,t){if(!(e.RTCPeerConnection&&e.RTCPeerConnection.prototype))return;let n=e.RTCPeerConnection.prototype.setLocalDescription;n&&0!==n.length&&(e.RTCPeerConnection.prototype.setLocalDescription=function(){let e=arguments[0]||{};if("object"!=typeof e||e.type&&e.sdp)return n.apply(this,arguments);if(!(e={type:e.type,sdp:e.sdp}).type)switch(this.signalingState){case"stable":case"have-local-offer":case"have-remote-pranswer":e.type="offer";break;default:e.type="answer"}return e.sdp||"offer"!==e.type&&"answer"!==e.type?n.apply(this,[e]):("offer"===e.type?this.createOffer:this.createAnswer).apply(this).then(e=>n.apply(this,[e]))})}"use strict";Z.generateIdentifier=function(){return Math.random().toString(36).substring(2,12)},Z.localCName=Z.generateIdentifier(),Z.splitLines=function(e){return e.trim().split("\n").map(e=>e.trim())},Z.splitSections=function(e){return e.split("\nm=").map((e,t)=>(t>0?"m="+e:e).trim()+"\r\n")},Z.getDescription=function(e){let t=Z.splitSections(e);return t&&t[0]},Z.getMediaSections=function(e){let t=Z.splitSections(e);return t.shift(),t},Z.matchPrefix=function(e,t){return Z.splitLines(e).filter(e=>0===e.indexOf(t))},Z.parseCandidate=function(e){let t,n={foundation:(t=0===e.indexOf("a=candidate:")?e.substring(12).split(" "):e.substring(10).split(" "))[0],component:{1:"rtp",2:"rtcp"}[t[1]]||t[1],protocol:t[2].toLowerCase(),priority:parseInt(t[3],10),ip:t[4],address:t[4],port:parseInt(t[5],10),type:t[7]};for(let e=8;e<t.length;e+=2)switch(t[e]){case"raddr":n.relatedAddress=t[e+1];break;case"rport":n.relatedPort=parseInt(t[e+1],10);break;case"tcptype":n.tcpType=t[e+1];break;case"ufrag":n.ufrag=t[e+1],n.usernameFragment=t[e+1];break;default:void 0===n[t[e]]&&(n[t[e]]=t[e+1])}return n},Z.writeCandidate=function(e){let t=[];t.push(e.foundation);let n=e.component;"rtp"===n?t.push(1):"rtcp"===n?t.push(2):t.push(n),t.push(e.protocol.toUpperCase()),t.push(e.priority),t.push(e.address||e.ip),t.push(e.port);let r=e.type;return t.push("typ"),t.push(r),"host"!==r&&e.relatedAddress&&e.relatedPort&&(t.push("raddr"),t.push(e.relatedAddress),t.push("rport"),t.push(e.relatedPort)),e.tcpType&&"tcp"===e.protocol.toLowerCase()&&(t.push("tcptype"),t.push(e.tcpType)),(e.usernameFragment||e.ufrag)&&(t.push("ufrag"),t.push(e.usernameFragment||e.ufrag)),"candidate:"+t.join(" ")},Z.parseIceOptions=function(e){return e.substring(14).split(" ")},Z.parseRtpMap=function(e){let t=e.substring(9).split(" "),n={payloadType:parseInt(t.shift(),10)};return n.name=(t=t[0].split("/"))[0],n.clockRate=parseInt(t[1],10),n.channels=3===t.length?parseInt(t[2],10):1,n.numChannels=n.channels,n},Z.writeRtpMap=function(e){let t=e.payloadType;void 0!==e.preferredPayloadType&&(t=e.preferredPayloadType);let n=e.channels||e.numChannels||1;return"a=rtpmap:"+t+" "+e.name+"/"+e.clockRate+(1!==n?"/"+n:"")+"\r\n"},Z.parseExtmap=function(e){let t=e.substring(9).split(" ");return{id:parseInt(t[0],10),direction:t[0].indexOf("/")>0?t[0].split("/")[1]:"sendrecv",uri:t[1],attributes:t.slice(2).join(" ")}},Z.writeExtmap=function(e){return"a=extmap:"+(e.id||e.preferredId)+(e.direction&&"sendrecv"!==e.direction?"/"+e.direction:"")+" "+e.uri+(e.attributes?" "+e.attributes:"")+"\r\n"},Z.parseFmtp=function(e){let t,n={},r=e.substring(e.indexOf(" ")+1).split(";");for(let e=0;e<r.length;e++)n[(t=r[e].trim().split("="))[0].trim()]=t[1];return n},Z.writeFmtp=function(e){let t="",n=e.payloadType;if(void 0!==e.preferredPayloadType&&(n=e.preferredPayloadType),e.parameters&&Object.keys(e.parameters).length){let r=[];Object.keys(e.parameters).forEach(t=>{void 0!==e.parameters[t]?r.push(t+"="+e.parameters[t]):r.push(t)}),t+="a=fmtp:"+n+" "+r.join(";")+"\r\n"}return t},Z.parseRtcpFb=function(e){let t=e.substring(e.indexOf(" ")+1).split(" ");return{type:t.shift(),parameter:t.join(" ")}},Z.writeRtcpFb=function(e){let t="",n=e.payloadType;return void 0!==e.preferredPayloadType&&(n=e.preferredPayloadType),e.rtcpFeedback&&e.rtcpFeedback.length&&e.rtcpFeedback.forEach(e=>{t+="a=rtcp-fb:"+n+" "+e.type+(e.parameter&&e.parameter.length?" "+e.parameter:"")+"\r\n"}),t},Z.parseSsrcMedia=function(e){let t=e.indexOf(" "),n={ssrc:parseInt(e.substring(7,t),10)},r=e.indexOf(":",t);return r>-1?(n.attribute=e.substring(t+1,r),n.value=e.substring(r+1)):n.attribute=e.substring(t+1),n},Z.parseSsrcGroup=function(e){let t=e.substring(13).split(" ");return{semantics:t.shift(),ssrcs:t.map(e=>parseInt(e,10))}},Z.getMid=function(e){let t=Z.matchPrefix(e,"a=mid:")[0];if(t)return t.substring(6)},Z.parseFingerprint=function(e){let t=e.substring(14).split(" ");return{algorithm:t[0].toLowerCase(),value:t[1].toUpperCase()}},Z.getDtlsParameters=function(e,t){return{role:"auto",fingerprints:Z.matchPrefix(e+t,"a=fingerprint:").map(Z.parseFingerprint)}},Z.writeDtlsParameters=function(e,t){let n="a=setup:"+t+"\r\n";return e.fingerprints.forEach(e=>{n+="a=fingerprint:"+e.algorithm+" "+e.value+"\r\n"}),n},Z.parseCryptoLine=function(e){let t=e.substring(9).split(" ");return{tag:parseInt(t[0],10),cryptoSuite:t[1],keyParams:t[2],sessionParams:t.slice(3)}},Z.writeCryptoLine=function(e){return"a=crypto:"+e.tag+" "+e.cryptoSuite+" "+("object"==typeof e.keyParams?Z.writeCryptoKeyParams(e.keyParams):e.keyParams)+(e.sessionParams?" "+e.sessionParams.join(" "):"")+"\r\n"},Z.parseCryptoKeyParams=function(e){if(0!==e.indexOf("inline:"))return null;let t=e.substring(7).split("|");return{keyMethod:"inline",keySalt:t[0],lifeTime:t[1],mkiValue:t[2]?t[2].split(":")[0]:void 0,mkiLength:t[2]?t[2].split(":")[1]:void 0}},Z.writeCryptoKeyParams=function(e){return e.keyMethod+":"+e.keySalt+(e.lifeTime?"|"+e.lifeTime:"")+(e.mkiValue&&e.mkiLength?"|"+e.mkiValue+":"+e.mkiLength:"")},Z.getCryptoParameters=function(e,t){return Z.matchPrefix(e+t,"a=crypto:").map(Z.parseCryptoLine)},Z.getIceParameters=function(e,t){let n=Z.matchPrefix(e+t,"a=ice-ufrag:")[0],r=Z.matchPrefix(e+t,"a=ice-pwd:")[0];return n&&r?{usernameFragment:n.substring(12),password:r.substring(10)}:null},Z.writeIceParameters=function(e){let t="a=ice-ufrag:"+e.usernameFragment+"\r\na=ice-pwd:"+e.password+"\r\n";return e.iceLite&&(t+="a=ice-lite\r\n"),t},Z.parseRtpParameters=function(e){let t={codecs:[],headerExtensions:[],fecMechanisms:[],rtcp:[]},n=Z.splitLines(e)[0].split(" ");t.profile=n[2];for(let r=3;r<n.length;r++){let i=n[r],s=Z.matchPrefix(e,"a=rtpmap:"+i+" ")[0];if(s){let n=Z.parseRtpMap(s),r=Z.matchPrefix(e,"a=fmtp:"+i+" ");switch(n.parameters=r.length?Z.parseFmtp(r[0]):{},n.rtcpFeedback=Z.matchPrefix(e,"a=rtcp-fb:"+i+" ").map(Z.parseRtcpFb),t.codecs.push(n),n.name.toUpperCase()){case"RED":case"ULPFEC":t.fecMechanisms.push(n.name.toUpperCase())}}}Z.matchPrefix(e,"a=extmap:").forEach(e=>{t.headerExtensions.push(Z.parseExtmap(e))});let r=Z.matchPrefix(e,"a=rtcp-fb:* ").map(Z.parseRtcpFb);return t.codecs.forEach(e=>{r.forEach(t=>{e.rtcpFeedback.find(e=>e.type===t.type&&e.parameter===t.parameter)||e.rtcpFeedback.push(t)})}),t},Z.writeRtpDescription=function(e,t){let n="";n+="m="+e+" ",n+=t.codecs.length>0?"9":"0",n+=" "+(t.profile||"UDP/TLS/RTP/SAVPF")+" ",n+=t.codecs.map(e=>void 0!==e.preferredPayloadType?e.preferredPayloadType:e.payloadType).join(" ")+"\r\n",n+="c=IN IP4 0.0.0.0\r\n",n+="a=rtcp:9 IN IP4 0.0.0.0\r\n",t.codecs.forEach(e=>{n+=Z.writeRtpMap(e),n+=Z.writeFmtp(e),n+=Z.writeRtcpFb(e)});let r=0;return t.codecs.forEach(e=>{e.maxptime>r&&(r=e.maxptime)}),r>0&&(n+="a=maxptime:"+r+"\r\n"),t.headerExtensions&&t.headerExtensions.forEach(e=>{n+=Z.writeExtmap(e)}),n},Z.parseRtpEncodingParameters=function(e){let t,n=[],r=Z.parseRtpParameters(e),i=-1!==r.fecMechanisms.indexOf("RED"),s=-1!==r.fecMechanisms.indexOf("ULPFEC"),o=Z.matchPrefix(e,"a=ssrc:").map(e=>Z.parseSsrcMedia(e)).filter(e=>"cname"===e.attribute),a=o.length>0&&o[0].ssrc,c=Z.matchPrefix(e,"a=ssrc-group:FID").map(e=>e.substring(17).split(" ").map(e=>parseInt(e,10)));c.length>0&&c[0].length>1&&c[0][0]===a&&(t=c[0][1]),r.codecs.forEach(e=>{if("RTX"===e.name.toUpperCase()&&e.parameters.apt){let r={ssrc:a,codecPayloadType:parseInt(e.parameters.apt,10)};a&&t&&(r.rtx={ssrc:t}),n.push(r),i&&((r=JSON.parse(JSON.stringify(r))).fec={ssrc:a,mechanism:s?"red+ulpfec":"red"},n.push(r))}}),0===n.length&&a&&n.push({ssrc:a});let p=Z.matchPrefix(e,"b=");return p.length&&(p=0===p[0].indexOf("b=TIAS:")?parseInt(p[0].substring(7),10):0===p[0].indexOf("b=AS:")?950*parseInt(p[0].substring(5),10)-16e3:void 0,n.forEach(e=>{e.maxBitrate=p})),n},Z.parseRtcpParameters=function(e){let t={},n=Z.matchPrefix(e,"a=ssrc:").map(e=>Z.parseSsrcMedia(e)).filter(e=>"cname"===e.attribute)[0];n&&(t.cname=n.value,t.ssrc=n.ssrc);let r=Z.matchPrefix(e,"a=rtcp-rsize");return t.reducedSize=r.length>0,t.compound=0===r.length,t.mux=Z.matchPrefix(e,"a=rtcp-mux").length>0,t},Z.writeRtcpParameters=function(e){let t="";return e.reducedSize&&(t+="a=rtcp-rsize\r\n"),e.mux&&(t+="a=rtcp-mux\r\n"),void 0!==e.ssrc&&e.cname&&(t+="a=ssrc:"+e.ssrc+" cname:"+e.cname+"\r\n"),t},Z.parseMsid=function(e){let t,n=Z.matchPrefix(e,"a=msid:");if(1===n.length)return{stream:(t=n[0].substring(7).split(" "))[0],track:t[1]};let r=Z.matchPrefix(e,"a=ssrc:").map(e=>Z.parseSsrcMedia(e)).filter(e=>"msid"===e.attribute);if(r.length>0)return{stream:(t=r[0].value.split(" "))[0],track:t[1]}},Z.parseSctpDescription=function(e){let t,n=Z.parseMLine(e),r=Z.matchPrefix(e,"a=max-message-size:");r.length>0&&(t=parseInt(r[0].substring(19),10)),isNaN(t)&&(t=65536);let i=Z.matchPrefix(e,"a=sctp-port:");if(i.length>0)return{port:parseInt(i[0].substring(12),10),protocol:n.fmt,maxMessageSize:t};let s=Z.matchPrefix(e,"a=sctpmap:");if(s.length>0){let e=s[0].substring(10).split(" ");return{port:parseInt(e[0],10),protocol:e[1],maxMessageSize:t}}},Z.writeSctpDescription=function(e,t){let n=[];return n="DTLS/SCTP"!==e.protocol?["m="+e.kind+" 9 "+e.protocol+" "+t.protocol+"\r\n","c=IN IP4 0.0.0.0\r\n","a=sctp-port:"+t.port+"\r\n"]:["m="+e.kind+" 9 "+e.protocol+" "+t.port+"\r\n","c=IN IP4 0.0.0.0\r\n","a=sctpmap:"+t.port+" "+t.protocol+" 65535\r\n"],void 0!==t.maxMessageSize&&n.push("a=max-message-size:"+t.maxMessageSize+"\r\n"),n.join("")},Z.generateSessionId=function(){return Math.random().toString().substr(2,22)},Z.writeSessionBoilerplate=function(e,t,n){return"v=0\r\no="+(n||"thisisadapterortc")+" "+(e||Z.generateSessionId())+" "+(void 0!==t?t:2)+" IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n"},Z.getDirection=function(e,t){let n=Z.splitLines(e);for(let e=0;e<n.length;e++)switch(n[e]){case"a=sendrecv":case"a=sendonly":case"a=recvonly":case"a=inactive":return n[e].substring(2)}return t?Z.getDirection(t):"sendrecv"},Z.getKind=function(e){return Z.splitLines(e)[0].split(" ")[0].substring(2)},Z.isRejected=function(e){return"0"===e.split(" ",2)[1]},Z.parseMLine=function(e){let t=Z.splitLines(e)[0].substring(2).split(" ");return{kind:t[0],port:parseInt(t[1],10),protocol:t[2],fmt:t.slice(3).join(" ")}},Z.parseOLine=function(e){let t=Z.matchPrefix(e,"o=")[0].substring(2).split(" ");return{username:t[0],sessionId:t[1],sessionVersion:parseInt(t[2],10),netType:t[3],addressType:t[4],address:t[5]}},Z.isValidSDP=function(e){if("string"!=typeof e||0===e.length)return!1;let t=Z.splitLines(e);for(let e=0;e<t.length;e++)if(t[e].length<2||"="!==t[e].charAt(1))return!1;return!0},q=Z;let ec=function({window:e}={},t={shimChrome:!0,shimFirefox:!0,shimSafari:!0}){let n=function(e){let t={browser:null,version:null};if(void 0===e||!e.navigator||!e.navigator.userAgent)return t.browser="Not a browser.",t;let{navigator:n}=e;if(n.userAgentData&&n.userAgentData.brands){let e=n.userAgentData.brands.find(e=>"Chromium"===e.brand);if(e)return{browser:"chrome",version:parseInt(e.version,10)}}return n.mozGetUserMedia?(t.browser="firefox",t.version=d(n.userAgent,/Firefox\/(\d+)\./,1)):n.webkitGetUserMedia||!1===e.isSecureContext&&e.webkitRTCPeerConnection?(t.browser="chrome",t.version=d(n.userAgent,/Chrom(e|ium)\/(\d+)\./,2)):e.RTCPeerConnection&&n.userAgent.match(/AppleWebKit\/(\d+)\./)?(t.browser="safari",t.version=d(n.userAgent,/AppleWebKit\/(\d+)\./,1),t.supportsUnifiedPlan=e.RTCRtpTransceiver&&"currentDirection"in e.RTCRtpTransceiver.prototype):t.browser="Not a supported browser.",t}(e),r={browserDetails:n,commonShim:Q,extractVersion:d,disableLog:h,disableWarnings:u,sdp:q};switch(n.browser){case"chrome":if(!y||!y.shimPeerConnection||!t.shimChrome){f("Chrome shim is not included in this adapter release.");break}if(null===n.version){f("Chrome shim can not determine version, not shimming.");break}f("adapter.js shimming chrome."),r.browserShim=y,eo(e,n),ea(e,n),y.shimGetUserMedia(e,n),y.shimMediaStream(e,n),y.shimPeerConnection(e,n),y.shimOnTrack(e,n),y.shimAddTrackRemoveTrack(e,n),y.shimGetSendersWithDtmf(e,n),y.shimSenderReceiverGetStats(e,n),y.fixNegotiationNeeded(e,n),ee(e,n),et(e,n),ei(e,n),en(e,n),er(e,n),es(e,n);break;case"firefox":if(!E||!E.shimPeerConnection||!t.shimFirefox){f("Firefox shim is not included in this adapter release.");break}f("adapter.js shimming firefox."),r.browserShim=E,eo(e,n),ea(e,n),E.shimGetUserMedia(e,n),E.shimPeerConnection(e,n),E.shimOnTrack(e,n),E.shimRemoveStream(e,n),E.shimSenderGetStats(e,n),E.shimReceiverGetStats(e,n),E.shimRTCDataChannel(e,n),E.shimAddTransceiver(e,n),E.shimGetParameters(e,n),E.shimCreateOffer(e,n),E.shimCreateAnswer(e,n),ee(e,n),ei(e,n),en(e,n),er(e,n);break;case"safari":if(!z||!t.shimSafari){f("Safari shim is not included in this adapter release.");break}f("adapter.js shimming safari."),r.browserShim=z,eo(e,n),ea(e,n),z.shimRTCIceServerUrls(e,n),z.shimCreateOfferLegacy(e,n),z.shimCallbacksAPI(e,n),z.shimLocalStreamsAPI(e,n),z.shimRemoteStreamsAPI(e,n),z.shimTrackEventTransceiver(e,n),z.shimGetUserMedia(e,n),z.shimAudioContext(e,n),ee(e,n),et(e,n),en(e,n),er(e,n),es(e,n);break;default:f("Unsupported browser!")}return r}({window:"undefined"==typeof window?void 0:window}),ep=ec.default||ec,ed=new class{isWebRTCSupported(){return"undefined"!=typeof RTCPeerConnection}isBrowserSupported(){let e=this.getBrowser(),t=this.getVersion();return!!this.supportedBrowsers.includes(e)&&("chrome"===e?t>=this.minChromeVersion:"firefox"===e?t>=this.minFirefoxVersion:"safari"===e&&!this.isIOS&&t>=this.minSafariVersion)}getBrowser(){return ep.browserDetails.browser}getVersion(){return ep.browserDetails.version||0}isUnifiedPlanSupported(){let e,t=this.getBrowser(),n=ep.browserDetails.version||0;if("chrome"===t&&n<this.minChromeVersion)return!1;if("firefox"===t&&n>=this.minFirefoxVersion)return!0;if(!window.RTCRtpTransceiver||!("currentDirection"in RTCRtpTransceiver.prototype))return!1;let r=!1;try{(e=new RTCPeerConnection).addTransceiver("audio"),r=!0}catch(e){}finally{e&&e.close()}return r}toString(){return`Supports:
+    browser:${this.getBrowser()}
+    version:${this.getVersion()}
+    isIOS:${this.isIOS}
+    isWebRTCSupported:${this.isWebRTCSupported()}
+    isBrowserSupported:${this.isBrowserSupported()}
+    isUnifiedPlanSupported:${this.isUnifiedPlanSupported()}`}constructor(){this.isIOS="undefined"!=typeof navigator&&["iPad","iPhone","iPod"].includes(navigator.platform),this.supportedBrowsers=["firefox","chrome","safari"],this.minFirefoxVersion=59,this.minChromeVersion=72,this.minSafariVersion=605}},el=e=>!e||/^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$/.test(e),eh=()=>Math.random().toString(36).slice(2),eu={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:["turn:eu-0.turn.peerjs.com:3478","turn:us-0.turn.peerjs.com:3478"],username:"peerjs",credential:"peerjsp"}],sdpSemantics:"unified-plan"},ef=new class extends n{noop(){}blobToArrayBuffer(e,t){let n=new FileReader;return n.onload=function(e){e.target&&t(e.target.result)},n.readAsArrayBuffer(e),n}binaryStringToArrayBuffer(e){let t=new Uint8Array(e.length);for(let n=0;n<e.length;n++)t[n]=255&e.charCodeAt(n);return t.buffer}isSecure(){return"https:"===location.protocol}constructor(...e){super(...e),this.CLOUD_HOST="0.peerjs.com",this.CLOUD_PORT=443,this.chunkedBrowsers={Chrome:1,chrome:1},this.defaultConfig=eu,this.browser=ed.getBrowser(),this.browserVersion=ed.getVersion(),this.pack=s,this.unpack=i,this.supports=function(){let e,t={browser:ed.isBrowserSupported(),webRTC:ed.isWebRTCSupported(),audioVideo:!1,data:!1,binaryBlob:!1,reliable:!1};if(!t.webRTC)return t;try{let n;e=new RTCPeerConnection(eu),t.audioVideo=!0;try{n=e.createDataChannel("_PEERJSTEST",{ordered:!0}),t.data=!0,t.reliable=!!n.ordered;try{n.binaryType="blob",t.binaryBlob=!ed.isIOS}catch(e){}}catch(e){}finally{n&&n.close()}}catch(e){}finally{e&&e.close()}return t}(),this.validateId=el,this.randomToken=eh}};"use strict";var em=new class{get logLevel(){return this._logLevel}set logLevel(e){this._logLevel=e}log(...e){this._logLevel>=3&&this._print(3,...e)}warn(...e){this._logLevel>=2&&this._print(2,...e)}error(...e){this._logLevel>=1&&this._print(1,...e)}setLogFunction(e){this._print=e}_print(e,...t){let n=["PeerJS: ",...t];for(let e in n)n[e]instanceof Error&&(n[e]="("+n[e].name+") "+n[e].message);e>=3?console.log(...n):e>=2?console.warn("WARNING",...n):e>=1&&console.error("ERROR",...n)}constructor(){this._logLevel=0}},e_={},eg=Object.prototype.hasOwnProperty,ey="~";function eC(){}function ev(e,t,n){this.fn=e,this.context=t,this.once=n||!1}function eb(e,t,n,r,i){if("function"!=typeof n)throw TypeError("The listener must be a function");var s=new ev(n,r||e,i),o=ey?ey+t:t;return e._events[o]?e._events[o].fn?e._events[o]=[e._events[o],s]:e._events[o].push(s):(e._events[o]=s,e._eventsCount++),e}function eT(e,t){0==--e._eventsCount?e._events=new eC:delete e._events[t]}function eS(){this._events=new eC,this._eventsCount=0}Object.create&&(eC.prototype=Object.create(null),new eC().__proto__||(ey=!1)),eS.prototype.eventNames=function(){var e,t,n=[];if(0===this._eventsCount)return n;for(t in e=this._events)eg.call(e,t)&&n.push(ey?t.slice(1):t);return Object.getOwnPropertySymbols?n.concat(Object.getOwnPropertySymbols(e)):n},eS.prototype.listeners=function(e){var t=ey?ey+e:e,n=this._events[t];if(!n)return[];if(n.fn)return[n.fn];for(var r=0,i=n.length,s=Array(i);r<i;r++)s[r]=n[r].fn;return s},eS.prototype.listenerCount=function(e){var t=ey?ey+e:e,n=this._events[t];return n?n.fn?1:n.length:0},eS.prototype.emit=function(e,t,n,r,i,s){var o=ey?ey+e:e;if(!this._events[o])return!1;var a,c,p=this._events[o],d=arguments.length;if(p.fn){switch(p.once&&this.removeListener(e,p.fn,void 0,!0),d){case 1:return p.fn.call(p.context),!0;case 2:return p.fn.call(p.context,t),!0;case 3:return p.fn.call(p.context,t,n),!0;case 4:return p.fn.call(p.context,t,n,r),!0;case 5:return p.fn.call(p.context,t,n,r,i),!0;case 6:return p.fn.call(p.context,t,n,r,i,s),!0}for(c=1,a=Array(d-1);c<d;c++)a[c-1]=arguments[c];p.fn.apply(p.context,a)}else{var l,h=p.length;for(c=0;c<h;c++)switch(p[c].once&&this.removeListener(e,p[c].fn,void 0,!0),d){case 1:p[c].fn.call(p[c].context);break;case 2:p[c].fn.call(p[c].context,t);break;case 3:p[c].fn.call(p[c].context,t,n);break;case 4:p[c].fn.call(p[c].context,t,n,r);break;default:if(!a)for(l=1,a=Array(d-1);l<d;l++)a[l-1]=arguments[l];p[c].fn.apply(p[c].context,a)}}return!0},eS.prototype.on=function(e,t,n){return eb(this,e,t,n,!1)},eS.prototype.once=function(e,t,n){return eb(this,e,t,n,!0)},eS.prototype.removeListener=function(e,t,n,r){var i=ey?ey+e:e;if(!this._events[i])return this;if(!t)return eT(this,i),this;var s=this._events[i];if(s.fn)s.fn!==t||r&&!s.once||n&&s.context!==n||eT(this,i);else{for(var o=0,a=[],c=s.length;o<c;o++)(s[o].fn!==t||r&&!s[o].once||n&&s[o].context!==n)&&a.push(s[o]);a.length?this._events[i]=1===a.length?a[0]:a:eT(this,i)}return this},eS.prototype.removeAllListeners=function(e){var t;return e?(t=ey?ey+e:e,this._events[t]&&eT(this,t)):(this._events=new eC,this._eventsCount=0),this},eS.prototype.off=eS.prototype.removeListener,eS.prototype.addListener=eS.prototype.on,eS.prefixed=ey,eS.EventEmitter=eS,e_=eS;var ek=function(e){return e.Data="data",e.Media="media",e}({}),eR=function(e){return e.BrowserIncompatible="browser-incompatible",e.Disconnected="disconnected",e.InvalidID="invalid-id",e.InvalidKey="invalid-key",e.Network="network",e.PeerUnavailable="peer-unavailable",e.SslUnavailable="ssl-unavailable",e.ServerError="server-error",e.SocketError="socket-error",e.SocketClosed="socket-closed",e.UnavailableID="unavailable-id",e.WebRTC="webrtc",e}({}),eP=function(e){return e.NegotiationFailed="negotiation-failed",e.ConnectionClosed="connection-closed",e}({}),ew=function(e){return e.NotOpenYet="not-open-yet",e.MessageToBig="message-too-big",e}({}),eE=function(e){return e.Binary="binary",e.BinaryUTF8="binary-utf8",e.JSON="json",e.None="raw",e}({}),ex=function(e){return e.Message="message",e.Disconnected="disconnected",e.Error="error",e.Close="close",e}({}),eD=function(e){return e.Heartbeat="HEARTBEAT",e.Candidate="CANDIDATE",e.Offer="OFFER",e.Answer="ANSWER",e.Open="OPEN",e.Error="ERROR",e.IdTaken="ID-TAKEN",e.InvalidKey="INVALID-KEY",e.Leave="LEAVE",e.Expire="EXPIRE",e}({});let eI="1.5.5";class eM extends e_.EventEmitter{start(e,t){this._id=e;let n=`${this._baseUrl}&id=${e}&token=${t}`;!this._socket&&this._disconnected&&(this._socket=new WebSocket(n+"&version="+eI),this._disconnected=!1,this._socket.onmessage=e=>{let t;try{t=JSON.parse(e.data),em.log("Server message received:",t)}catch(t){em.log("Invalid server message",e.data);return}this.emit(ex.Message,t)},this._socket.onclose=e=>{this._disconnected||(em.log("Socket closed.",e),this._cleanup(),this._disconnected=!0,this.emit(ex.Disconnected))},this._socket.onopen=()=>{this._disconnected||(this._sendQueuedMessages(),em.log("Socket open"),this._scheduleHeartbeat())})}_scheduleHeartbeat(){this._wsPingTimer=setTimeout(()=>{this._sendHeartbeat()},this.pingInterval)}_sendHeartbeat(){if(!this._wsOpen())return void em.log("Cannot send heartbeat, because socket closed");let e=JSON.stringify({type:eD.Heartbeat});this._socket.send(e),this._scheduleHeartbeat()}_wsOpen(){return!!this._socket&&1===this._socket.readyState}_sendQueuedMessages(){let e=[...this._messagesQueue];for(let t of(this._messagesQueue=[],e))this.send(t)}send(e){if(this._disconnected)return;if(!this._id)return void this._messagesQueue.push(e);if(!e.type)return void this.emit(ex.Error,"Invalid message");if(!this._wsOpen())return;let t=JSON.stringify(e);this._socket.send(t)}close(){this._disconnected||(this._cleanup(),this._disconnected=!0)}_cleanup(){this._socket&&(this._socket.onopen=this._socket.onmessage=this._socket.onclose=null,this._socket.close(),this._socket=void 0),clearTimeout(this._wsPingTimer)}constructor(e,t,n,r,i,s=5e3){super(),this.pingInterval=s,this._disconnected=!0,this._messagesQueue=[],this._baseUrl=(e?"wss://":"ws://")+t+":"+n+r+"peerjs?key="+i}}class eO{startConnection(e){let t=this._startPeerConnection();if(this.connection.peerConnection=t,this.connection.type===ek.Media&&e._stream&&this._addTracksToConnection(e._stream,t),e.originator){let n=this.connection,r={ordered:!!e.reliable},i=t.createDataChannel(n.label,r);n._initializeDataChannel(i),this._makeOffer()}else this.handleSDP("OFFER",e.sdp)}_startPeerConnection(){em.log("Creating RTCPeerConnection.");let e=new RTCPeerConnection(this.connection.provider.options.config);return this._setupListeners(e),e}_setupListeners(e){let t=this.connection.peer,n=this.connection.connectionId,r=this.connection.type,i=this.connection.provider;em.log("Listening for ICE candidates."),e.onicecandidate=e=>{e.candidate&&e.candidate.candidate&&(em.log(`Received ICE candidates for ${t}:`,e.candidate),i.socket.send({type:eD.Candidate,payload:{candidate:e.candidate,type:r,connectionId:n},dst:t}))},e.oniceconnectionstatechange=()=>{switch(e.iceConnectionState){case"failed":em.log("iceConnectionState is failed, closing connections to "+t),this.connection.emitError(eP.NegotiationFailed,"Negotiation of connection to "+t+" failed."),this.connection.close();break;case"closed":em.log("iceConnectionState is closed, closing connections to "+t),this.connection.emitError(eP.ConnectionClosed,"Connection to "+t+" closed."),this.connection.close();break;case"disconnected":em.log("iceConnectionState changed to disconnected on the connection with "+t);break;case"completed":e.onicecandidate=()=>{}}this.connection.emit("iceStateChanged",e.iceConnectionState)},em.log("Listening for data channel"),e.ondatachannel=e=>{em.log("Received data channel");let r=e.channel;i.getConnection(t,n)._initializeDataChannel(r)},em.log("Listening for remote stream"),e.ontrack=e=>{em.log("Received remote stream");let r=e.streams[0],s=i.getConnection(t,n);s.type===ek.Media&&this._addStreamToMediaConnection(r,s)}}cleanup(){em.log("Cleaning up PeerConnection to "+this.connection.peer);let e=this.connection.peerConnection;if(!e)return;this.connection.peerConnection=null,e.onicecandidate=e.oniceconnectionstatechange=e.ondatachannel=e.ontrack=()=>{};let t="closed"!==e.signalingState,n=!1,r=this.connection.dataChannel;r&&(n=!!r.readyState&&"closed"!==r.readyState),(t||n)&&e.close()}async _makeOffer(){let e=this.connection.peerConnection,t=this.connection.provider;try{let n=await e.createOffer(this.connection.options.constraints);em.log("Created offer."),this.connection.options.sdpTransform&&"function"==typeof this.connection.options.sdpTransform&&(n.sdp=this.connection.options.sdpTransform(n.sdp)||n.sdp);try{await e.setLocalDescription(n),em.log("Set localDescription:",n,`for:${this.connection.peer}`);let r={sdp:n,type:this.connection.type,connectionId:this.connection.connectionId,metadata:this.connection.metadata};if(this.connection.type===ek.Data){let e=this.connection;r={...r,label:e.label,reliable:e.reliable,serialization:e.serialization}}t.socket.send({type:eD.Offer,payload:r,dst:this.connection.peer})}catch(e){"OperationError: Failed to set local offer sdp: Called in wrong state: kHaveRemoteOffer"!=e&&(t.emitError(eR.WebRTC,e),em.log("Failed to setLocalDescription, ",e))}}catch(e){t.emitError(eR.WebRTC,e),em.log("Failed to createOffer, ",e)}}async _makeAnswer(){let e=this.connection.peerConnection,t=this.connection.provider;try{let n=await e.createAnswer();em.log("Created answer."),this.connection.options.sdpTransform&&"function"==typeof this.connection.options.sdpTransform&&(n.sdp=this.connection.options.sdpTransform(n.sdp)||n.sdp);try{await e.setLocalDescription(n),em.log("Set localDescription:",n,`for:${this.connection.peer}`),t.socket.send({type:eD.Answer,payload:{sdp:n,type:this.connection.type,connectionId:this.connection.connectionId},dst:this.connection.peer})}catch(e){t.emitError(eR.WebRTC,e),em.log("Failed to setLocalDescription, ",e)}}catch(e){t.emitError(eR.WebRTC,e),em.log("Failed to create answer, ",e)}}async handleSDP(e,t){t=new RTCSessionDescription(t);let n=this.connection.peerConnection,r=this.connection.provider;em.log("Setting remote description",t);try{await n.setRemoteDescription(t),em.log(`Set remoteDescription:${e} for:${this.connection.peer}`),"OFFER"===e&&await this._makeAnswer()}catch(e){r.emitError(eR.WebRTC,e),em.log("Failed to setRemoteDescription, ",e)}}async handleCandidate(e){em.log("handleCandidate:",e);try{await this.connection.peerConnection.addIceCandidate(e),em.log(`Added ICE candidate for:${this.connection.peer}`)}catch(e){this.connection.provider.emitError(eR.WebRTC,e),em.log("Failed to handleCandidate, ",e)}}_addTracksToConnection(e,t){if(em.log(`add tracks from stream ${e.id} to peer connection`),!t.addTrack)return em.error("Your browser does't support RTCPeerConnection#addTrack. Ignored.");e.getTracks().forEach(n=>{t.addTrack(n,e)})}_addStreamToMediaConnection(e,t){em.log(`add stream ${e.id} to media connection ${t.connectionId}`),t.addStream(e)}constructor(e){this.connection=e}}class eL extends e_.EventEmitter{emitError(e,t){em.error("Error:",t),this.emit("error",new eA(`${e}`,t))}}class eA extends Error{constructor(e,t){"string"==typeof t?super(t):(super(),Object.assign(this,t)),this.type=e}}class ej extends eL{get open(){return this._open}constructor(e,t,n){super(),this.peer=e,this.provider=t,this.options=n,this._open=!1,this.metadata=n.metadata}}class eB extends ej{get type(){return ek.Media}get localStream(){return this._localStream}get remoteStream(){return this._remoteStream}_initializeDataChannel(e){this.dataChannel=e,this.dataChannel.onopen=()=>{em.log(`DC#${this.connectionId} dc connection success`),this.emit("willCloseOnRemote")},this.dataChannel.onclose=()=>{em.log(`DC#${this.connectionId} dc closed for:`,this.peer),this.close()}}addStream(e){em.log("Receiving stream",e),this._remoteStream=e,super.emit("stream",e)}handleMessage(e){let t=e.type,n=e.payload;switch(e.type){case eD.Answer:this._negotiator.handleSDP(t,n.sdp),this._open=!0;break;case eD.Candidate:this._negotiator.handleCandidate(n.candidate);break;default:em.warn(`Unrecognized message type:${t} from peer:${this.peer}`)}}answer(e,t={}){if(this._localStream)return void em.warn("Local stream already exists on this MediaConnection. Are you answering a call twice?");for(let n of(this._localStream=e,t&&t.sdpTransform&&(this.options.sdpTransform=t.sdpTransform),this._negotiator.startConnection({...this.options._payload,_stream:e}),this.provider._getMessages(this.connectionId)))this.handleMessage(n);this._open=!0}close(){this._negotiator&&(this._negotiator.cleanup(),this._negotiator=null),this._localStream=null,this._remoteStream=null,this.provider&&(this.provider._removeConnection(this),this.provider=null),this.options&&this.options._stream&&(this.options._stream=null),this.open&&(this._open=!1,super.emit("close"))}constructor(e,t,n){super(e,t,n),this._localStream=this.options._stream,this.connectionId=this.options.connectionId||eB.ID_PREFIX+ef.randomToken(),this._negotiator=new eO(this),this._localStream&&this._negotiator.startConnection({_stream:this._localStream,originator:!0})}}eB.ID_PREFIX="mc_";class eU{_buildRequest(e){let t=this._options.secure?"https":"http",{host:n,port:r,path:i,key:s}=this._options,o=new URL(`${t}://${n}:${r}${i}${s}/${e}`);return o.searchParams.set("ts",`${Date.now()}${Math.random()}`),o.searchParams.set("version",eI),fetch(o.href,{referrerPolicy:this._options.referrerPolicy})}async retrieveId(){try{let e=await this._buildRequest("id");if(200!==e.status)throw Error(`Error. Status:${e.status}`);return e.text()}catch(t){em.error("Error retrieving ID",t);let e="";throw"/"===this._options.path&&this._options.host!==ef.CLOUD_HOST&&(e=" If you passed in a `path` to your self-hosted PeerServer, you'll also need to pass in that same path when creating a new Peer."),Error("Could not get an ID from the server."+e)}}async listAllPeers(){try{let e=await this._buildRequest("peers");if(200!==e.status){if(401===e.status){let e="";throw e=this._options.host===ef.CLOUD_HOST?"It looks like you're using the cloud server. You can email team@peerjs.com to enable peer listing for your API key.":"You need to enable `allow_discovery` on your self-hosted PeerServer to use this feature.",Error("It doesn't look like you have permission to list peers IDs. "+e)}throw Error(`Error. Status:${e.status}`)}return e.json()}catch(e){throw em.error("Error retrieving list peers",e),Error("Could not get list peers from the server."+e)}}constructor(e){this._options=e}}class eF extends ej{get type(){return ek.Data}_initializeDataChannel(e){this.dataChannel=e,this.dataChannel.onopen=()=>{em.log(`DC#${this.connectionId} dc connection success`),this._open=!0,this.emit("open")},this.dataChannel.onmessage=e=>{em.log(`DC#${this.connectionId} dc onmessage:`,e.data)},this.dataChannel.onclose=()=>{em.log(`DC#${this.connectionId} dc closed for:`,this.peer),this.close()}}close(e){if(e?.flush)return void this.send({__peerData:{type:"close"}});this._negotiator&&(this._negotiator.cleanup(),this._negotiator=null),this.provider&&(this.provider._removeConnection(this),this.provider=null),this.dataChannel&&(this.dataChannel.onopen=null,this.dataChannel.onmessage=null,this.dataChannel.onclose=null,this.dataChannel=null),this.open&&(this._open=!1,super.emit("close"))}send(e,t=!1){return this.open?this._send(e,t):void this.emitError(ew.NotOpenYet,"Connection is not open. You should listen for the `open` event before sending messages.")}async handleMessage(e){let t=e.payload;switch(e.type){case eD.Answer:await this._negotiator.handleSDP(e.type,t.sdp);break;case eD.Candidate:await this._negotiator.handleCandidate(t.candidate);break;default:em.warn("Unrecognized message type:",e.type,"from peer:",this.peer)}}constructor(e,t,n){super(e,t,n),this.connectionId=this.options.connectionId||eF.ID_PREFIX+eh(),this.label=this.options.label||this.connectionId,this.reliable=!!this.options.reliable,this._negotiator=new eO(this),this._negotiator.startConnection(this.options._payload||{originator:!0,reliable:this.reliable})}}eF.ID_PREFIX="dc_",eF.MAX_BUFFERED_AMOUNT=8388608;class eN extends eF{get bufferSize(){return this._bufferSize}_initializeDataChannel(e){super._initializeDataChannel(e),this.dataChannel.binaryType="arraybuffer",this.dataChannel.addEventListener("message",e=>this._handleDataMessage(e))}_bufferedSend(e){(this._buffering||!this._trySend(e))&&(this._buffer.push(e),this._bufferSize=this._buffer.length)}_trySend(e){if(!this.open)return!1;if(this.dataChannel.bufferedAmount>eF.MAX_BUFFERED_AMOUNT)return this._buffering=!0,setTimeout(()=>{this._buffering=!1,this._tryBuffer()},50),!1;try{this.dataChannel.send(e)}catch(e){return em.error(`DC#:${this.connectionId} Error when sending:`,e),this._buffering=!0,this.close(),!1}return!0}_tryBuffer(){if(!this.open||0===this._buffer.length)return;let e=this._buffer[0];this._trySend(e)&&(this._buffer.shift(),this._bufferSize=this._buffer.length,this._tryBuffer())}close(e){if(e?.flush)return void this.send({__peerData:{type:"close"}});this._buffer=[],this._bufferSize=0,super.close()}constructor(...e){super(...e),this._buffer=[],this._bufferSize=0,this._buffering=!1}}class ez extends eN{close(e){super.close(e),this._chunkedData={}}_handleDataMessage({data:e}){let t=i(e),n=t.__peerData;if(n)return"close"===n.type?void this.close():void this._handleChunk(t);this.emit("data",t)}_handleChunk(e){let t=e.__peerData,n=this._chunkedData[t]||{data:[],count:0,total:e.total};if(n.data[e.n]=new Uint8Array(e.data),n.count++,this._chunkedData[t]=n,n.total===n.count){delete this._chunkedData[t];let e=function(e){let t=0;for(let n of e)t+=n.byteLength;let n=new Uint8Array(t),r=0;for(let t of e)n.set(t,r),r+=t.byteLength;return n}(n.data);this._handleDataMessage({data:e})}}_send(e,t){let n=s(e);return n instanceof Promise?this._send_blob(n):!t&&n.byteLength>this.chunker.chunkedMTU?void this._sendChunks(n):void this._bufferedSend(n)}async _send_blob(e){let t=await e;if(t.byteLength>this.chunker.chunkedMTU)return void this._sendChunks(t);this._bufferedSend(t)}_sendChunks(e){let t=this.chunker.chunk(e);for(let e of(em.log(`DC#${this.connectionId} Try to send ${t.length} chunks...`),t))this.send(e,!0)}constructor(e,t,r){super(e,t,r),this.chunker=new n,this.serialization=eE.Binary,this._chunkedData={}}}class e$ extends eN{_handleDataMessage({data:e}){super.emit("data",e)}_send(e,t){this._bufferedSend(e)}constructor(...e){super(...e),this.serialization=eE.None}}class eV extends eN{_handleDataMessage({data:e}){let t=this.parse(this.decoder.decode(e)),n=t.__peerData;if(n&&"close"===n.type)return void this.close();this.emit("data",t)}_send(e,t){let n=this.encoder.encode(this.stringify(e));if(n.byteLength>=ef.chunkedMTU)return void this.emitError(ew.MessageToBig,"Message too big for JSON channel");this._bufferedSend(n)}constructor(...e){super(...e),this.serialization=eE.JSON,this.encoder=new TextEncoder,this.decoder=new TextDecoder,this.stringify=JSON.stringify,this.parse=JSON.parse}}class eG extends eL{get id(){return this._id}get options(){return this._options}get open(){return this._open}get socket(){return this._socket}get connections(){let e=Object.create(null);for(let[t,n]of this._connections)e[t]=n;return e}get destroyed(){return this._destroyed}get disconnected(){return this._disconnected}_createServerConnection(){let e=new eM(this._options.secure,this._options.host,this._options.port,this._options.path,this._options.key,this._options.pingInterval);return e.on(ex.Message,e=>{this._handleMessage(e)}),e.on(ex.Error,e=>{this._abort(eR.SocketError,e)}),e.on(ex.Disconnected,()=>{this.disconnected||(this.emitError(eR.Network,"Lost connection to server."),this.disconnect())}),e.on(ex.Close,()=>{this.disconnected||this._abort(eR.SocketClosed,"Underlying socket is already closed.")}),e}_initialize(e){this._id=e,this.socket.start(e,this._options.token)}_handleMessage(e){let t=e.type,n=e.payload,r=e.src;switch(t){case eD.Open:this._lastServerId=this.id,this._open=!0,this.emit("open",this.id);break;case eD.Error:this._abort(eR.ServerError,n.msg);break;case eD.IdTaken:this._abort(eR.UnavailableID,`ID "${this.id}" is taken`);break;case eD.InvalidKey:this._abort(eR.InvalidKey,`API KEY "${this._options.key}" is invalid`);break;case eD.Leave:em.log(`Received leave message from ${r}`),this._cleanupPeer(r),this._connections.delete(r);break;case eD.Expire:this.emitError(eR.PeerUnavailable,`Could not connect to peer ${r}`);break;case eD.Offer:{let e=n.connectionId,t=this.getConnection(r,e);if(t&&(t.close(),em.warn(`Offer received for existing Connection ID:${e}`)),n.type===ek.Media){let i=new eB(r,this,{connectionId:e,_payload:n,metadata:n.metadata});t=i,this._addConnection(r,t),this.emit("call",i)}else{if(n.type!==ek.Data)return void em.warn(`Received malformed connection type:${n.type}`);let i=new this._serializers[n.serialization](r,this,{connectionId:e,_payload:n,metadata:n.metadata,label:n.label,serialization:n.serialization,reliable:n.reliable});t=i,this._addConnection(r,t),this.emit("connection",i)}for(let n of this._getMessages(e))t.handleMessage(n);break}default:{if(!n)return void em.warn(`You received a malformed message from ${r} of type ${t}`);let i=n.connectionId,s=this.getConnection(r,i);s&&s.peerConnection?s.handleMessage(e):i?this._storeMessage(i,e):em.warn("You received an unrecognized message:",e)}}}_storeMessage(e,t){this._lostMessages.has(e)||this._lostMessages.set(e,[]),this._lostMessages.get(e).push(t)}_getMessages(e){let t=this._lostMessages.get(e);return t?(this._lostMessages.delete(e),t):[]}connect(e,t={}){if(t={serialization:"default",...t},this.disconnected){em.warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect, or call reconnect on this peer if you believe its ID to still be available."),this.emitError(eR.Disconnected,"Cannot connect to new Peer after disconnecting from server.");return}let n=new this._serializers[t.serialization](e,this,t);return this._addConnection(e,n),n}call(e,t,n={}){if(this.disconnected){em.warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect."),this.emitError(eR.Disconnected,"Cannot connect to new Peer after disconnecting from server.");return}if(!t)return void em.error("To call a peer, you must provide a stream from your browser's `getUserMedia`.");let r=new eB(e,this,{...n,_stream:t});return this._addConnection(e,r),r}_addConnection(e,t){em.log(`add connection ${t.type}:${t.connectionId} to peerId:${e}`),this._connections.has(e)||this._connections.set(e,[]),this._connections.get(e).push(t)}_removeConnection(e){let t=this._connections.get(e.peer);if(t){let n=t.indexOf(e);-1!==n&&t.splice(n,1)}this._lostMessages.delete(e.connectionId)}getConnection(e,t){let n=this._connections.get(e);if(!n)return null;for(let e of n)if(e.connectionId===t)return e;return null}_delayedAbort(e,t){setTimeout(()=>{this._abort(e,t)},0)}_abort(e,t){em.error("Aborting!"),this.emitError(e,t),this._lastServerId?this.disconnect():this.destroy()}destroy(){this.destroyed||(em.log(`Destroy peer with ID:${this.id}`),this.disconnect(),this._cleanup(),this._destroyed=!0,this.emit("close"))}_cleanup(){for(let e of this._connections.keys())this._cleanupPeer(e),this._connections.delete(e);this.socket.removeAllListeners()}_cleanupPeer(e){let t=this._connections.get(e);if(t)for(let e of t)e.close()}disconnect(){if(this.disconnected)return;let e=this.id;em.log(`Disconnect peer with ID:${e}`),this._disconnected=!0,this._open=!1,this.socket.close(),this._lastServerId=e,this._id=null,this.emit("disconnected",e)}reconnect(){if(this.disconnected&&!this.destroyed)em.log(`Attempting reconnection to server with ID ${this._lastServerId}`),this._disconnected=!1,this._initialize(this._lastServerId);else if(this.destroyed)throw Error("This peer cannot reconnect to the server. It has already been destroyed.");else if(this.disconnected||this.open)throw Error(`Peer ${this.id} cannot reconnect because it is not disconnected from the server!`);else em.error("In a hurry? We're still trying to make the initial connection!")}listAllPeers(e=e=>{}){this._api.listAllPeers().then(t=>e(t)).catch(e=>this._abort(eR.ServerError,e))}constructor(e,t){let n;if(super(),this._serializers={raw:e$,json:eV,binary:ez,"binary-utf8":ez,default:ez},this._id=null,this._lastServerId=null,this._destroyed=!1,this._disconnected=!1,this._open=!1,this._connections=new Map,this._lostMessages=new Map,e&&e.constructor==Object?t=e:e&&(n=e.toString()),t={debug:0,host:ef.CLOUD_HOST,port:ef.CLOUD_PORT,path:"/",key:eG.DEFAULT_KEY,token:ef.randomToken(),config:ef.defaultConfig,referrerPolicy:"strict-origin-when-cross-origin",serializers:{},...t},this._options=t,this._serializers={...this._serializers,...this.options.serializers},"/"===this._options.host&&(this._options.host=window.location.hostname),this._options.path&&("/"!==this._options.path[0]&&(this._options.path="/"+this._options.path),"/"!==this._options.path[this._options.path.length-1]&&(this._options.path+="/")),void 0===this._options.secure&&this._options.host!==ef.CLOUD_HOST?this._options.secure=ef.isSecure():this._options.host==ef.CLOUD_HOST&&(this._options.secure=!0),this._options.logFunction&&em.setLogFunction(this._options.logFunction),em.logLevel=this._options.debug||0,this._api=new eU(t),this._socket=this._createServerConnection(),!ef.supports.audioVideo&&!ef.supports.data)return void this._delayedAbort(eR.BrowserIncompatible,"The current browser does not support WebRTC");if(n&&!ef.validateId(n))return void this._delayedAbort(eR.InvalidID,`ID "${n}" is invalid`);n?this._initialize(n):this._api.retrieveId().then(e=>this._initialize(e)).catch(e=>this._abort(eR.ServerError,e))}}eG.DEFAULT_KEY="peerjs",window.peerjs={Peer:eG,util:ef},window.Peer=eG})();
+
+</script>
+<script>/* ═══════════════════════════════════════════════════════════════════
+   FreeMeet — 서버 없이 동작하는 단일 HTML 화상회의
+
+   구조 요약
+   ─────────
+   • 방은 3개, 각 방 정원은 4명. 방마다 미리 정해진 주소(PeerJS ID)가 있습니다.
+       fm3-<사이트키>-r{1..3}-s{0..3}
+   • 대기실은 그 주소들에 "노크"해서 응답이 오면 사용 중으로 표시합니다.
+     → 방 목록을 위한 데이터베이스가 필요 없습니다.
+   • 비밀번호는 어디에도 저장되지 않습니다. 이미 방에 있는 사람들이
+     새로 온 사람에게 난수 문제를 내고, 비밀번호에서 유도한 키로
+     서명한 답을 맞춰봅니다(PBKDF2 + HMAC). 양쪽이 서로 검증합니다.
+     통과 전에는 영상도 자막도 오가지 않습니다.
+   ═══════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+
+  const ROOM_COUNT = 3;
+  const ROOM_CAPACITY = 4;   // 실제 정원 — 참가자 수로 강제합니다
+  /* 주소는 정원보다 넉넉하게 둡니다. 브라우저를 갑자기 닫으면 시그널링 서버가
+     그 주소를 잠깐 붙들고 있는데, 주소 개수 = 정원이면 그 유령 자리 때문에
+     멀쩡한 방이 "정원 초과"로 보입니다. 정원은 주소가 아니라 사람 수로 셉니다. */
+  const SLOT_COUNT = 6;
+  const SCAN_INTERVAL = 10000;
+  const PROBE_TIMEOUT = 2500;
+
+  /* 같은 PeerJS 공개 서버를 쓰는 다른 사이트와 방 주소가 겹치지 않도록
+     배포 주소(도메인+경로)에서 사이트 키를 만듭니다.
+     → 내 GitHub Pages 주소로 접속한 사람들끼리만 같은 방 목록을 봅니다. */
+  function siteKey() {
+    const seed = location.origin + location.pathname.replace(/\/index\.html?$/i, '/');
+    let h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (let i = 0; i < seed.length; i++) {
+      h1 = Math.imul(h1 ^ seed.charCodeAt(i), 16777619) >>> 0;
+      h2 = Math.imul(h2 + seed.charCodeAt(i) * (i + 7), 2246822519) >>> 0;
+    }
+    return (h1.toString(36) + h2.toString(36)).slice(0, 10);
+  }
+
+  const SITE = siteKey();
+  const peerIdFor = (room, slot) => `fm3-${SITE}-r${room}-s${slot}`;
+
+  const qp = new URLSearchParams(location.search);
+  const PEER_OPTS = qp.get('host')
+    ? { host: qp.get('host'), port: Number(qp.get('port') || 443), path: qp.get('path') || '/',
+        secure: qp.get('secure') !== '0', debug: 0 }
+    : { debug: 0 };                       // 기본값 = PeerJS 공개 클라우드
+  PEER_OPTS.config = {
+    iceServers: [
+      { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+      // 회사망 등에서 연결이 안 되면 TURN 서버를 여기에 추가하세요.
+    ],
+  };
+
+  const S = {
+    peer: null, myId: null, mySlot: -1,
+    roomNo: 0, roomTitle: '', locked: false, key: null,
+    selfName: '', lang: 'ko-KR',
+    localStream: null, screenStream: null,
+    peers: new Map(),      // peerId -> { id, name, conn, call, tile, video }
+    pending: new Map(),    // peerId -> 악수 진행 상태
+    transcript: [], startedAt: 0,
+    sttOn: false, rec: null, stopStt: false, captionTimer: null,
+    scout: null, scanTimer: null, rooms: [],
+  };
+
+  /* ─────────────────────── 작은 도구들 ─────────────────────── */
+
+  function toast(msg, ms = 2600) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.hidden = true; }, ms);
+  }
+
+  const pad = (n, w = 2) => String(n).padStart(w, '0');
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function clockTime(ts) {
+    const d = new Date(ts);
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function offsetTime(ts, withMs = false) {
+    let ms = Math.max(0, ts - S.startedAt);
+    const h = Math.floor(ms / 3600000); ms -= h * 3600000;
+    const m = Math.floor(ms / 60000);   ms -= m * 60000;
+    const s = Math.floor(ms / 1000);    ms -= s * 1000;
+    return withMs ? `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+
+  function randHex(bytes = 16) {
+    const a = new Uint8Array(bytes);
+    crypto.getRandomValues(a);
+    return [...a].map((b) => pad(b.toString(16))).join('');
+  }
+
+  function download(filename, text, mime = 'text/plain;charset=utf-8') {
+    const blob = new Blob(['﻿' + text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }
+  }
+
+  /* ─────────────────────── 비밀번호 암호 처리 ───────────────────────
+     비밀번호 자체는 절대 오가지 않습니다. 비밀번호에서 유도한 키로
+     상대가 낸 난수에 서명해서 보내고, 상대는 같은 키로 검증합니다.  */
+
+  async function deriveKey(password, roomNo) {
+    const enc = new TextEncoder();
+    const base = await crypto.subtle.importKey('raw', enc.encode(password || ''), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: enc.encode(`freemeet|${SITE}|room${roomNo}`), iterations: 120000, hash: 'SHA-256' },
+      base,
+      { name: 'HMAC', hash: 'SHA-256', length: 256 },
+      false, ['sign']
+    );
+  }
+
+  async function proofFor(nonce) {
+    const sig = await crypto.subtle.sign('HMAC', S.key, new TextEncoder().encode(`${nonce}|room${S.roomNo}`));
+    return btoa(String.fromCharCode(...new Uint8Array(sig)));
+  }
+
+  /* ─────────────────────── 미리보기 / 대기실 ─────────────────────── */
+
+  function showError(msg) {
+    $('lobbyError').textContent = msg;
+    $('lobbyError').hidden = !msg;
+  }
+
+  function trackOf(kind) {
+    if (!S.localStream) return null;
+    return (kind === 'video' ? S.localStream.getVideoTracks() : S.localStream.getAudioTracks())[0] || null;
+  }
+
+  async function initPreview() {
+    try {
+      S.localStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+    } catch {
+      try {
+        S.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        $('preCam').classList.remove('on');
+        toast('카메라를 쓸 수 없어 음성으로만 참여합니다.');
+      } catch {
+        showError('마이크·카메라 권한이 필요합니다. 주소창의 자물쇠 아이콘에서 허용해 주세요.');
+        return;
+      }
+    }
+    $('previewVideo').srcObject = S.localStream;
+  }
+
+  function setupLobby() {
+    try {
+      $('nameInput').value = localStorage.getItem('fm.name') || '';
+      $('langSelect').value = localStorage.getItem('fm.lang') || 'ko-KR';
+    } catch {}
+
+    /* file:// 로 직접 열면 크롬이 권한을 기억하지 못해 마이크 팝업이 계속 뜨고,
+       음성인식은 아예 거부됩니다. 미리 알려주고 자막 자동 시작을 끕니다. */
+    if (location.protocol === 'file:') {
+      showError('파일을 직접 연 상태(file://)입니다. 크롬이 권한을 기억하지 못해 마이크 허용창이 계속 뜨고, '
+              + '자막·대본은 동작하지 않습니다. GitHub Pages 같은 https:// 주소에 올려서 여세요.');
+    } else if (!window.isSecureContext) {
+      showError('HTTPS가 아니어서 카메라·마이크를 쓸 수 없습니다. https:// 주소로 열어 주세요.');
+    }
+
+    $('preCam').onclick = () => {
+      const t = trackOf('video'); if (!t) return;
+      t.enabled = !t.enabled;
+      $('preCam').classList.toggle('on', t.enabled);
+    };
+    $('preMic').onclick = () => {
+      const t = trackOf('audio'); if (!t) return;
+      t.enabled = !t.enabled;
+      $('preMic').classList.toggle('on', t.enabled);
+    };
+
+    S.rooms = Array.from({ length: ROOM_COUNT }, (_, i) => ({ no: i + 1, active: false, title: '', count: 0, locked: false }));
+    renderRooms();
+    initPreview();
+    startScanning();
+  }
+
+  /* 대기실 스캔: 각 방의 슬롯을 순서대로 노크해 보고 첫 응답을 씁니다. */
+
+  function makeScout() {
+    return new Promise((resolve) => {
+      const peer = new Peer(PEER_OPTS);
+      const done = (v) => { peer.off('open', onOpen); peer.off('error', onErr); resolve(v); };
+      const onOpen = () => done(peer);
+      const onErr = () => { try { peer.destroy(); } catch {} done(null); };
+      peer.on('open', onOpen);
+      peer.on('error', onErr);
+      setTimeout(() => { if (!peer.open) onErr(); }, 10000);
+    });
+  }
+
+  function knock(scout, room, slot) {
+    return new Promise((resolve) => {
+      if (!scout || !scout.open) return resolve(null);   // 그 사이 대기실을 떠났다면 중단
+      let settled = false;
+      const finish = (v) => { if (settled) return; settled = true; try { conn.close(); } catch {} resolve(v); };
+      const conn = scout.connect(peerIdFor(room, slot), { reliable: true, metadata: { kind: 'info' } });
+      conn.on('open', () => conn.send({ t: 'info' }));
+      conn.on('data', (m) => { if (m && m.t === 'info') finish(m); });
+      conn.on('error', () => finish(null));
+      setTimeout(() => finish(null), PROBE_TIMEOUT);
+    });
+  }
+
+  let scanning = false;
+
+  async function scanRooms() {
+    if (scanning || $('lobby').hidden) return;
+    scanning = true;
+    $('scanState').textContent = '확인 중…';
+
+    try {
+      if (!S.scout || !S.scout.open) {
+        S.scout = await makeScout();
+        if (!S.scout) { $('scanState').textContent = '연결 실패 — 재시도 중'; return; }
+        S.scout.on('error', () => {});   // peer-unavailable = "빈 슬롯", 정상 상황
+      }
+
+      const scout = S.scout;   // 스캔 도중 방에 입장하면 scout 이 사라지므로 붙잡아 둡니다
+
+      // 1단계: 방마다 0번 슬롯만 동시에 노크 (보통 여기서 끝납니다)
+      const first = await Promise.all(S.rooms.map((r) => knock(scout, r.no, 0)));
+      if (S.scout !== scout || $('lobby').hidden) return;
+
+      // 2단계: 0번이 조용한 방만 나머지 슬롯을 동시에 확인
+      //         (방장이 먼저 나갔어도 방이 살아 있을 수 있으므로)
+      const rest = await Promise.all(S.rooms.map(async (r, i) => {
+        if (first[i]) return first[i];
+        const tries = await Promise.all(
+          Array.from({ length: SLOT_COUNT - 1 }, (_, k) => knock(scout, r.no, k + 1)));
+        return tries.find(Boolean) || null;
+      }));
+      if (S.scout !== scout || $('lobby').hidden) return;
+
+      S.rooms.forEach((room, i) => {
+        const info = rest[i];
+        room.active = !!info;
+        room.title = info ? String(info.title || '').slice(0, 24) : '';
+        room.count = info ? Math.min(ROOM_CAPACITY, Math.max(1, Number(info.count) || 1)) : 0;
+        room.locked = info ? !!info.locked : false;
+      });
+      renderRooms();
+      $('scanState').textContent = '방금 갱신됨';
+    } finally {
+      scanning = false;
+    }
+  }
+
+  function startScanning() {
+    scanRooms();
+    clearInterval(S.scanTimer);
+    S.scanTimer = setInterval(scanRooms, SCAN_INTERVAL);
+  }
+
+  function stopScanning() {
+    clearInterval(S.scanTimer);
+    try { S.scout && S.scout.destroy(); } catch {}
+    S.scout = null;
+  }
+
+  function renderRooms() {
+    $('roomList').innerHTML = S.rooms.map((r) => {
+      const full = r.count >= ROOM_CAPACITY;
+      const pips = Array.from({ length: ROOM_CAPACITY },
+        (_, i) => `<span class="pip${i < r.count ? ' on' : ''}"></span>`).join('');
+      const title = r.active ? esc(r.title || `방 ${r.no}`) : '비어 있음';
+      const lock = r.active && r.locked ? '<span class="lock">🔒</span>' : '';
+      const sub = r.active
+        ? (full ? '정원이 찼습니다' : (r.locked ? '비밀번호를 입력하고 참여' : '바로 참여할 수 있습니다'))
+        : '클릭해서 새 방 만들기';
+      const state = r.active ? `${r.count}/${ROOM_CAPACITY}명` : '대기';
+      return `<button class="room-card${r.active ? ' busy' : ''}" data-room="${r.no}" ${full ? 'disabled' : ''} type="button">
+        <span class="rc-no">${r.no}</span>
+        <span class="rc-body">
+          <span class="rc-title">${title}${lock}</span>
+          <span class="rc-sub">${sub}</span>
+        </span>
+        <span class="rc-state">${state}<span class="pips">${pips}</span></span>
+      </button>`;
+    }).join('');
+
+    $('roomList').querySelectorAll('.room-card').forEach((el) => {
+      el.onclick = () => openModal(Number(el.dataset.room));
+    });
+  }
+
+  /* ─────────────────────── 입장 모달 ─────────────────────── */
+
+  function openModal(roomNo) {
+    const room = S.rooms[roomNo - 1];
+    const name = $('nameInput').value.trim();
+    if (!name) { showError('먼저 이름을 입력해 주세요.'); $('nameInput').focus(); return; }
+    if (!S.localStream) { showError('마이크·카메라 준비가 아직 끝나지 않았습니다.'); return; }
+    showError('');
+
+    const creating = !room.active;
+    $('modalTitle').textContent = creating ? `${roomNo}번 방 만들기` : `${room.title || `방 ${roomNo}`} 참여`;
+    $('modalDesc').textContent = creating
+      ? '방 이름과 비밀번호를 정하세요. 이 방에 처음 들어가는 사람이 설정하게 됩니다.'
+      : (room.locked ? '이 방은 비밀번호로 잠겨 있습니다.' : '비밀번호가 없는 방입니다. 그냥 입장하세요.');
+    $('titleField').hidden = !creating;
+    $('pwLabel').innerHTML = creating
+      ? '비밀번호 <em class="hint">— 비워 두면 누구나 입장</em>'
+      : '비밀번호';
+    $('roomTitle').value = creating ? `방 ${roomNo}` : room.title;
+    $('roomPw').value = '';
+    $('modalError').hidden = true;
+    $('modalOk').textContent = creating ? '방 만들기' : '입장';
+    $('modal').hidden = false;
+    setTimeout(() => (creating ? $('roomTitle') : $('roomPw')).focus(), 50);
+
+    const submit = () => {
+      const title = creating ? ($('roomTitle').value.trim() || `방 ${roomNo}`) : (room.title || `방 ${roomNo}`);
+      $('modal').hidden = true;
+      enterRoom(roomNo, title, $('roomPw').value);
+    };
+    $('modalOk').onclick = submit;
+    $('modalCancel').onclick = () => { $('modal').hidden = true; };
+    $('roomPw').onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+    $('roomTitle').onkeydown = (e) => { if (e.key === 'Enter') $('roomPw').focus(); };
+  }
+
+  /* ─────────────────────── 입장 ─────────────────────── */
+
+  async function enterRoom(roomNo, title, password) {
+    if (S.peer) backToLobby('');   // 이미 어딘가 들어가 있었다면 먼저 정리
+    const name = $('nameInput').value.trim() || '익명';
+    S.selfName = name;
+    S.roomNo = roomNo;
+    S.roomTitle = title;
+    S.locked = !!password;
+    S.lang = $('langSelect').value;
+    try {
+      localStorage.setItem('fm.name', name);
+      localStorage.setItem('fm.lang', S.lang);
+    } catch {}
+
+    S.key = await deriveKey(password, roomNo);
+
+    stopScanning();
+    $('lobby').hidden = true;
+    $('room').hidden = false;
+    $('roomLabel').textContent = title;
+    $('lockBadge').hidden = !S.locked;
+    S.startedAt = Date.now();
+
+    addSelfTile();
+    setupRoomUI();
+
+    try {
+      await claimSlotAndConnect();
+    } catch (e) {
+      return backToLobby(e.message);
+    }
+
+    if (location.protocol === 'file:') {
+      // 여기서 자막을 켜면 권한 팝업이 무한히 반복됩니다. 버튼으로만 켜게 둡니다.
+      toast('file:// 로 연 상태라 자막을 끈 채로 시작합니다. https:// 주소에서 열면 자동으로 켜집니다.', 6000);
+    } else if (sttSupported()) startStt();
+    else toast('이 브라우저는 실시간 자막을 지원하지 않습니다. Chrome 또는 Edge를 권장합니다.', 5000);
+  }
+
+  function backToLobby(message) {
+    stopStt();
+    for (const p of S.peers.values()) { try { p.conn && p.conn.close(); p.call && p.call.close(); } catch {} }
+    S.peers.clear();
+    S.pending.clear();
+    try { S.peer && S.peer.destroy(); } catch {}
+    S.peer = null; S.mySlot = -1;
+    $('grid').innerHTML = '';
+    $('room').hidden = true;
+    $('lobby').hidden = false;
+    $('connDot').classList.remove('live');
+    startScanning();
+    if (message) showError(message);
+  }
+
+  function claimSlot(room, slot) {
+    return new Promise((resolve, reject) => {
+      const peer = new Peer(peerIdFor(room, slot), PEER_OPTS);
+      const cleanup = () => { peer.off('open', onOpen); peer.off('error', onErr); };
+      const onOpen = (id) => { cleanup(); resolve({ peer, id }); };
+      const onErr = (err) => { cleanup(); try { peer.destroy(); } catch {} reject(err); };
+      peer.on('open', onOpen);
+      peer.on('error', onErr);
+      setTimeout(() => { if (!peer.open) onErr(new Error('timeout')); }, 12000);
+    });
+  }
+
+  async function claimSlotAndConnect() {
+    for (let slot = 0; slot < SLOT_COUNT; slot++) {
+      try {
+        const { peer, id } = await claimSlot(S.roomNo, slot);
+        S.peer = peer; S.myId = id; S.mySlot = slot;
+        break;
+      } catch (err) {
+        const taken = err && (err.type === 'unavailable-id' || /taken|unavailable/i.test(err.message || ''));
+        if (taken) continue;
+        if (err && err.type === 'browser-incompatible') throw new Error('이 브라우저는 WebRTC를 지원하지 않습니다.');
+        throw new Error('시그널링 서버에 연결할 수 없습니다. 네트워크를 확인해 주세요.');
+      }
+    }
+    if (!S.peer) throw new Error(`${S.roomNo}번 방에 자리를 잡지 못했습니다. 잠시 후 다시 시도해 주세요.`);
+
+    $('connDot').classList.add('live');
+
+    S.peer.on('connection', (conn) => {
+      if (conn.metadata && conn.metadata.kind === 'info') return serveInfo(conn);
+      conn.on('open', () => beginHandshake(conn, false));
+    });
+    S.peer.on('call', (call) => {
+      if (S.peers.has(call.peer)) {          // 이미 검증 완료 → 바로 받기
+        call.answer(S.localStream);
+        attachCall(call);
+      } else if (S.pending.has(call.peer)) { // 악수가 몇 밀리초 늦은 경우 → 대기시켰다가 받기
+        S.pending.get(call.peer).queuedCall = call;
+      } else {                               // 모르는 상대 → 거절
+        try { call.close(); } catch {}
+      }
+    });
+    S.peer.on('error', (err) => {
+      if (err.type === 'peer-unavailable') return;   // 빈 슬롯 — 정상
+      console.warn('peer error:', err.type, err.message);
+    });
+    S.peer.on('disconnected', () => {
+      $('connDot').classList.remove('live');
+      try { S.peer.reconnect(); } catch {}
+    });
+
+    const mySlotAtDial = S.mySlot;
+    await sleep(mySlotAtDial * 120);   // 동시 입장 시 엇갈림 방지
+    for (let slot = 0; slot < SLOT_COUNT; slot++) {
+      if (!S.peer || S.mySlot !== mySlotAtDial) return;   // 그 사이 방을 나갔다면 중단
+      if (slot === S.mySlot) continue;
+      dial(peerIdFor(S.roomNo, slot));
+    }
+  }
+
+  // 대기실의 노크에 답합니다. 방 제목·인원·잠금 여부만 알려줍니다.
+  function serveInfo(conn) {
+    const reply = () => {
+      try {
+        conn.send({ t: 'info', title: S.roomTitle, count: S.peers.size + 1, locked: S.locked });
+      } catch {}
+      setTimeout(() => { try { conn.close(); } catch {} }, 800);
+    };
+    if (conn.open) reply(); else conn.on('open', reply);
+  }
+
+  function dial(peerId) {
+    if (!S.peer || S.peers.has(peerId) || S.pending.has(peerId)) return;
+    const conn = S.peer.connect(peerId, { reliable: true, metadata: { kind: 'join', name: S.selfName } });
+    let opened = false;
+    conn.on('open', () => { opened = true; beginHandshake(conn, true); });
+    conn.on('error', () => {});
+    setTimeout(() => { if (!opened) { try { conn.close(); } catch {} } }, 8000);
+  }
+
+  /* ─────────────────────── 상호 검증 악수 ───────────────────────
+     양쪽이 서로에게 난수를 내고, 비밀번호에서 유도한 키로 서명한
+     답을 받아 검증합니다. 둘 다 통과해야 화면과 자막이 열립니다.  */
+
+  function beginHandshake(conn, outgoing) {
+    if (S.peers.has(conn.peer) || S.pending.has(conn.peer)) { try { conn.close(); } catch {} return; }
+
+    const st = {
+      conn, outgoing,
+      name: (conn.metadata && conn.metadata.name) || '참가자',
+      nonce: randHex(),
+      iVerified: false, theyVerified: false, closed: false,
+    };
+    S.pending.set(conn.peer, st);
+
+    const fail = () => {
+      if (st.closed) return;
+      st.closed = true;
+      S.pending.delete(conn.peer);
+      try { conn.close(); } catch {}
+    };
+    st.fail = fail;
+
+    conn.send({ t: 'hello', name: S.selfName, title: S.roomTitle });
+    conn.send({ t: 'challenge', nonce: st.nonce });
+
+    conn.on('data', async (m) => {
+      if (!m || !m.t) return;
+
+      // 승격된 뒤의 메시지는 회의용 핸들러가 처리합니다.
+      if (S.peers.has(conn.peer)) return;
+
+      if (m.t === 'hello') {
+        st.name = String(m.name || st.name).slice(0, 32);
+        if (m.title && !S.roomTitle) S.roomTitle = String(m.title).slice(0, 24);
+      } else if (m.t === 'challenge') {
+        try { conn.send({ t: 'proof', v: await proofFor(m.nonce) }); } catch {}
+      } else if (m.t === 'proof') {
+        const expected = await proofFor(st.nonce);
+        if (m.v === expected) {
+          // 자리가 없으면 통과 신호를 보내기 전에 잘라야 합니다.
+          // 'ok' 를 먼저 보내면 상대는 입장에 성공했다고 착각합니다.
+          if (S.peers.size >= ROOM_CAPACITY - 1) {
+            try { conn.send({ t: 'full' }); } catch {}
+            fail();
+            return;
+          }
+          st.iVerified = true;
+          conn.send({ t: 'ok' });
+          promote(conn.peer);
+        } else {
+          try { conn.send({ t: 'denied' }); } catch {}
+          fail();
+          authFailed(st);
+        }
+      } else if (m.t === 'ok') {
+        st.theyVerified = true;
+        promote(conn.peer);
+      } else if (m.t === 'denied') {
+        fail();
+        authFailed(st);
+      } else if (m.t === 'full') {
+        fail();
+        if (st.outgoing && S.peers.size === 0) {
+          backToLobby(`${S.roomNo}번 방은 정원(${ROOM_CAPACITY}명)이 찼습니다.`);
+        }
+      }
+    });
+
+    conn.on('close', () => { if (!S.peers.has(conn.peer)) fail(); });
+    conn.on('error', () => fail());
+    setTimeout(() => { if (!S.peers.has(conn.peer)) fail(); }, 15000);
+  }
+
+  /* 검증 실패의 의미는 내가 어느 쪽이냐에 따라 다릅니다.
+     • 내가 문을 두드린 쪽이고 아직 아무도 통과시키지 못했다 → 내 비밀번호가 틀린 것
+     • 이미 방에 있는 사람이다 → 그냥 잘못 찾아온 사람을 끊어낸 것 (나는 그대로) */
+  function authFailed(st) {
+    if (st.outgoing && S.peers.size === 0 && S.pending.size === 0) {
+      backToLobby('비밀번호가 틀렸습니다.');
+    }
+  }
+
+  function promote(peerId) {
+    const st = S.pending.get(peerId);
+    if (!st || !st.iVerified || !st.theyVerified) return;
+
+    // 정원은 주소가 아니라 사람 수로 셉니다. 내가 보는 상대가 이미
+    // (정원 - 나) 명이면 이 사람은 들어올 자리가 없습니다.
+    if (S.peers.size >= ROOM_CAPACITY - 1) {
+      try { st.conn.send({ t: 'full' }); } catch {}
+      st.fail();
+      return;
+    }
+
+    S.pending.delete(peerId);
+
+    const { tile, video } = addTile(peerId, st.name);
+    const p = { id: peerId, name: st.name, conn: st.conn, call: null, tile, video };
+    S.peers.set(peerId, p);
+    updateCount();
+    toast(`${st.name} 님이 참여했습니다.`);
+
+    st.conn.on('data', (m) => handleMessage(p, m));
+    st.conn.on('close', () => dropPeer(peerId));
+
+    // 먼저 말을 건 쪽이 영상을 겁니다. 상대는 받습니다.
+    if (st.queuedCall) {
+      st.queuedCall.answer(S.localStream);
+      attachCall(st.queuedCall);
+    } else if (st.outgoing) {
+      const call = S.peer.call(peerId, S.localStream, { metadata: { name: S.selfName } });
+      attachCall(call);
+    }
+  }
+
+  function handleMessage(p, m) {
+    if (!m || !m.t) return;
+    if (m.t === 'name') setName(p, m.name);
+    else if (m.t === 'caption') {
+      if (m.final) addLine(p.name, m.text, Date.now());
+      showCaption(p.name, m.text);
+    } else if (m.t === 'chat') addChat(p.name, m.text, Date.now());
+    else if (m.t === 'bye') dropPeer(p.id);
+  }
+
+  function attachCall(call) {
+    const p = S.peers.get(call.peer);
+    if (!p) { try { call.close(); } catch {} return; }
+    p.call = call;
+
+    call.on('stream', (stream) => {
+      if (p.video.srcObject === stream) return;
+      p.video.srcObject = stream;
+      p.tile.classList.add('camon');
+      watchAudio(stream, p.tile);
+    });
+    call.on('close', () => dropPeer(call.peer));
+    call.on('error', () => {});
+
+    // 탭을 그냥 닫으면 close 이벤트가 안 올 때가 있어 연결 상태를 직접 감시합니다.
+    const pc = call.peerConnection;
+    if (pc) {
+      pc.addEventListener('connectionstatechange', () => {
+        if (pc.connectionState === 'failed' || pc.connectionState === 'closed') dropPeer(call.peer);
+        else if (pc.connectionState === 'disconnected') {
+          setTimeout(() => {
+            if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) dropPeer(call.peer);
+          }, 6000);
+        }
+      });
+    }
+  }
+
+  function dropPeer(id) {
+    const p = S.peers.get(id);
+    if (!p) return;
+    try { p.conn && p.conn.close(); } catch {}
+    try { p.call && p.call.close(); } catch {}
+    p.tile.remove();
+    S.peers.delete(id);
+    updateCount();
+    toast(`${p.name} 님이 나갔습니다.`);
+  }
+
+  function setName(p, name) {
+    if (!name || p.name === name) return;
+    p.name = name;
+    p.tile.querySelector('.label').textContent = name;
+    p.tile.querySelector('.avatar').textContent = name.slice(0, 1).toUpperCase();
+  }
+
+  function broadcast(obj) {
+    for (const p of S.peers.values()) {
+      try { if (p.conn && p.conn.open) p.conn.send(obj); } catch {}
+    }
+  }
+
+  /* ─────────────────────── 타일 ─────────────────────── */
+
+  function addTile(id, name) {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.dataset.peer = id;
+    tile.innerHTML = `
+      <div class="avatar">${esc(name.slice(0, 1).toUpperCase())}</div>
+      <video autoplay playsinline></video>
+      <div class="label">${esc(name)}</div>`;
+    $('grid').appendChild(tile);
+    return { tile, video: tile.querySelector('video') };
+  }
+
+  function addSelfTile() {
+    const { tile, video } = addTile('self', `${S.selfName} (나)`);
+    tile.classList.add('self', 'camon');
+    video.muted = true;
+    video.srcObject = S.localStream;
+    S.selfTile = tile;
+    S.selfVideo = video;
+    watchAudio(S.localStream, tile);
+  }
+
+  const updateCount = () => {
+    const n = S.peers.size + 1;
+    $('peerCount').textContent = `${n}명`;
+    $('grid').dataset.n = n;               // CSS 가 인원수에 맞춰 격자를 잡습니다
+  };
+
+  function watchAudio(stream, tile) {
+    if (!stream.getAudioTracks().length) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ctx = (watchAudio._ctx ||= new AC());
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        if (!tile.isConnected) return;
+        analyser.getByteFrequencyData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) sum += buf[i];
+        tile.classList.toggle('speaking', sum / buf.length > 12);
+        requestAnimationFrame(tick);
+      };
+      tick();
+    } catch {}
+  }
+
+  /* ─────────────────────── 음성인식 ─────────────────────── */
+
+  const sttSupported = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  function startStt() {
+    if (!sttSupported()) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    rec.lang = S.lang;
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+
+    rec.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        const text = r[0].transcript.trim();
+        if (!text) continue;
+        if (r.isFinal) {
+          addLine(S.selfName, text, Date.now());
+          showCaption(S.selfName, text);
+          broadcast({ t: 'caption', text, final: true });
+        } else interim += text + ' ';
+      }
+      if (interim.trim()) {
+        showCaption(S.selfName, interim.trim());
+        broadcast({ t: 'caption', text: interim.trim(), final: false });
+      }
+    };
+
+    rec.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        stopStt();
+        toast('음성인식이 차단되었습니다. HTTPS 주소인지, 마이크 권한이 허용됐는지 확인해 주세요.', 6000);
+      } else if (e.error === 'network') {
+        toast('음성인식 서버에 연결하지 못했습니다. (file:// 로 연 경우 자막은 동작하지 않습니다)', 6000);
+      }
+    };
+    rec.onend = () => { if (S.sttOn && !S.stopStt) { try { rec.start(); } catch {} } };
+
+    S.rec = rec; S.sttOn = true; S.stopStt = false;
+    try { rec.start(); } catch {}
+    $('btnStt').classList.add('on');
+    $('recBadge').hidden = false;
+  }
+
+  function stopStt() {
+    S.sttOn = false; S.stopStt = true;
+    try { S.rec && S.rec.stop(); } catch {}
+    $('btnStt').classList.remove('on');
+    $('recBadge').hidden = true;
+  }
+
+  function showCaption(name, text) {
+    const bar = $('captionBar');
+    bar.innerHTML = `<b>${esc(name)}</b>${esc(text)}`;
+    bar.hidden = false;
+    clearTimeout(S.captionTimer);
+    S.captionTimer = setTimeout(() => { bar.hidden = true; }, 4500);
+  }
+
+  /* ─────────────────────── 대본 ─────────────────────── */
+
+  function addLine(name, text, ts) {
+    const last = S.transcript[S.transcript.length - 1];
+    if (last && last.name === name && ts - last.tsEnd < 3000) {
+      last.text += ' ' + text;
+      last.tsEnd = ts;
+    } else {
+      S.transcript.push({ name, text, ts, tsEnd: ts });
+      S.transcript.sort((a, b) => a.ts - b.ts);
+    }
+    renderScript();
+  }
+
+  function renderScript() {
+    const list = $('scriptList');
+    const q = $('scriptSearch').value.trim().toLowerCase();
+    const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+
+    if (!S.transcript.length) {
+      list.innerHTML = '<p class="empty">마이크를 켜고 말하면 여기에 대본이 쌓입니다.</p>';
+      $('lineCount').textContent = '0줄';
+      return;
+    }
+
+    list.innerHTML = S.transcript.map((l) => {
+      const hit = !q || l.text.toLowerCase().includes(q) || l.name.toLowerCase().includes(q);
+      let body = esc(l.text);
+      if (q && hit) {
+        const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        body = body.replace(re, '<mark>$1</mark>');
+      }
+      return `<div class="line${hit ? '' : ' hidden'}">
+        <div class="meta"><span class="who">${esc(l.name)}</span><span class="time">${clockTime(l.ts)}</span></div>
+        <div class="text">${body}</div></div>`;
+    }).join('');
+
+    $('lineCount').textContent = `${S.transcript.length}줄`;
+    if (atBottom) list.scrollTop = list.scrollHeight;
+  }
+
+  function addChat(name, text, ts) {
+    const list = $('chatList');
+    if (list.querySelector('.empty')) list.innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'line';
+    div.innerHTML = `<div class="meta"><span class="who">${esc(name)}</span><span class="time">${clockTime(ts)}</span></div>
+                     <div class="text">${esc(text)}</div>`;
+    list.appendChild(div);
+    list.scrollTop = list.scrollHeight;
+  }
+
+  /* ─────────────────────── 내보내기 ─────────────────────── */
+
+  function meta() {
+    const speakers = [...new Set(S.transcript.map((l) => l.name))];
+    const dur = offsetTime(S.transcript.length ? S.transcript[S.transcript.length - 1].tsEnd : Date.now());
+    return { speakers, dur, date: new Date(S.startedAt).toLocaleString('ko-KR') };
+  }
+
+  function asTxt() {
+    const m = meta();
+    return [
+      `회의: ${S.roomTitle}`, `일시: ${m.date}`, `길이: ${m.dur}`,
+      `참석: ${m.speakers.join(', ') || '-'}`, '─'.repeat(48), '',
+    ].join('\n') + S.transcript.map((l) => `[${offsetTime(l.ts)}] ${l.name}: ${l.text}`).join('\n');
+  }
+
+  function asMd() {
+    const m = meta();
+    return [
+      `# ${S.roomTitle} 회의록`, '',
+      `- **일시**: ${m.date}`, `- **길이**: ${m.dur}`,
+      `- **참석자**: ${m.speakers.join(', ') || '-'}`,
+      `- **발언 수**: ${S.transcript.length}`, '', '## 대본', '',
+      ...S.transcript.map((l) => `**${l.name}** \`${offsetTime(l.ts)}\`\n\n> ${l.text}\n`),
+    ].join('\n');
+  }
+
+  function asSrt() {
+    return S.transcript.map((l, i) => {
+      const start = l.ts;
+      const next = S.transcript[i + 1];
+      const guess = Math.min(8000, Math.max(1500, l.text.length * 90));
+      const end = next ? Math.min(next.ts, start + guess) : start + guess;
+      return `${i + 1}\n${offsetTime(start, true)} --> ${offsetTime(end, true)}\n${l.name}: ${l.text}\n`;
+    }).join('\n');
+  }
+
+  function summaryPrompt() {
+    const m = meta();
+    return `아래는 "${S.roomTitle}" 회의(${m.date}, 길이 ${m.dur})의 전체 대본입니다.
+음성인식으로 자동 생성되어 오탈자가 있을 수 있으니 문맥으로 보정해서 읽어 주세요.
+
+다음 형식으로 정리해 주세요.
+
+1. 한 줄 요약
+2. 핵심 논의 사항 (주제별 3~6개)
+3. 결정된 사항
+4. 액션 아이템 — 담당자 / 할 일 / 기한 (대본에 언급된 범위에서만)
+5. 미해결 질문 및 다음 회의로 넘길 것
+
+---
+${asTxt()}`;
+  }
+
+  /* ─────────────────────── 회의실 UI ─────────────────────── */
+
+  let roomUIReady = false;
+
+  function setupRoomUI() {
+    if (roomUIReady) return;
+    roomUIReady = true;
+
+    $('btnMic').onclick = () => {
+      const t = trackOf('audio'); if (!t) return;
+      t.enabled = !t.enabled;
+      $('btnMic').classList.toggle('on', t.enabled);
+      toast(t.enabled ? '마이크 켜짐' : '마이크 꺼짐', 1200);
+    };
+    $('btnCam').onclick = () => {
+      const t = trackOf('video'); if (!t) return;
+      t.enabled = !t.enabled;
+      $('btnCam').classList.toggle('on', t.enabled);
+      S.selfTile.classList.toggle('camon', t.enabled);
+    };
+    $('btnShare').onclick = toggleShare;
+    $('btnStt').onclick = () => {
+      if (S.sttOn) stopStt();
+      else if (sttSupported()) startStt();
+      else toast('이 브라우저는 자막을 지원하지 않습니다. Chrome 또는 Edge를 사용해 주세요.', 4000);
+    };
+    $('btnPanel').onclick = () => {
+      const hidden = $('room').classList.toggle('no-panel');
+      $('btnPanel').classList.toggle('on', !hidden);
+    };
+    $('btnLeave').onclick = leave;
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.onclick = () => {
+        document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+        $('panel-script').hidden = tab.dataset.tab !== 'script';
+        $('panel-chat').hidden = tab.dataset.tab !== 'chat';
+      };
+    });
+
+    $('scriptSearch').oninput = renderScript;
+
+    const fileBase = () => `${S.roomTitle}_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '')}`;
+    $('dlTxt').onclick = () => S.transcript.length ? download(`${fileBase()}.txt`, asTxt()) : toast('아직 대본이 없습니다.');
+    $('dlMd').onclick  = () => S.transcript.length ? download(`${fileBase()}.md`, asMd(), 'text/markdown;charset=utf-8') : toast('아직 대본이 없습니다.');
+    $('dlSrt').onclick = () => S.transcript.length ? download(`${fileBase()}.srt`, asSrt(), 'application/x-subrip') : toast('아직 대본이 없습니다.');
+    $('copyPrompt').onclick = async () => {
+      if (!S.transcript.length) return toast('아직 대본이 없습니다.');
+      const ok = await copyText(summaryPrompt());
+      toast(ok ? '요약 프롬프트를 복사했습니다. Claude나 ChatGPT에 붙여넣으세요.' : '복사에 실패했습니다.', 3500);
+    };
+
+    $('chatForm').onsubmit = (e) => {
+      e.preventDefault();
+      const text = $('chatInput').value.trim();
+      if (!text) return;
+      broadcast({ t: 'chat', text });
+      addChat(`${S.selfName} (나)`, text, Date.now());
+      $('chatInput').value = '';
+    };
+
+    window.addEventListener('beforeunload', (e) => {
+      if (S.transcript.length && !$('room').hidden) { e.preventDefault(); e.returnValue = ''; }
+    });
+    window.addEventListener('pagehide', () => broadcast({ t: 'bye' }));
+  }
+
+  async function toggleShare() {
+    if (S.screenStream) return stopShare();
+    try {
+      S.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    } catch { return; }
+    const track = S.screenStream.getVideoTracks()[0];
+    for (const p of S.peers.values()) {
+      const pc = p.call && p.call.peerConnection;
+      if (!pc) continue;
+      const sender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+      if (sender) sender.replaceTrack(track);
+    }
+    S.selfVideo.srcObject = S.screenStream;
+    S.selfTile.classList.add('sharing', 'camon');
+    $('btnShare').classList.add('on');
+    track.onended = stopShare;
+  }
+
+  function stopShare() {
+    if (!S.screenStream) return;
+    S.screenStream.getTracks().forEach((t) => t.stop());
+    S.screenStream = null;
+    const cam = trackOf('video');
+    for (const p of S.peers.values()) {
+      const pc = p.call && p.call.peerConnection;
+      if (!pc || !cam) continue;
+      const sender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+      if (sender) sender.replaceTrack(cam);
+    }
+    S.selfVideo.srcObject = S.localStream;
+    S.selfTile.classList.remove('sharing');
+    S.selfTile.classList.toggle('camon', !!(cam && cam.enabled));
+    $('btnShare').classList.remove('on');
+  }
+
+  function leave() {
+    if (S.transcript.length && !confirm('회의를 나가시겠어요? 대본을 저장하지 않았다면 사라집니다.')) return;
+    broadcast({ t: 'bye' });
+    S.transcript = [];
+    renderScript();
+    $('chatList').innerHTML = '<p class="empty">아직 메시지가 없습니다.</p>';
+    backToLobby('');
+  }
+
+  setupLobby();
+
+  window.__fm = S;
+  Object.assign(window.__fm, {
+    addLine, broadcast, scanRooms, enterRoom,
+    exports: { asTxt, asMd, asSrt, summaryPrompt },
+    consts: { ROOM_COUNT, ROOM_CAPACITY, SITE },
+  });
+})();
+</script>
+</body>
+</html>
