@@ -5,6 +5,9 @@ import { SHOP_ID, SHOP_NAME,MANAGER_NAME, firebaseConfig } from './config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, updateDoc, doc, query, where, orderBy, onSnapshot, limit, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { initAiGuide, openAiOrderGuide } from "./ai-guide.js";
+// 지점 장부가 별도 Firebase 프로젝트면 config.js 에 LEDGER_CONFIG 를 export 해두면 된다 (없으면 본점 장부)
+import * as SHOP_CFG from './config.js';
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -212,6 +215,20 @@ if(mainSearchInput && mainClearBtn) {
         renderMainTree(allProductsData);     // 목록 초기화
     };
 }
+
+/* 🤖 AI 주문가이드 초기화 — 상품/거래처 목록은 이미 메모리에 있는 것을 그대로 쓴다 */
+initAiGuide({
+    db,
+    shopId: SHOP_ID,
+    ledgerConfig: SHOP_CFG.LEDGER_CONFIG || null,
+    getProducts: () => allProductsData,
+    getSuppliers: () => allSuppliersData,
+    onPickProduct: (product, photoReqId) => {
+        const menu = document.querySelector('.menu-item[data-target="order-mgmt"]');
+        if (menu) menu.click();
+        displayOrderForm(product, null, photoReqId);
+    }
+});
 
 function focusProductInTree(product, optionId = null) {
     if(currentPhotoReqId) {
@@ -436,7 +453,7 @@ function subscribeToPhotoRequests() {
     
     // 1. 기준 시간 설정 (현재로부터 72시간 전)
     const timeLimit = new Date();
-    timeLimit.setHours(timeLimit.getHours() - 168);
+    timeLimit.setHours(timeLimit.getHours() - 72);
 
     // 2. 쿼리 (일단 최신순으로 가져옴)
     const q = query(collection(db, "photo_requests"), orderBy("timestamp", "desc"));
@@ -482,13 +499,13 @@ function subscribeToPhotoRequests() {
             
             div.className = `order-book-item ${statusClass}`;
             div.innerHTML = `<img src="${data.imageUrl}"><div class="photo-time-label time-top">${formatShortTime(data.timestamp)}</div>${data.note ? `<div class="photo-note-label">${data.note}</div>` : ''}`;
-            div.addEventListener('click', () => showPhotoViewer(data.id, data.imageUrl, data.status, data.note));
+            div.addEventListener('click', () => showPhotoViewer(data.id, data.imageUrl, data.status, data.note, data));
             queueContainer.appendChild(div);
         });
     });
 }
 
-function showPhotoViewer(docId, imageUrl, currentStatus, note) {
+function showPhotoViewer(docId, imageUrl, currentStatus, note, reqData = null) {
     let viewer = document.getElementById('photo-viewer-modal');
     viewer.innerHTML = `<div style="position:relative; max-width:90%; max-height:70%;"><img id="viewer-img" src="${imageUrl}" style="max-width:100%; max-height:70vh; border-radius:8px;"><button id="viewer-close" style="position:absolute; top:-40px; right:0; background:none; border:none; color:white; font-size:2.5rem; cursor:pointer;">&times;</button></div><div id="viewer-note" style="background:rgba(255,255,255,0.9); padding:10px 20px; border-radius:20px; margin-top:15px; font-weight:bold; color:#333; max-width:90%; text-align:center; display:${note ? 'block' : 'none'}">📝 ${note || ''}</div><div id="viewer-buttons" style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;"></div>`;
     
@@ -502,7 +519,16 @@ function showPhotoViewer(docId, imageUrl, currentStatus, note) {
         viewer.style.display = 'none';
     };
 
-    if(currentStatus === 'pending') { btnContainer.appendChild(createBtn('✅ 주문완료', '#27ae60', ()=>update('processed'))); btnContainer.appendChild(createBtn('🟠 보류', '#f39c12', ()=>update('hold', true))); } 
+    // 🤖 AI 주문가이드 — 상태와 무관하게 항상 제공
+    btnContainer.appendChild(createBtn('🤖 AI 주문가이드', '#8e44ad', () => {
+        openAiOrderGuide({
+            id: docId,
+            imageUrl: imageUrl,
+            aiScan: reqData ? reqData.aiScan : null
+        });
+    }));
+
+    if(currentStatus === 'pending') { btnContainer.appendChild(createBtn('✅ 주문완료', '#27ae60', ()=>update('processed'))); btnContainer.appendChild(createBtn('🟠 보류', '#f39c12', ()=>update('hold', true))); }
     else if(currentStatus === 'hold') { btnContainer.appendChild(createBtn('✅ 주문완료', '#27ae60', ()=>update('processed'))); btnContainer.appendChild(createBtn('↩️ 대기', '#34495e', ()=>update('pending'))); }
     else { btnContainer.appendChild(createBtn('↩️ 복구', '#e74c3c', ()=>update('pending'))); }
 
@@ -1410,5 +1436,4 @@ if (btnSaveSupervisorPw) {
 loadProducts();
 subscribeToRecentLogs();
 subscribeToPhotoRequests();
-
 subscribeToReturns();
