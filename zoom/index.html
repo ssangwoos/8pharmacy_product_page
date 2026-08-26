@@ -241,10 +241,17 @@ button, input, select { font: inherit; color: inherit; }
 .tile.speaking { border-color: var(--ok); box-shadow: 0 0 0 2px rgba(62,207,142,.35); }
 .tile .avatar {
   position: absolute; inset: 0;
-  display: grid; place-items: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
   background: linear-gradient(140deg, #232a3a, #171b24);
-  font-size: 2rem; font-weight: 600; color: var(--fg-dim);
+  color: var(--fg-dim);
 }
+.tile .avatar b {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--bg-3); border: 1px solid var(--line);
+  display: grid; place-items: center;
+  font-size: 1.6rem; font-weight: 600; color: var(--fg);
+}
+.tile .avatar em { font-style: normal; font-size: .76rem; letter-spacing: .01em; }
 .tile.camon .avatar { display: none; }
 
 .caption-bar {
@@ -517,6 +524,7 @@ button, input, select { font: inherit; color: inherit; }
   const SLOT_COUNT = 6;
   const SCAN_INTERVAL = 10000;
   const PROBE_TIMEOUT = 2500;
+  const PROBE_TIMEOUT_FAST = 1800;   // 카드를 눌렀을 때 그 방만 즉시 확인하는 용도
 
   /* 같은 PeerJS 공개 서버를 쓰는 다른 사이트와 방 주소가 겹치지 않도록
      배포 주소(도메인+경로)에서 사이트 키를 만듭니다.
@@ -644,23 +652,42 @@ button, input, select { font: inherit; color: inherit; }
     return (kind === 'video' ? S.localStream.getVideoTracks() : S.localStream.getAudioTracks())[0] || null;
   }
 
+  function mediaErrorText(err) {
+    switch (err && err.name) {
+      case 'NotReadableError':
+      case 'TrackStartError':
+        return '카메라를 다른 프로그램이 쓰고 있습니다. 같은 PC에서 다른 브라우저·줌·팀즈 등이 '
+             + '카메라를 잡고 있으면 여기서는 열리지 않습니다. 그 프로그램을 끄고 새로고침해 주세요.';
+      case 'NotAllowedError':
+      case 'PermissionDeniedError':
+        return '카메라 권한이 거부됐습니다. 주소창의 자물쇠 아이콘에서 허용으로 바꿔 주세요.';
+      case 'NotFoundError':
+      case 'DevicesNotFoundError':
+        return '연결된 카메라를 찾지 못했습니다.';
+      default:
+        return `카메라를 열지 못했습니다 (${(err && err.name) || '알 수 없는 오류'}).`;
+    }
+  }
+
   async function initPreview() {
     try {
       S.localStream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-    } catch {
+    } catch (camErr) {
       try {
+        // 카메라만 실패했을 수 있으니 마이크만으로 한 번 더 시도합니다.
         S.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         $('preCam').classList.remove('on');
-        toast('카메라를 쓸 수 없어 음성으로만 참여합니다.');
+        showError(`${mediaErrorText(camErr)} 지금은 음성으로만 참여합니다.`);
       } catch {
-        showError('마이크·카메라 권한이 필요합니다. 주소창의 자물쇠 아이콘에서 허용해 주세요.');
+        showError('마이크·카메라를 모두 열지 못했습니다. 주소창의 자물쇠 아이콘에서 권한을 허용해 주세요.');
         return;
       }
     }
     $('previewVideo').srcObject = S.localStream;
+    if (!S.localStream.getVideoTracks().length) $('preCam').classList.remove('on');
   }
 
   function setupLobby() {
@@ -689,6 +716,10 @@ button, input, select { font: inherit; color: inherit; }
       $('preMic').classList.toggle('on', t.enabled);
     };
 
+    $('scanState').onclick = () => scanRooms();
+    $('scanState').title = '눌러서 지금 새로고침';
+    $('scanState').style.cursor = 'pointer';
+
     S.rooms = Array.from({ length: ROOM_COUNT }, (_, i) => ({ no: i + 1, active: false, title: '', count: 0, locked: false }));
     renderRooms();
     initPreview();
@@ -709,7 +740,7 @@ button, input, select { font: inherit; color: inherit; }
     });
   }
 
-  function knock(scout, room, slot) {
+  function knock(scout, room, slot, timeout = PROBE_TIMEOUT) {
     return new Promise((resolve) => {
       if (!scout || !scout.open) return resolve(null);   // 그 사이 대기실을 떠났다면 중단
       let settled = false;
@@ -718,8 +749,38 @@ button, input, select { font: inherit; color: inherit; }
       conn.on('open', () => conn.send({ t: 'info' }));
       conn.on('data', (m) => { if (m && m.t === 'info') finish(m); });
       conn.on('error', () => finish(null));
-      setTimeout(() => finish(null), PROBE_TIMEOUT);
+      setTimeout(() => finish(null), timeout);
     });
+  }
+
+  async function ensureScout() {
+    if (S.scout && S.scout.open) return S.scout;
+    S.scout = await makeScout();
+    if (S.scout) S.scout.on('error', () => {});   // peer-unavailable = "빈 슬롯", 정상 상황
+    return S.scout;
+  }
+
+  /* 방 하나만 지금 즉시 확인합니다.
+     주기적인 목록 갱신(10초)은 어차피 늦을 수밖에 없으므로, 사용자가 방을
+     누르는 바로 그 순간 다시 물어봐서 "만들기냐 참여냐"를 정합니다.
+     목록이 낡아서 엉뚱한 화면이 뜨는 일을 없애는 게 목적입니다. */
+  async function checkRoom(roomNo) {
+    const scout = await ensureScout();
+    if (!scout) return null;
+    const head = await knock(scout, roomNo, 0, PROBE_TIMEOUT_FAST);
+    if (head) return head;
+    const rest = await Promise.all(
+      Array.from({ length: SLOT_COUNT - 1 }, (_, k) => knock(scout, roomNo, k + 1, PROBE_TIMEOUT_FAST)));
+    return rest.find(Boolean) || null;
+  }
+
+  function applyInfo(roomNo, info) {
+    const room = S.rooms[roomNo - 1];
+    room.active = !!info;
+    room.title = info ? String(info.title || '').slice(0, 24) : '';
+    room.count = info ? Math.min(ROOM_CAPACITY, Math.max(1, Number(info.count) || 1)) : 0;
+    room.locked = info ? !!info.locked : false;
+    return room;
   }
 
   let scanning = false;
@@ -730,11 +791,7 @@ button, input, select { font: inherit; color: inherit; }
     $('scanState').textContent = '확인 중…';
 
     try {
-      if (!S.scout || !S.scout.open) {
-        S.scout = await makeScout();
-        if (!S.scout) { $('scanState').textContent = '연결 실패 — 재시도 중'; return; }
-        S.scout.on('error', () => {});   // peer-unavailable = "빈 슬롯", 정상 상황
-      }
+      if (!(await ensureScout())) { $('scanState').textContent = '연결 실패 — 재시도 중'; return; }
 
       const scout = S.scout;   // 스캔 도중 방에 입장하면 scout 이 사라지므로 붙잡아 둡니다
 
@@ -752,13 +809,7 @@ button, input, select { font: inherit; color: inherit; }
       }));
       if (S.scout !== scout || $('lobby').hidden) return;
 
-      S.rooms.forEach((room, i) => {
-        const info = rest[i];
-        room.active = !!info;
-        room.title = info ? String(info.title || '').slice(0, 24) : '';
-        room.count = info ? Math.min(ROOM_CAPACITY, Math.max(1, Number(info.count) || 1)) : 0;
-        room.locked = info ? !!info.locked : false;
-      });
+      S.rooms.forEach((room, i) => applyInfo(room.no, rest[i]));
       renderRooms();
       $('scanState').textContent = '방금 갱신됨';
     } finally {
@@ -806,12 +857,36 @@ button, input, select { font: inherit; color: inherit; }
 
   /* ─────────────────────── 입장 모달 ─────────────────────── */
 
-  function openModal(roomNo) {
-    const room = S.rooms[roomNo - 1];
+  let opening = false;
+
+  async function openModal(roomNo, errMsg) {
     const name = $('nameInput').value.trim();
     if (!name) { showError('먼저 이름을 입력해 주세요.'); $('nameInput').focus(); return; }
     if (!S.localStream) { showError('마이크·카메라 준비가 아직 끝나지 않았습니다.'); return; }
+    if (opening) return;
+    opening = true;
     showError('');
+
+    /* 목록은 최대 10초 낡아 있을 수 있습니다. 방금 만들어진 방을
+       "비어 있음"으로 보고 새 비밀번호를 받으면 당연히 거절당하므로,
+       누른 그 방만 지금 다시 확인하고 나서 화면을 띄웁니다. */
+    const card = $('roomList').querySelector(`.room-card[data-room="${roomNo}"]`);
+    if (card) {
+      card.disabled = true;
+      card.querySelector('.rc-sub').textContent = '방 상태 확인 중…';
+    }
+    let room;
+    try {
+      room = applyInfo(roomNo, await checkRoom(roomNo));
+    } finally {
+      opening = false;
+      renderRooms();
+    }
+
+    if (room.count >= ROOM_CAPACITY) {
+      showError(`${roomNo}번 방은 이미 정원(${ROOM_CAPACITY}명)이 찼습니다.`);
+      return;
+    }
 
     const creating = !room.active;
     $('modalTitle').textContent = creating ? `${roomNo}번 방 만들기` : `${room.title || `방 ${roomNo}`} 참여`;
@@ -824,8 +899,10 @@ button, input, select { font: inherit; color: inherit; }
       : '비밀번호';
     $('roomTitle').value = creating ? `방 ${roomNo}` : room.title;
     $('roomPw').value = '';
-    $('modalError').hidden = true;
+    $('modalError').textContent = errMsg || '';
+    $('modalError').hidden = !errMsg;
     $('modalOk').textContent = creating ? '방 만들기' : '입장';
+    $('modalOk').disabled = false;
     $('modal').hidden = false;
     setTimeout(() => (creating ? $('roomTitle') : $('roomPw')).focus(), 50);
 
@@ -866,6 +943,7 @@ button, input, select { font: inherit; color: inherit; }
 
     addSelfTile();
     setupRoomUI();
+    toast('연결 중…', 4000);
 
     try {
       await claimSlotAndConnect();
@@ -1055,7 +1133,12 @@ button, input, select { font: inherit; color: inherit; }
      • 이미 방에 있는 사람이다 → 그냥 잘못 찾아온 사람을 끊어낸 것 (나는 그대로) */
   function authFailed(st) {
     if (st.outgoing && S.peers.size === 0 && S.pending.size === 0) {
-      backToLobby('비밀번호가 틀렸습니다.');
+      /* 대기실로 쫓아내고 끝내면, 목록이 낡아서 "방 만들기"로 들어갔던
+         사람은 왜 막혔는지 알 수 없습니다. 방 상태를 다시 확인해서
+         입장 화면을 그대로 다시 띄워 줍니다. */
+      const roomNo = S.roomNo;
+      backToLobby('');
+      openModal(roomNo, '비밀번호가 맞지 않습니다. 이미 열려 있는 방이라면 그 방의 비밀번호를 입력해 주세요.');
     }
   }
 
@@ -1110,7 +1193,7 @@ button, input, select { font: inherit; color: inherit; }
     call.on('stream', (stream) => {
       if (p.video.srcObject === stream) return;
       p.video.srcObject = stream;
-      p.tile.classList.add('camon');
+      bindVideoState(stream, p.tile);   // 실제 영상이 들어올 때만 검은 화면 대신 영상 표시
       watchAudio(stream, p.tile);
     });
     call.on('close', () => dropPeer(call.peer));
@@ -1145,7 +1228,7 @@ button, input, select { font: inherit; color: inherit; }
     if (!name || p.name === name) return;
     p.name = name;
     p.tile.querySelector('.label').textContent = name;
-    p.tile.querySelector('.avatar').textContent = name.slice(0, 1).toUpperCase();
+    p.tile.querySelector('.avatar b').textContent = name.slice(0, 1).toUpperCase();
   }
 
   function broadcast(obj) {
@@ -1161,7 +1244,7 @@ button, input, select { font: inherit; color: inherit; }
     tile.className = 'tile';
     tile.dataset.peer = id;
     tile.innerHTML = `
-      <div class="avatar">${esc(name.slice(0, 1).toUpperCase())}</div>
+      <div class="avatar"><b>${esc(name.slice(0, 1).toUpperCase())}</b><em>카메라 꺼짐</em></div>
       <video autoplay playsinline></video>
       <div class="label">${esc(name)}</div>`;
     $('grid').appendChild(tile);
@@ -1170,12 +1253,38 @@ button, input, select { font: inherit; color: inherit; }
 
   function addSelfTile() {
     const { tile, video } = addTile('self', `${S.selfName} (나)`);
-    tile.classList.add('self', 'camon');
+    tile.classList.add('self');
     video.muted = true;
     video.srcObject = S.localStream;
     S.selfTile = tile;
     S.selfVideo = video;
+    bindVideoState(S.localStream, tile);
     watchAudio(S.localStream, tile);
+  }
+
+  /* 영상이 "실제로 나오고 있을 때"만 화면을 보여주고, 아니면 이름 첫 글자를
+     띄웁니다. 카메라가 없거나 다른 앱이 잡고 있으면 검은 사각형만 남아서
+     "연결이 안 된 건가?" 싶어지는데, 그 혼란을 막기 위한 처리입니다.
+     원격 영상 트랙은 붙는 순간엔 muted 상태였다가 데이터가 흐르면 풀립니다. */
+  function bindVideoState(stream, tile) {
+    const apply = () => {
+      const v = stream.getVideoTracks()[0];
+      const live = !!v && v.readyState === 'live' && v.enabled && !v.muted;
+      tile.classList.toggle('camon', live);
+    };
+    tile._applyCam = apply;
+
+    const bind = (t) => { t.onmute = apply; t.onunmute = apply; t.onended = apply; };
+    stream.getVideoTracks().forEach(bind);
+    stream.onaddtrack = (e) => { if (e.track.kind === 'video') bind(e.track); apply(); };
+    apply();
+
+    // 트랙 교체(화면공유 등)나 늦게 도착하는 첫 프레임까지 잠깐 지켜봅니다.
+    let n = 0;
+    const iv = setInterval(() => {
+      if (!tile.isConnected || ++n > 30) return clearInterval(iv);
+      apply();
+    }, 500);
   }
 
   const updateCount = () => {
@@ -1391,7 +1500,7 @@ ${asTxt()}`;
       const t = trackOf('video'); if (!t) return;
       t.enabled = !t.enabled;
       $('btnCam').classList.toggle('on', t.enabled);
-      S.selfTile.classList.toggle('camon', t.enabled);
+      S.selfTile._applyCam && S.selfTile._applyCam();
     };
     $('btnShare').onclick = toggleShare;
     $('btnStt').onclick = () => {
@@ -1453,7 +1562,8 @@ ${asTxt()}`;
       if (sender) sender.replaceTrack(track);
     }
     S.selfVideo.srcObject = S.screenStream;
-    S.selfTile.classList.add('sharing', 'camon');
+    S.selfTile.classList.add('sharing');
+    bindVideoState(S.screenStream, S.selfTile);
     $('btnShare').classList.add('on');
     track.onended = stopShare;
   }
@@ -1471,7 +1581,7 @@ ${asTxt()}`;
     }
     S.selfVideo.srcObject = S.localStream;
     S.selfTile.classList.remove('sharing');
-    S.selfTile.classList.toggle('camon', !!(cam && cam.enabled));
+    bindVideoState(S.localStream, S.selfTile);
     $('btnShare').classList.remove('on');
   }
 
