@@ -20,3 +20,12 @@ export const firebaseConfig = {
     messagingSenderId: "713414389922",
     appId: "1:713414389922:web:606452de8b27fe847ca7fb"
 };
+
+export const LEDGER_CONFIG = {
+    apiKey: "AIzaSyD6gYbjdXjdwLNP4baJTxKZpqbaSFkG670",
+    authDomain: "ledger-cmr8p.firebaseapp.com",
+    projectId: "ledger-cmr8p",
+    storageBucket: "ledger-cmr8p.firebasestorage.app",
+    messagingSenderId: "556126872516",
+    appId: "1:556126872516:web:2c5e1044619d5201837a91"
+};
