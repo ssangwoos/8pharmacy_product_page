@@ -20,3 +20,12 @@ export const firebaseConfig = {
     messagingSenderId: "713414389922",
     appId: "1:713414389922:web:606452de8b27fe847ca7fb"
 };
+
+export const LEDGER_CONFIG = {
+    apiKey: "AIzaSyACOqns4PnakUaowOC107czAkNUsvvVhLA",
+    authDomain: "ledger-aewol.firebaseapp.com",
+    projectId: "ledger-aewol",
+    storageBucket: "ledger-aewol.firebasestorage.app",
+    messagingSenderId: "1085469734295",
+    appId: "1:1085469734295:web:0dbdfd0d675321686300d2"
+};
