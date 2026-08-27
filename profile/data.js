@@ -8,15 +8,15 @@
    ══════════════════════════════════════════════════════════════════════ */
 
 const LANGS = [
-  { code: "ko", short: "KR", label: "한국어",           flag: "../images/flag-kr.png" },
-  { code: "en", short: "EN", label: "English",          flag: "../images/flag-en.png" },
-  { code: "ja", short: "JP", label: "日本語",            flag: "../images/flag-jp.png" },
-  { code: "zh", short: "CN", label: "简体中文",          flag: "../images/flag-cn.png" },
-  { code: "tw", short: "TW", label: "繁體中文",          flag: "../images/flag-tw.png" },
-  { code: "th", short: "TH", label: "ไทย",              flag: "../images/flag-th.png" },
-  { code: "vi", short: "VN", label: "Tiếng Việt",       flag: "../images/flag-vn.png" },
-  { code: "id", short: "ID", label: "Indonesia", flag: "../images/flag-id.png" },
-  { code: "mn", short: "MN", label: "Монгол",           flag: "../images/flag-mn.png" }
+  { code: "ko", short: "KR", label: "한국어",           flag: "images/flag-kr.png" },
+  { code: "en", short: "EN", label: "English",          flag: "images/flag-en.png" },
+  { code: "ja", short: "JP", label: "日本語",            flag: "images/flag-jp.png" },
+  { code: "zh", short: "CN", label: "简体中文",          flag: "images/flag-cn.png" },
+  { code: "tw", short: "TW", label: "繁體中文",          flag: "images/flag-tw.png" },
+  { code: "th", short: "TH", label: "ไทย",              flag: "images/flag-th.png" },
+  { code: "vi", short: "VN", label: "Tiếng Việt",       flag: "images/flag-vn.png" },
+  { code: "id", short: "ID", label: "Indonesia", flag: "images/flag-id.png" },
+  { code: "mn", short: "MN", label: "Монгол",           flag: "images/flag-mn.png" }
 ];
 
 const LANG_CODES = LANGS.map(l => l.code);

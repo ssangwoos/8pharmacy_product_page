@@ -32,7 +32,41 @@ let onlyOpen = false;
 let DATA = epNormalize(DEFAULT_DATA);
 
 /* ── 언어 감지 ───────────────────────────────────────────────────────── */
+
+/* "ja" "JP" "ja-JP" "japanese" 같은 여러 표기를 지원 언어 코드로 정리 */
+function normalizeLangCode(raw){
+  if (!raw) return "";
+  const v = String(raw).trim().toLowerCase().replace(/_/g, "-");
+  if (LANG_CODES.includes(v)) return v;                       // ja, zh, tw …
+  const byShort = LANGS.find(l => l.short.toLowerCase() === v); // JP, CN, VN …
+  if (byShort) return byShort.code;
+  for (const [re, code] of LANG_MATCH) if (re.test(v)) return code;
+  return "";
+}
+
+/* 주소에 지정된 언어 읽기 — ?lang=ja / ?l=jp / #ja 모두 인식 */
+function langFromUrl(){
+  try {
+    const q = new URLSearchParams(location.search);
+    const fromQuery = normalizeLangCode(q.get("lang") || q.get("l") || q.get("hl"));
+    if (fromQuery) return fromQuery;
+    const h = (location.hash || "").replace(/^#/, "").replace(/^lang=/i, "");
+    if (h && h.length <= 5) return normalizeLangCode(h);
+  } catch (e) { /* 주소 해석 실패는 무시 */ }
+  return "";
+}
+
 function detectLang(){
+  // 0) 주소로 언어를 지정했으면 무조건 그 언어 (?lang=ja 처럼)
+  const forced = langFromUrl();
+  if (forced) {
+    try {
+      if (typeof REMEMBER_LANG === "undefined" || REMEMBER_LANG)
+        localStorage.setItem(STORE_KEY, forced);
+    } catch (e) { /* 저장 실패는 무시 */ }
+    return forced;
+  }
+
   // 1) 손님이 직접 고른 언어가 있으면 그것을 우선 (REMEMBER_LANG 이 true 일 때)
   if (typeof REMEMBER_LANG === "undefined" || REMEMBER_LANG) {
     try {

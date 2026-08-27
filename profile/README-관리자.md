@@ -92,7 +92,30 @@ match /profile/{docId} {
 | `id` | Indonesia | `flag-id.png` |
 | `mn` | Монгол | `flag-mn.png` |
 
-- 처음 방문하면 **브라우저 언어로 자동 선택**되고, 한 번 고르면 그 브라우저에 기억됩니다.
+### 언어가 정해지는 순서
+
+1. **주소로 지정한 언어** — `?lang=ja` 처럼 붙이면 무조건 그 언어로 열립니다.
+2. 손님이 예전에 고른 언어 (그 브라우저에 기억됨)
+3. `AUTO_DETECT_LANG` 가 true 면 브라우저 언어
+4. `DEFAULT_LANG` (현재 영어)
+
+### 언어별 바로가기 주소
+
+| 언어 | 주소 |
+|---|---|
+| English | `https://8pharmacy.kr/profile/` |
+| 日本語 | `https://8pharmacy.kr/profile/?lang=ja` |
+| 简体中文 | `https://8pharmacy.kr/profile/?lang=zh` |
+| 繁體中文 | `https://8pharmacy.kr/profile/?lang=tw` |
+| ไทย | `https://8pharmacy.kr/profile/?lang=th` |
+| Tiếng Việt | `https://8pharmacy.kr/profile/?lang=vi` |
+| Indonesia | `https://8pharmacy.kr/profile/?lang=id` |
+| Монгол | `https://8pharmacy.kr/profile/?lang=mn` |
+| 한국어 | `https://8pharmacy.kr/profile/?lang=ko` |
+
+`?lang=jp`, `?lang=cn`, `?lang=vn` 처럼 국기 표기(JP/CN/VN)로 적어도 인식합니다.
+
+- 손님이 한 번 언어를 고르면 그 브라우저에 기억됩니다.
 - 어떤 언어의 내용을 비워두면 그 자리는 **영어 → 한국어** 순으로 대신 표시됩니다.
   화면이 비어 보이는 일은 없습니다.
 - 언어를 더 늘리려면 `data.js` 의 `LANGS` 배열에 한 줄 추가하고, `UI` 에 같은 코드의
