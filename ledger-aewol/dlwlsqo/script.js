@@ -69,13 +69,13 @@ function getActiveTier(monthlyTotalSales) {
     return active;
 }
 
-// 화면의 "마진" = 약국 마진(매출총이익에서 회사 RS를 뺀 약국 몫).
-//   A     : 약국 100% 귀속(RS 없음)  → 약국마진 = A × 마진율_A
-//   B, C  : 약국마진 = (매출 × 마진율) − 회사귀속
-//           회사귀속 = 매출 × RS − 누진공제
-//           → 비례분 = 매출 × (마진율 − RS),  누진공제는 월 정액(월간 1회 반영)
-//   D     : MARGIN_D_FIXED(25%) 고정
-// 여기서는 "비례분"만 반환하고, 누진공제는 updateSummaryUI에서 월 1회 더한다.
+// 화면의 "마진" = 약국 마진. 그룹마다 매출 구성이 다르다.
+//   A : 약국 사입, RS 없음        →  A매출 = 원가 + 약국마진        →  약국마진 = 매출 × 마진율_A
+//   B : 약국 사입, RS 있음        →  B매출 = 원가 + RS + 약국마진    →  약국마진 = 매출 × (마진율_B − RS_B)
+//   C : 약국 사입 아님(원가 없음) →  C매출 = RS + 약국마진          →  약국마진 = 매출 × (1 − RS_C)
+//       ※ C는 원가가 없으므로 마진율을 곱하지 않는다. RS를 뺀 나머지가 전부 약국 몫.
+//   D : MARGIN_D_FIXED(25%) 고정
+// 누진공제(월 정액)는 여기서 빼고, updateSummaryUI에서 월 1회 더한다(약국 몫에 가산).
 function calculateProfit(data, tier) {
     const A = data.groupA || 0;
     const B = data.groupB || 0;
@@ -83,12 +83,11 @@ function calculateProfit(data, tier) {
     const D = data.groupD || 0;
     const mA = (marginRates.A || 0) / 100;
     const mB = (marginRates.B || 0) / 100;
-    const mC = (marginRates.C || 0) / 100;
     const rsB = (tier.rsB || 0) / 100;
     const rsC = (tier.rsC || 0) / 100;
-    const marginA = A * mA;              // A: RS 없음
-    const marginB = B * (mB - rsB);      // B: 마진 − RS 비례분
-    const marginC = C * (mC - rsC);      // C: 마진 − RS 비례분
+    const marginA = A * mA;              // A: 원가 + 약국마진 → 매출 × 마진율
+    const marginB = B * (mB - rsB);      // B: 원가 + RS + 약국마진 → 매출 × (마진율 − RS)
+    const marginC = C * (1 - rsC);       // C: RS + 약국마진 → 매출 × (1 − RS), 원가·마진율 미적용
     const marginD = D * (MARGIN_D_FIXED / 100);
     return {
         a: Math.round(marginA),
@@ -780,8 +779,8 @@ function showDayDetail(dateKey, tier) {
     container.innerHTML = `
         <div class="detail-item-list">
             <div class="detail-row group-A"><span>그룹 A 매출 (마진 ${marginRates.A}%)</span><span>${data.groupA.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.a.toLocaleString()} 원)</span></span></div>
-            <div class="detail-row group-B"><span>그룹 B 매출 (마진 ${marginRates.B}% − RS ${(tier.rsB || 0)}%)</span><span><strong>${data.groupB.toLocaleString()} 원</strong> <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.b.toLocaleString()} 원)</span></span></div>
-            <div class="detail-row group-C"><span>그룹 C 매출 (마진 ${marginRates.C}% − RS ${(tier.rsC || 0)}%)</span><span>${data.groupC.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.c.toLocaleString()} 원)</span></span></div>
+            <div class="detail-row group-B"><span>그룹 B 매출 (마진 ${marginRates.B}% − RS ${(tier.rsB || 0)}%, 약국사입)</span><span><strong>${data.groupB.toLocaleString()} 원</strong> <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.b.toLocaleString()} 원)</span></span></div>
+            <div class="detail-row group-C"><span>그룹 C 매출 (RS ${(tier.rsC || 0)}% 제외, 약국 ${100 - (tier.rsC || 0)}%)</span><span>${data.groupC.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.c.toLocaleString()} 원)</span></span></div>
             <div class="detail-row group-D"><span>그룹 D 매출 (마진 25%)</span><span>${data.groupD.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.d.toLocaleString()} 원)</span></span></div>
             <div class="detail-row"><span>원판매금액 합계 (AE열)</span><span style="font-weight:600; color:#2c3e50;">${data.originalTotal.toLocaleString()} 원</span></div>
             <div class="detail-row"><span>텍스리펀 환급액 (AA열)</span><span style="font-weight:600; color:#2c3e50;">${data.taxRefundTotal.toLocaleString()} 원</span></div>
