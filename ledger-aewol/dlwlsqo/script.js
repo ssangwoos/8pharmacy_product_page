@@ -30,11 +30,15 @@ const _today = new Date();
 let currentYear = _today.getFullYear();
 let currentMonth = _today.getMonth();   // 0-indexed, 오늘 기준 자동
 
+// [RS 스펙 반영] 값은 "회사귀속" 기준 (RS_B, RS_C = 회사가 가져가는 %).
+//  - A그룹(의약품)은 전 구간 약국 100% 귀속, RS 산정 제외 → 별도 요율 없음
+//  - 누진공제_B / 누진공제_C 는 "월 단위 정액"이며 월간 합산에서 1회만 반영
+//    (deductB 는 스펙 표기 그대로 음수, deductC 는 양수)
 let tierSettings = [
-    { threshold: 0, a: 20, b: 20, c: 70, deductB: 0 },
-    { threshold: 100000000, a: 15, b: 15, c: 80, deductB: -1500000 },
-    { threshold: 200000000, a: 10, b: 10, c: 90, deductB: -3000000 },
-    { threshold: 300000000, a: 7.5, b: 7.5, c: 90, deductB: 0 }
+    { threshold: 0,         rsB: 20, rsC: 70, deductB: 0,        deductC: 0 },
+    { threshold: 100000000, rsB: 10, rsC: 80, deductB: -1500000, deductC: 7000000 },
+    { threshold: 200000000, rsB: 0,  rsC: 90, deductB: -3000000, deductC: 24000000 },
+    { threshold: 300000000, rsB: 10, rsC: 90, deductB: 0,        deductC: 25500000 }
 ];
 const MARGIN_D_FIXED = 25;
 
@@ -59,11 +63,20 @@ function getActiveTier(monthlyTotalSales) {
     return active;
 }
 
+// 화면의 "마진" = 약국 귀속(약국이 갖는 몫).
+//   약국귀속 = 매출 − 회사귀속,  회사귀속 = 매출 × RS − 누진공제
+//   → 약국귀속 = 매출 × (1 − RS) + 누진공제
+// 여기서는 "요율 비례분"만 반환한다(= 매출 × (1 − RS)).
+// 누진공제는 월 단위 정액이므로 월간 합산(updateSummaryUI)에서 1회만 더한다.
 function calculateProfit(data, tier) {
-    const marginA = (data.groupA || 0) * (tier.a / 100);
-    const marginB = (data.groupB || 0) * (tier.b / 100);
-    const marginC = (data.groupC || 0) * (tier.c / 100);
-    const marginD = (data.groupD || 0) * (MARGIN_D_FIXED / 100);
+    const A = data.groupA || 0;
+    const B = data.groupB || 0;
+    const C = data.groupC || 0;
+    const D = data.groupD || 0;
+    const marginA = A;                                   // A: 약국 100% 귀속
+    const marginB = B * (1 - (tier.rsB || 0) / 100);     // 약국 B 요율분
+    const marginC = C * (1 - (tier.rsC || 0) / 100);     // 약국 C 요율분
+    const marginD = D * (MARGIN_D_FIXED / 100);          // D: 25% 고정(스펙 외)
     return {
         a: Math.round(marginA),
         b: Math.round(marginB),
@@ -174,20 +187,29 @@ function switchTab(tabContentId, element) {
 function loadMarginsFromFirestore() {
     db.collection("settings").doc("progressive_margins").get().then((doc) => {
         if (doc.exists) {
-            tierSettings = doc.data().tiers || tierSettings;
+            const stored = doc.data().tiers;
+            // 신규 스키마(rsB/rsC)일 때만 채택. 구 스키마({a,b,c})는 의미가 달라
+            // 그대로 쓰면 계산이 틀어지므로 폐기하고 스펙 기본값을 유지한다.
+            if (Array.isArray(stored) && stored.length && stored[0].rsB !== undefined) {
+                tierSettings = stored;
+            }
         }
         const rows = document.querySelectorAll('#tierSettingsBody tr');
         tierSettings.forEach((ts, i) => {
             if (rows[i]) {
-                rows[i].querySelector('.in-a').value = ts.a;
-                rows[i].querySelector('.in-b').value = ts.b;
-                rows[i].querySelector('.in-c').value = ts.c;
-                rows[i].querySelector('.in-deduct').value = ts.deductB;
+                const rsb = rows[i].querySelector('.in-rsb');
+                const rsc = rows[i].querySelector('.in-rsc');
+                const dB  = rows[i].querySelector('.in-deductb');
+                const dC  = rows[i].querySelector('.in-deductc');
+                if (rsb) rsb.value = ts.rsB;
+                if (rsc) rsc.value = ts.rsC;
+                if (dB)  dB.value  = ts.deductB;
+                if (dC)  dC.value  = ts.deductC;
             }
         });
         renderCalendar();
     }).catch((error) => {
-        console.error("마진 설정 로드 실패:", error);
+        console.error("RS 설정 로드 실패:", error);
         renderCalendar();
     });
 }
@@ -202,17 +224,17 @@ function saveMarginSettings() {
         else if (i === 3) currentThreshold = 300000000;
         newTiers.push({
             threshold: currentThreshold,
-            a: parseFloat(tr.querySelector('.in-a').value) || 0,
-            b: parseFloat(tr.querySelector('.in-b').value) || 0,
-            c: parseFloat(tr.querySelector('.in-c').value) || 0,
-            deductB: parseFloat(tr.querySelector('.in-deduct').value) || 0
+            rsB: parseFloat(tr.querySelector('.in-rsb').value) || 0,
+            rsC: parseFloat(tr.querySelector('.in-rsc').value) || 0,
+            deductB: parseFloat(tr.querySelector('.in-deductb').value) || 0,
+            deductC: parseFloat(tr.querySelector('.in-deductc').value) || 0
         });
     });
     db.collection("settings").doc("progressive_margins").set({ tiers: newTiers }).then(() => {
         tierSettings = newTiers;
         document.getElementById('settingsModal').classList.remove('active');
         renderCalendar();
-        alert("💾 마진율 조건이 성공적으로 변경 완료되었습니다.");
+        alert("💾 RS 요율/누진공제 설정이 성공적으로 변경 완료되었습니다.");
     }).catch((error) => alert("설정 저장 실패: " + error));
 }
 
@@ -574,18 +596,23 @@ function draw3DPieChart(a, b, c, d) {
 
 function updateSummaryUI(sum, tier, totalMonthlyExpense) {
     const m = calculateProfit(sum, tier);
-    const finalTotalMargin = m.a + m.b + m.c + m.d + tier.deductB;
+    // 누진공제(월 정액)를 월간에서 1회 반영: 약국 B = 요율분 + 누진공제_B, 약국 C = 요율분 + 누진공제_C
+    const deductB = tier.deductB || 0;
+    const deductC = tier.deductC || 0;
+    const finalB = m.b + deductB;
+    const finalC = m.c + deductC;
+    const finalTotalMargin = m.a + finalB + finalC + m.d;
     const pctReal = sum.realPaymentTotal > 0 ? ((finalTotalMargin / sum.realPaymentTotal) * 100).toFixed(1) : '0.0';
     const pctA = sum.groupA > 0 ? ((m.a / sum.groupA) * 100).toFixed(1) : '0.0';
-    const pctB = sum.groupB > 0 ? (((m.b + tier.deductB) / sum.groupB) * 100).toFixed(1) : '0.0';
-    const pctC = sum.groupC > 0 ? ((m.c / sum.groupC) * 100).toFixed(1) : '0.0';
+    const pctB = sum.groupB > 0 ? ((finalB / sum.groupB) * 100).toFixed(1) : '0.0';
+    const pctC = sum.groupC > 0 ? ((finalC / sum.groupC) * 100).toFixed(1) : '0.0';
     const pctD = sum.groupD > 0 ? ((m.d / sum.groupD) * 100).toFixed(1) : '0.0';
     document.getElementById('totalOrig').textContent = sum.originalTotal.toLocaleString() + '원';
     document.getElementById('totalTax').textContent = sum.taxRefundTotal.toLocaleString() + '원';
     document.getElementById('totalReal').innerHTML = `${sum.realPaymentTotal.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(finalTotalMargin).toLocaleString()}원, ${pctReal}%)</div>`;
     document.getElementById('totalA').innerHTML = `${sum.groupA.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(m.a).toLocaleString()}원, ${pctA}%)</div>`;
-    document.getElementById('totalB').innerHTML = `${sum.groupB.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(m.b + tier.deductB).toLocaleString()}원, ${pctB}%)</div>`;
-    document.getElementById('totalC').innerHTML = `${sum.groupC.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(m.c).toLocaleString()}원, ${pctC}%)</div>`;
+    document.getElementById('totalB').innerHTML = `${sum.groupB.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(finalB).toLocaleString()}원, ${pctB}%)</div>`;
+    document.getElementById('totalC').innerHTML = `${sum.groupC.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(finalC).toLocaleString()}원, ${pctC}%)</div>`;
     document.getElementById('totalD').innerHTML = `${sum.groupD.toLocaleString()}원 <div style="color:#e53935; font-size:12px; font-weight:600; margin-top:4px;">(${Math.round(m.d).toLocaleString()}원, ${pctD}%)</div>`;
     const summaryCardSec = document.getElementById('summarySection');
     if (summaryCardSec) summaryCardSec.style.display = 'grid';
@@ -718,15 +745,15 @@ function showDayDetail(dateKey, tier) {
     const marginPercent = data.realPaymentTotal > 0 ? ((estimatedMargin / data.realPaymentTotal) * 100).toFixed(1) : '0.0';
     container.innerHTML = `
         <div class="detail-item-list">
-            <div class="detail-row group-A"><span>그룹 A 매출 (마진 ${tier.a}%)</span><span>${data.groupA.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.a.toLocaleString()} 원)</span></span></div>
-            <div class="detail-row group-B"><span>그룹 B 매출 (마진 ${tier.b}%)</span><span><strong>${data.groupB.toLocaleString()} 원</strong> <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.b.toLocaleString()} 원)</span></span></div>
-            <div class="detail-row group-C"><span>그룹 C 매출 (마진 ${tier.c}%)</span><span>${data.groupC.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.c.toLocaleString()} 원)</span></span></div>
+            <div class="detail-row group-A"><span>그룹 A 매출 (약국 100%)</span><span>${data.groupA.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.a.toLocaleString()} 원)</span></span></div>
+            <div class="detail-row group-B"><span>그룹 B 매출 (약국 ${(100 - (tier.rsB || 0))}%)</span><span><strong>${data.groupB.toLocaleString()} 원</strong> <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.b.toLocaleString()} 원)</span></span></div>
+            <div class="detail-row group-C"><span>그룹 C 매출 (약국 ${(100 - (tier.rsC || 0))}%)</span><span>${data.groupC.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.c.toLocaleString()} 원)</span></span></div>
             <div class="detail-row group-D"><span>그룹 D 매출 (마진 25%)</span><span>${data.groupD.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.d.toLocaleString()} 원)</span></span></div>
             <div class="detail-row"><span>원판매금액 합계 (AE열)</span><span style="font-weight:600; color:#2c3e50;">${data.originalTotal.toLocaleString()} 원</span></div>
             <div class="detail-row"><span>텍스리펀 환급액 (AA열)</span><span style="font-weight:600; color:#2c3e50;">${data.taxRefundTotal.toLocaleString()} 원</span></div>
             <div class="detail-row total-row"><span>실 결제금액 합계 (AF열)</span><span style="font-weight:700; color:var(--primary-dark);">${data.realPaymentTotal.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${estimatedMargin.toLocaleString()} 원, ${marginPercent}%)</span></span></div>
             <div class="detail-row" style="border-left-color: var(--accent-red); background: #fdf2f2;"><span class="label" style="color: var(--accent-red); font-weight:700;">일일 총 예상마진 합계</span><span class="val" style="color: var(--accent-red); font-weight:700; font-size:16px;">${estimatedMargin.toLocaleString()} 원</span></div>
-            <p style="font-size: 11px; color: #70857a; margin-top: 8px; padding: 0 4px; line-height: 1.4;">* 당월 총 실결제 매출액 구간 [₩${tier.threshold.toLocaleString()} 이상] 요율 세트가 실시간 동적 적용되었습니다.</p>
+            <p style="font-size: 11px; color: #70857a; margin-top: 8px; padding: 0 4px; line-height: 1.4;">* 당월 총 실결제 매출액 구간 [₩${tier.threshold.toLocaleString()} 이상] 요율 세트가 실시간 동적 적용되었습니다.<br>* 일별 값은 RS 요율분만 반영한 예상치이며, 누진공제(월 정액)는 상단 월간 정산에만 반영됩니다.</p>
             <button onclick="deleteDateData('${dateKey}')" style="width: 100%; margin-top: 14px; padding: 12px; background-color: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; border-radius: 8px; font-weight: 600; cursor: pointer;">🗑 이 날짜의 모든 데이터 삭제하기</button>
         </div>`;
 }

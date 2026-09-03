@@ -218,50 +218,50 @@
     <div id="settingsModal" class="modal-overlay">
         <div class="modal-window" style="max-width: 800px;">
             <div class="modal-header">
-                <h2>구간별 마진율 및 누진공제 설정</h2>
+                <h2>구간별 RS(회사귀속) 요율 및 누진공제 설정</h2>
                 <button id="closeModalBtn" class="close-x-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="modal-tip">월간 총 실결제액 구간에 따라 그룹 A, B, C의 마진율과 B의 누진공제액을 설정합니다. (D는 25% 고정)</p>
+                <p class="modal-tip">월간 총 실결제액 구간에 따라 <strong>RS_B / RS_C(회사귀속 %)</strong>와 <strong>누진공제_B / 누진공제_C</strong>를 설정합니다. 화면 마진은 약국 귀속(매출 − 회사귀속) 기준입니다. (A는 약국 100% 귀속·RS 제외, D는 25% 고정)</p>
                 <div class="table-responsive">
                     <table class="settings-table">
                         <thead>
                             <tr>
                                 <th>월 매출 구간</th>
-                                <th>A 마진(%)</th>
-                                <th>B 마진(%)</th>
-                                <th>C 마진(%)</th>
-                                <th>B 누진공제</th>
+                                <th>RS_B (회사귀속 %)</th>
+                                <th>RS_C (회사귀속 %)</th>
+                                <th>누진공제_B</th>
+                                <th>누진공제_C</th>
                             </tr>
                         </thead>
                         <tbody id="tierSettingsBody">
                             <tr data-tier="1">
                                 <td>0 ~ 1억 이하</td>
-                                <td><input type="number" class="in-a" value="20"></td>
-                                <td><input type="number" class="in-b" value="20"></td>
-                                <td><input type="number" class="in-c" value="70"></td>
-                                <td><input type="number" class="in-deduct" value="0"></td>
+                                <td><input type="number" class="in-rsb" value="20"></td>
+                                <td><input type="number" class="in-rsc" value="70"></td>
+                                <td><input type="number" class="in-deductb" value="0"></td>
+                                <td><input type="number" class="in-deductc" value="0"></td>
                             </tr>
                             <tr data-tier="2">
                                 <td>1억 초과 ~ 2억 이하</td>
-                                <td><input type="number" class="in-a" value="15"></td>
-                                <td><input type="number" class="in-b" value="15"></td>
-                                <td><input type="number" class="in-c" value="80"></td>
-                                <td><input type="number" class="in-deduct" value="-1500000"></td>
+                                <td><input type="number" class="in-rsb" value="10"></td>
+                                <td><input type="number" class="in-rsc" value="80"></td>
+                                <td><input type="number" class="in-deductb" value="-1500000"></td>
+                                <td><input type="number" class="in-deductc" value="7000000"></td>
                             </tr>
                             <tr data-tier="3">
                                 <td>2억 초과 ~ 3억 이하</td>
-                                <td><input type="number" class="in-a" value="10"></td>
-                                <td><input type="number" class="in-b" value="10"></td>
-                                <td><input type="number" class="in-c" value="90"></td>
-                                <td><input type="number" class="in-deduct" value="-3000000"></td>
+                                <td><input type="number" class="in-rsb" value="0"></td>
+                                <td><input type="number" class="in-rsc" value="90"></td>
+                                <td><input type="number" class="in-deductb" value="-3000000"></td>
+                                <td><input type="number" class="in-deductc" value="24000000"></td>
                             </tr>
                             <tr data-tier="4">
                                 <td>3억 초과</td>
-                                <td><input type="number" class="in-a" value="7.5"></td>
-                                <td><input type="number" class="in-b" value="7.5"></td>
-                                <td><input type="number" class="in-c" value="90"></td>
-                                <td><input type="number" class="in-deduct" value="0"></td>
+                                <td><input type="number" class="in-rsb" value="10"></td>
+                                <td><input type="number" class="in-rsc" value="90"></td>
+                                <td><input type="number" class="in-deductb" value="0"></td>
+                                <td><input type="number" class="in-deductc" value="25500000"></td>
                             </tr>
                         </tbody>
                     </table>
