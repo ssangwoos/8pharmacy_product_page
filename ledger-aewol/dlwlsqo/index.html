@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>약국 통합 경영 관리 대시보드</title>
-    <link rel="stylesheet" href="style.css?v=20260903-rs2">
+    <link rel="stylesheet" href="style.css?v=20260903-rs3">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -168,7 +168,7 @@
                         <span id="pMetricReal">0 원</span>
                     </div>
                     <div class="metric-box bg-margin">
-                        <h4>총 매출총이익 (A+B+C+D 마진합계)</h4>
+                        <h4>총 약국마진 (마진 − RS 합계)</h4>
                         <span id="pMetricMargin">0 원</span>
                     </div>
                     <div class="metric-box bg-expense">
@@ -221,11 +221,31 @@
     <div id="settingsModal" class="modal-overlay">
         <div class="modal-window" style="max-width: 800px;">
             <div class="modal-header">
-                <h2>구간별 RS(회사귀속) 요율 및 누진공제 설정</h2>
+                <h2>마진율 · RS(회사귀속) · 누진공제 설정</h2>
                 <button id="closeModalBtn" class="close-x-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="modal-tip">월간 총 실결제액 구간에 따라 <strong>RS_B / RS_C(회사귀속 %)</strong>와 <strong>누진공제_B / 누진공제_C</strong>를 설정합니다. 화면 마진은 약국 귀속(매출 − 회사귀속) 기준입니다. (A는 약국 100% 귀속·RS 제외, D는 25% 고정)</p>
+                <p class="modal-tip"><strong>① 그룹별 마진율</strong>(원가 대비 매출총이익률)을 정하고, <strong>② 구간별 RS_B / RS_C(회사귀속 %)와 누진공제</strong>를 뺀 나머지가 약국 마진입니다. (A는 RS 없이 마진 전액 약국, D는 25% 고정)</p>
+
+                <div style="display:flex; gap:14px; flex-wrap:wrap; margin:6px 0 18px;">
+                    <div style="flex:1; min-width:120px;">
+                        <label style="display:block; font-size:12px; font-weight:600; color:#516;">A 마진율(%)</label>
+                        <input type="number" id="marginA" value="45" step="0.1" style="width:100%; padding:8px; border:1px solid #cbd5d1; border-radius:6px;">
+                    </div>
+                    <div style="flex:1; min-width:120px;">
+                        <label style="display:block; font-size:12px; font-weight:600; color:#516;">B 마진율(%)</label>
+                        <input type="number" id="marginB" value="50" step="0.1" style="width:100%; padding:8px; border:1px solid #cbd5d1; border-radius:6px;">
+                    </div>
+                    <div style="flex:1; min-width:120px;">
+                        <label style="display:block; font-size:12px; font-weight:600; color:#516;">C 마진율(%)</label>
+                        <input type="number" id="marginC" value="50" step="0.1" style="width:100%; padding:8px; border:1px solid #cbd5d1; border-radius:6px;">
+                    </div>
+                    <div style="flex:1; min-width:120px;">
+                        <label style="display:block; font-size:12px; font-weight:600; color:#999;">D 마진율(%) · 고정</label>
+                        <input type="number" value="25" disabled style="width:100%; padding:8px; border:1px solid #e2e8e5; border-radius:6px; background:#f1f5f4; color:#999;">
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table class="settings-table">
                         <thead>
@@ -276,6 +296,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260903-rs2"></script>
+    <script src="script.js?v=20260903-rs3"></script>
 </body>
 </html>

@@ -42,6 +42,12 @@ let tierSettings = [
 ];
 const MARGIN_D_FIXED = 25;
 
+// [그룹별 원가기반 마진율(%)] — 설정 가능. 이게 실제 매출총이익률.
+//  - A: 약국 100% 귀속(RS 없음)      → 약국마진 = A매출 × 마진율_A
+//  - B/C: 마진에서 RS(회사귀속) 차감 → 약국마진 = 매출×마진율 − 회사귀속
+//  - D: MARGIN_D_FIXED(25%) 고정
+let marginRates = { A: 45, B: 50, C: 50 };
+
 const COL_DATE = 1;
 const COL_CODE = 9;
 const COL_TAX = 26;
@@ -63,20 +69,27 @@ function getActiveTier(monthlyTotalSales) {
     return active;
 }
 
-// 화면의 "마진" = 약국 귀속(약국이 갖는 몫).
-//   약국귀속 = 매출 − 회사귀속,  회사귀속 = 매출 × RS − 누진공제
-//   → 약국귀속 = 매출 × (1 − RS) + 누진공제
-// 여기서는 "요율 비례분"만 반환한다(= 매출 × (1 − RS)).
-// 누진공제는 월 단위 정액이므로 월간 합산(updateSummaryUI)에서 1회만 더한다.
+// 화면의 "마진" = 약국 마진(매출총이익에서 회사 RS를 뺀 약국 몫).
+//   A     : 약국 100% 귀속(RS 없음)  → 약국마진 = A × 마진율_A
+//   B, C  : 약국마진 = (매출 × 마진율) − 회사귀속
+//           회사귀속 = 매출 × RS − 누진공제
+//           → 비례분 = 매출 × (마진율 − RS),  누진공제는 월 정액(월간 1회 반영)
+//   D     : MARGIN_D_FIXED(25%) 고정
+// 여기서는 "비례분"만 반환하고, 누진공제는 updateSummaryUI에서 월 1회 더한다.
 function calculateProfit(data, tier) {
     const A = data.groupA || 0;
     const B = data.groupB || 0;
     const C = data.groupC || 0;
     const D = data.groupD || 0;
-    const marginA = A;                                   // A: 약국 100% 귀속
-    const marginB = B * (1 - (tier.rsB || 0) / 100);     // 약국 B 요율분
-    const marginC = C * (1 - (tier.rsC || 0) / 100);     // 약국 C 요율분
-    const marginD = D * (MARGIN_D_FIXED / 100);          // D: 25% 고정(스펙 외)
+    const mA = (marginRates.A || 0) / 100;
+    const mB = (marginRates.B || 0) / 100;
+    const mC = (marginRates.C || 0) / 100;
+    const rsB = (tier.rsB || 0) / 100;
+    const rsC = (tier.rsC || 0) / 100;
+    const marginA = A * mA;              // A: RS 없음
+    const marginB = B * (mB - rsB);      // B: 마진 − RS 비례분
+    const marginC = C * (mC - rsC);      // C: 마진 − RS 비례분
+    const marginD = D * (MARGIN_D_FIXED / 100);
     return {
         a: Math.round(marginA),
         b: Math.round(marginB),
@@ -193,7 +206,22 @@ function loadMarginsFromFirestore() {
             if (Array.isArray(stored) && stored.length && stored[0].rsB !== undefined) {
                 tierSettings = stored;
             }
+            // 그룹별 마진율(원가마진) 로드
+            const mr = doc.data().marginRates;
+            if (mr && typeof mr === 'object') {
+                marginRates = {
+                    A: (mr.A !== undefined ? mr.A : marginRates.A),
+                    B: (mr.B !== undefined ? mr.B : marginRates.B),
+                    C: (mr.C !== undefined ? mr.C : marginRates.C)
+                };
+            }
         }
+        const mA = document.getElementById('marginA');
+        const mB = document.getElementById('marginB');
+        const mC = document.getElementById('marginC');
+        if (mA) mA.value = marginRates.A;
+        if (mB) mB.value = marginRates.B;
+        if (mC) mC.value = marginRates.C;
         const rows = document.querySelectorAll('#tierSettingsBody tr');
         tierSettings.forEach((ts, i) => {
             if (rows[i]) {
@@ -230,11 +258,17 @@ function saveMarginSettings() {
             deductC: parseFloat(tr.querySelector('.in-deductc').value) || 0
         });
     });
-    db.collection("settings").doc("progressive_margins").set({ tiers: newTiers }).then(() => {
+    const newMarginRates = {
+        A: parseFloat((document.getElementById('marginA') || {}).value) || 0,
+        B: parseFloat((document.getElementById('marginB') || {}).value) || 0,
+        C: parseFloat((document.getElementById('marginC') || {}).value) || 0
+    };
+    db.collection("settings").doc("progressive_margins").set({ tiers: newTiers, marginRates: newMarginRates }).then(() => {
         tierSettings = newTiers;
+        marginRates = newMarginRates;
         document.getElementById('settingsModal').classList.remove('active');
         renderCalendar();
-        alert("💾 RS 요율/누진공제 설정이 성공적으로 변경 완료되었습니다.");
+        alert("💾 마진율 / RS / 누진공제 설정이 성공적으로 변경 완료되었습니다.");
     }).catch((error) => alert("설정 저장 실패: " + error));
 }
 
@@ -745,9 +779,9 @@ function showDayDetail(dateKey, tier) {
     const marginPercent = data.realPaymentTotal > 0 ? ((estimatedMargin / data.realPaymentTotal) * 100).toFixed(1) : '0.0';
     container.innerHTML = `
         <div class="detail-item-list">
-            <div class="detail-row group-A"><span>그룹 A 매출 (약국 100%)</span><span>${data.groupA.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.a.toLocaleString()} 원)</span></span></div>
-            <div class="detail-row group-B"><span>그룹 B 매출 (약국 ${(100 - (tier.rsB || 0))}%)</span><span><strong>${data.groupB.toLocaleString()} 원</strong> <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.b.toLocaleString()} 원)</span></span></div>
-            <div class="detail-row group-C"><span>그룹 C 매출 (약국 ${(100 - (tier.rsC || 0))}%)</span><span>${data.groupC.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.c.toLocaleString()} 원)</span></span></div>
+            <div class="detail-row group-A"><span>그룹 A 매출 (마진 ${marginRates.A}%)</span><span>${data.groupA.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.a.toLocaleString()} 원)</span></span></div>
+            <div class="detail-row group-B"><span>그룹 B 매출 (마진 ${marginRates.B}% − RS ${(tier.rsB || 0)}%)</span><span><strong>${data.groupB.toLocaleString()} 원</strong> <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.b.toLocaleString()} 원)</span></span></div>
+            <div class="detail-row group-C"><span>그룹 C 매출 (마진 ${marginRates.C}% − RS ${(tier.rsC || 0)}%)</span><span>${data.groupC.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.c.toLocaleString()} 원)</span></span></div>
             <div class="detail-row group-D"><span>그룹 D 매출 (마진 25%)</span><span>${data.groupD.toLocaleString()} 원 <span style="color:#e53935; font-size:12px; font-weight:600; margin-left:4px;">(${m.d.toLocaleString()} 원)</span></span></div>
             <div class="detail-row"><span>원판매금액 합계 (AE열)</span><span style="font-weight:600; color:#2c3e50;">${data.originalTotal.toLocaleString()} 원</span></div>
             <div class="detail-row"><span>텍스리펀 환급액 (AA열)</span><span style="font-weight:600; color:#2c3e50;">${data.taxRefundTotal.toLocaleString()} 원</span></div>
