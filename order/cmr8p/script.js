@@ -445,63 +445,118 @@ if(document.getElementById('btn-upload-confirm')) {
 }
 
 /* ==========================================================================
-   [수정] 사진 요청 구독 (72시간 필터링 복구)
+   사진 요청 구독 — 표시 기간을 버튼으로 고른다 (3일 / 7일 / 30일 / 전체)
+   기본 7일. 고른 값은 이 브라우저에 기억된다.
    ========================================================================== */
+let photoDays = 7;                 // 0 = 전체
+let photoDocsCache = [];           // 마지막 스냅샷 (버튼만 눌러도 다시 그리도록)
+const PHOTO_MAX_RENDER = 300;      // 전체 보기에서 썸네일이 너무 많아지는 것 방지
+
+try {
+    const saved = localStorage.getItem('po_photo_days');
+    if (saved !== null) photoDays = Number(saved);
+} catch (e) { /* 저장소 못 쓰면 기본값 */ }
+
+function renderPhotoPeriodBar() {
+    const grid = document.getElementById('photo-grid');
+    if (!grid || document.getElementById('photo-period-bar')) return;
+
+    const bar = document.createElement('div');
+    bar.id = 'photo-period-bar';
+    bar.style.cssText = "display:flex; gap:6px; align-items:center; margin-bottom:12px;";
+    bar.innerHTML = `<span style="font-size:.85rem; color:#888; margin-right:4px;">표시 기간</span>`;
+
+    [[3, '3일'], [7, '7일'], [30, '30일'], [0, '전체']].forEach(([days, label]) => {
+        const b = document.createElement('button');
+        b.textContent = label;
+        b.dataset.days = days;
+        b.className = 'photo-period-btn';
+        b.style.cssText = "padding:5px 14px; border-radius:16px; border:1px solid #ddd; background:#fff; color:#666; cursor:pointer; font-size:.85rem;";
+        b.onclick = () => {
+            photoDays = days;
+            try { localStorage.setItem('po_photo_days', String(days)); } catch (e) {}
+            markPhotoPeriodBtn();
+            renderPhotoGrid();
+        };
+        bar.appendChild(b);
+    });
+
+    grid.parentNode.insertBefore(bar, grid);
+    markPhotoPeriodBtn();
+}
+
+function markPhotoPeriodBtn() {
+    document.querySelectorAll('.photo-period-btn').forEach(b => {
+        const on = Number(b.dataset.days) === photoDays;
+        b.style.background = on ? '#3498db' : '#fff';
+        b.style.color = on ? '#fff' : '#666';
+        b.style.borderColor = on ? '#3498db' : '#ddd';
+        b.style.fontWeight = on ? '700' : '400';
+    });
+}
+
+function renderPhotoGrid() {
+    const queueContainer = document.getElementById('photo-grid');
+    if (!queueContainer) return;
+
+    const timeLimit = new Date();
+    if (photoDays > 0) timeLimit.setDate(timeLimit.getDate() - photoDays);
+    else timeLimit.setFullYear(1970);
+
+    let list = photoDocsCache.filter(d => {
+        // [조건 1] 내 약국 데이터인가? (또는 본점이고 식별자 없는 옛날 데이터인가?)
+        const isMine = (d.shopId === SHOP_ID) || (SHOP_ID === 'main' && !d.shopId);
+        // [조건 2] 선택한 기간 안인가?
+        const itemDate = d.timestamp ? d.timestamp.toDate() : new Date(0);
+        return isMine && itemDate > timeLimit;
+    });
+
+    queueContainer.innerHTML = "";
+    if (list.length === 0) {
+        const label = photoDays > 0 ? `최근 ${photoDays}일간` : "";
+        queueContainer.innerHTML = `<div style='grid-column:1/-1; text-align:center; padding:50px; color:#aaa;'>${label} 요청 내역이 없습니다.</div>`;
+        return;
+    }
+
+    // 정렬 (대기중 우선, 그 다음 시간순)
+    list.sort((a, b) => {
+        const statusOrder = { 'pending': 1, 'hold': 2, 'processed': 3 };
+        if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status];
+        return b.timestamp.seconds - a.timestamp.seconds;
+    });
+
+    const shown = list.slice(0, PHOTO_MAX_RENDER);
+    shown.forEach(data => {
+        const div = document.createElement('div');
+        let statusClass = 'pending';
+        if(data.status === 'hold') statusClass = 'hold';
+        if(data.status === 'processed') statusClass = 'done';
+
+        div.className = `order-book-item ${statusClass}`;
+        div.innerHTML = `<img src="${data.imageUrl}" loading="lazy"><div class="photo-time-label time-top">${formatShortTime(data.timestamp)}</div>${data.note ? `<div class="photo-note-label">${data.note}</div>` : ''}`;
+        div.addEventListener('click', () => showPhotoViewer(data.id, data.imageUrl, data.status, data.note, data));
+        queueContainer.appendChild(div);
+    });
+
+    if (list.length > shown.length) {
+        const more = document.createElement('div');
+        more.style.cssText = "grid-column:1/-1; text-align:center; padding:20px; color:#aaa; font-size:.85rem;";
+        more.textContent = `${list.length}건 중 최근 ${shown.length}건만 표시했습니다.`;
+        queueContainer.appendChild(more);
+    }
+}
+
 function subscribeToPhotoRequests() {
     const queueContainer = document.getElementById('photo-grid');
     if(!queueContainer) return;
-    
-    // 1. 기준 시간 설정 (현재로부터 72시간 전)
-    const timeLimit = new Date();
-    timeLimit.setHours(timeLimit.getHours() - 72);
 
-    // 2. 쿼리 (일단 최신순으로 가져옴)
+    renderPhotoPeriodBar();
+
     const q = query(collection(db, "photo_requests"), orderBy("timestamp", "desc"));
-    
     onSnapshot(q, (snapshot) => {
-        queueContainer.innerHTML = "";
-        let list = [];
-        
-        snapshot.forEach(doc => {
-            const d = doc.data();
-            const itemDate = d.timestamp ? d.timestamp.toDate() : new Date(0); // 날짜 변환
-
-            // [조건 1] 내 약국 데이터인가? (또는 본점이고 식별자 없는 옛날 데이터인가?)
-            const isMine = (d.shopId === SHOP_ID) || (SHOP_ID === 'main' && !d.shopId);
-            
-            // [조건 2] ★ 3일(72시간) 이내의 데이터인가?
-            const isRecent = itemDate > timeLimit;
-
-            // 두 조건 모두 만족할 때만 리스트에 추가
-            if (isMine && isRecent) {
-                list.push({ id: doc.id, ...d });
-            }
-        });
-        
-        if(list.length === 0) { 
-            queueContainer.innerHTML = "<div style='grid-column:1/-1; text-align:center; padding:50px; color:#aaa;'>최근 3일간 요청 내역이 없습니다.</div>"; 
-            return; 
-        }
-        
-        // 정렬 (대기중 우선, 그 다음 시간순)
-        list.sort((a, b) => {
-            const statusOrder = { 'pending': 1, 'hold': 2, 'processed': 3 };
-            if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status];
-            return b.timestamp.seconds - a.timestamp.seconds; 
-        });
-
-        // 화면 그리기
-        list.forEach(data => {
-            const div = document.createElement('div');
-            let statusClass = 'pending'; 
-            if(data.status === 'hold') statusClass = 'hold'; 
-            if(data.status === 'processed') statusClass = 'done';
-            
-            div.className = `order-book-item ${statusClass}`;
-            div.innerHTML = `<img src="${data.imageUrl}"><div class="photo-time-label time-top">${formatShortTime(data.timestamp)}</div>${data.note ? `<div class="photo-note-label">${data.note}</div>` : ''}`;
-            div.addEventListener('click', () => showPhotoViewer(data.id, data.imageUrl, data.status, data.note, data));
-            queueContainer.appendChild(div);
-        });
+        photoDocsCache = [];
+        snapshot.forEach(doc => photoDocsCache.push({ id: doc.id, ...doc.data() }));
+        renderPhotoGrid();
     });
 }
 
