@@ -1,4 +1,6 @@
 let currentPage = 1;
+let ledgerAnchorDIdx = null;     // 👁️ 결제 숨기기 토글 시 보던 위치 유지용
+let ledgerPageFirstDIdx = null;  // 현재 페이지 첫 행의 원본 순번
 const itemsPerPage = 10;
 let allData = []; // 필터링된 전체 데이터를 담을 변수
 let cardNames = []; // 🔥 [카드연동] 등록된 카드 이름 목록 (결제 시 검색용)
@@ -149,18 +151,84 @@ function renderLedger() {
         });
     });
 
+    // 3-1. 👁️ [결제 숨기기] 화면 표시에서만 결제 행을 뺀다. (행 자체가 사라짐)
+    //      잔액·합계는 위(3단계)에서 결제까지 모두 반영해 이미 계산됐으므로 틀어지지 않음.
+    //      숨긴 결제는 바로 다음 행 윗선에 빨간 점선 + 작은 '💳 결제 N건' 표식으로만 남긴다.
+    //      (맨 마지막 결제들은 마지막 행 아랫선에 표시) → 표식은 높이를 차지하지 않고 페이지 10줄에도 안 셈.
+    displayList.forEach((r, i) => { r._dIdx = i; r.hiddenBefore = null; r.hiddenAfter = null; });
+    const hidePay = document.getElementById('hidePayRows')?.checked || false;
+    let viewList = displayList;
+    let orphanHidden = null;
+    if (hidePay) {
+        viewList = [];
+        let bucket = null;
+        displayList.forEach(r => {
+            const isReturnRow = (r.type === 'return' || r.type === '반품');
+            const isPayRow = !r.isBuy && !isReturnRow;
+            if (isPayRow) {
+                if (!bucket) bucket = { count: 0, sum: 0, details: [] };
+                bucket.count++;
+                bucket.sum += r.amount;
+                bucket.currentBalance = r.currentBalance;       // 묶음 마지막 결제 반영 후 잔액
+                bucket.cumulativeBalance = r.cumulativeBalance;
+                const label = (r.card || (r.subItem && r.subItem.memo) || '결제');
+                bucket.details.push(`${r.date}  ${label}  -${r.amount.toLocaleString()}`);
+            } else {
+                if (bucket) { r.hiddenBefore = bucket; bucket = null; }
+                viewList.push(r);
+            }
+        });
+        if (bucket) {
+            if (viewList.length) viewList[viewList.length - 1].hiddenAfter = bucket;
+            else orphanHidden = bucket;
+        }
+    }
+
     // 4. 🔥 [완벽 복구] 약사님 오리지널 페이지네이션 계산 로직! ㅡㅡ^
-    const totalItems = displayList.length;
+    const totalItems = viewList.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    // 📌 [위치 유지] 토글 직전 보던 행이 있는 페이지로 이동 (1페이지로 튀지 않게)
+    if (ledgerAnchorDIdx !== null && totalItems > 0) {
+        let j = viewList.findIndex(r => r._dIdx >= ledgerAnchorDIdx);
+        if (j < 0) j = totalItems - 1;
+        // 기준 행이 숨겨진 결제였으면 바로 앞 행과 비교해 더 가까운 쪽 선택
+        if (j > 0 && viewList[j]._dIdx !== ledgerAnchorDIdx && (ledgerAnchorDIdx - viewList[j - 1]._dIdx) < (viewList[j]._dIdx - ledgerAnchorDIdx)) j = j - 1;
+        currentPage = Math.floor((totalItems - 1 - j) / itemsPerPage) + 1;
+    }
+    ledgerAnchorDIdx = null;
+
+    if (currentPage > Math.max(1, totalPages)) currentPage = Math.max(1, totalPages);
     const endIdx = totalItems - (currentPage - 1) * itemsPerPage;
     const startIdx = Math.max(0, endIdx - itemsPerPage);
-    const currentPageData = displayList.slice(startIdx, endIdx);
+    const currentPageData = viewList.slice(startIdx, endIdx);
+    // 페이지 가운데 행을 기준점으로 기억 → 토글 후에도 비슷한 위치가 보이도록
+    ledgerPageFirstDIdx = currentPageData.length ? currentPageData[Math.floor(currentPageData.length / 2)]._dIdx : null;
+
+    // 👁️ 숨긴 결제 표식(작은 알약) HTML — 행 경계선 위에 겹쳐 떠 있어 높이를 차지하지 않음
+    const hiddenPill = (bk, pos) => {
+        const bal = periodOnly ? bk.currentBalance : bk.cumulativeBalance;
+        const tip = (bk.details.join('\n') + `\n───────────\n결제 후 잔액 ${bal.toLocaleString()}\n(클릭하면 결제 펼치기)`).replace(/"/g, '&quot;');
+        const edge = pos === 'top' ? 'top:-10px;' : 'bottom:-10px;';
+        return `<span class="hidden-pay-pill" title="${tip}" onclick="event.stopPropagation(); document.getElementById('hidePayRows').click();"
+            style="position:absolute; ${edge} right:6px; z-index:3; cursor:pointer; white-space:nowrap;
+                   font-size:11px; line-height:18px; height:18px; padding:0 8px; border-radius:9px;
+                   background:#fff1f2; border:1px solid #fca5a5; color:#b91c1c; font-weight:700;">💳 결제 ${bk.count}건 · ${bk.sum.toLocaleString()}</span>`;
+    };
+    const lineTop = 'border-top:2px dashed #f87171;';
+    const lineBottom = 'border-bottom:2px dashed #f87171;';
 
     // 5. HTML 테이블 생성 (10개씩만 가볍게 출력)
     let html = '';
     currentPageData.forEach((row) => {
         // 기본(체크 해제)=전체 누적 잔액 / 체크=이 기간 내 잔액
         const shownBalance = periodOnly ? row.currentBalance : row.cumulativeBalance;
+
+        // 👁️ 이 행 위/아래에 숨긴 결제가 있으면 점선 + 알약 표식
+        const edgeStyle = (row.hiddenBefore ? lineTop : '') + (row.hiddenAfter ? lineBottom : '');
+        const payCellExtra = (row.hiddenBefore || row.hiddenAfter) ? 'position:relative;' : '';
+        const pills = (row.hiddenBefore ? hiddenPill(row.hiddenBefore, 'top') : '')
+                    + (row.hiddenAfter ? hiddenPill(row.hiddenAfter, 'bottom') : '');
         const isRealImg = row.img && row.img.startsWith('http') && !row.img.includes('write.html');
         const groupId = isRealImg ? row.img : row.id;
         
@@ -184,22 +252,22 @@ function renderLedger() {
         // 🔥 [수정] 네 번째 인자로 자기 자신(this)의 텍스트를 던지도록 수정하여 따옴표 오류를 차단합니다!
         html += `
             <tr class="ledger-row" data-parent-id="${groupId}" onmouseover="highlightGroup('${groupId}')" onmouseout="removeHighlight()">
-                <td style="text-align:center;">${row.date}</td>
-                <td style="text-align:center;">${typeBadge}${cardChip}</td>
-                <td style="text-align:center;">${row.vendor}</td>
-                <td style="text-align:left; padding-left:10px; cursor:pointer; font-weight:500;"
+                <td style="${edgeStyle}text-align:center;">${row.date}</td>
+                <td style="${edgeStyle}text-align:center;">${typeBadge}${cardChip}</td>
+                <td style="${edgeStyle}text-align:center;">${row.vendor}</td>
+                <td style="${edgeStyle}text-align:left; padding-left:10px; cursor:pointer; font-weight:500;"
                     onclick="showUnitPriceTooltip(event, ${row.amount}, ${row.subItem.qty || 0}, this.innerText)"
                     onmousemove="hideUnitPriceTooltipOnMove(event)">
                     ${row.subItem.memo || ''}
                 </td>
-                <td style="text-align:center;">${row.subItem.qty || 0}</td>
-                <td style="text-align:right;">${(Number(row.subItem.supply) || 0).toLocaleString()}</td>
-                <td style="text-align:right;">${(Number(row.subItem.vat) || 0).toLocaleString()}</td>
-                <td style="color:#2563eb; font-weight:bold; text-align:right;">${row.isBuy ? row.amount.toLocaleString() : ''}</td>
-                <td style="color:#dc2626; font-weight:bold; text-align:right;">${!row.isBuy ? row.amount.toLocaleString() : ''}</td>
-                <td style="font-weight:700; text-align:right; background:#f9fafb;">${shownBalance.toLocaleString()}</td>
-                <td style="text-align:center;">${proofIcon}</td>
-                <td style="text-align:center;">
+                <td style="${edgeStyle}text-align:center;">${row.subItem.qty || 0}</td>
+                <td style="${edgeStyle}text-align:right;">${(Number(row.subItem.supply) || 0).toLocaleString()}</td>
+                <td style="${edgeStyle}text-align:right;">${(Number(row.subItem.vat) || 0).toLocaleString()}</td>
+                <td style="${edgeStyle}color:#2563eb; font-weight:bold; text-align:right;">${row.isBuy ? row.amount.toLocaleString() : ''}</td>
+                <td style="${edgeStyle}${payCellExtra}color:#dc2626; font-weight:bold; text-align:right;">${!row.isBuy ? row.amount.toLocaleString() : ''}${pills}</td>
+                <td style="${edgeStyle}font-weight:700; text-align:right; background:#f9fafb;">${shownBalance.toLocaleString()}</td>
+                <td style="${edgeStyle}text-align:center;">${proofIcon}</td>
+                <td style="${edgeStyle}text-align:center;">
                     <div style="display: flex; justify-content: center; gap: 8px;">
                         <button onclick="openEditModal('${row.id}')" style="color:#2563eb; border:none; background:none; cursor:pointer;"><i class="fas fa-edit"></i></button>
                         <button onclick="deleteEntry('${row.id}')" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
@@ -208,6 +276,9 @@ function renderLedger() {
             </tr>`;
     });
 
+    if (!html && orphanHidden) {
+        html = `<tr><td colspan="12" style="text-align:center; padding:30px; color:#b91c1c;">💳 결제 ${orphanHidden.count}건만 있습니다 (숨김 중) · 합계 ${orphanHidden.sum.toLocaleString()}</td></tr>`;
+    }
     tableBody.innerHTML = html || '<tr><td colspan="12" style="text-align:center; padding:30px;">결과가 없습니다.</td></tr>';
     
     // 6. UI 업데이트 (페이지네이션 및 서머리)
@@ -366,7 +437,15 @@ function renderPaginationUI(totalPages) {
     container.innerHTML = html;
 }
 
-function goToPage(p) { 
+// 👁️ [결제 숨기기] 토글: 상태 저장 후 지금 보던 위치 그대로 다시 그림
+function onTogglePayHidden() {
+    const on = document.getElementById('hidePayRows')?.checked || false;
+    try { localStorage.setItem('ledger_hidePay', on ? '1' : '0'); } catch (e) {}
+    ledgerAnchorDIdx = ledgerPageFirstDIdx;   // 보던 페이지 유지 (1페이지로 튀지 않게)
+    renderLedger();
+}
+
+function goToPage(p) {
     currentPage = p; 
     renderLedger(); 
     window.scrollTo(0, 0); 
@@ -446,6 +525,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const balanceCheckbox = document.getElementById('totalBalanceFullMode');
     if (balanceCheckbox) {
         balanceCheckbox.addEventListener('change', renderLedger);
+    }
+
+    // 👁️ [결제 숨기기] 지난번 켜둔 상태 복원 (이 브라우저 기준)
+    const hidePayBox = document.getElementById('hidePayRows');
+    if (hidePayBox) {
+        try { hidePayBox.checked = localStorage.getItem('ledger_hidePay') === '1'; } catch (e) {}
     }
 
     await fillVendorFilterOnly();
