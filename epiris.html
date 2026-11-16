@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EPIRIS · 약사가 고르는 뷰티·건강 마켓</title>
+<title>EPIRIS · Find What Fits You</title>
+<meta name="description" content="EPIRIS — Find What Fits You. Tell us what you need and find the products that fit you.">
+<meta property="og:title" content="EPIRIS · Find What Fits You">
+<meta property="og:description" content="Tell us what you need and find the products that fit you.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0F2748">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F2748'/%3E%3Ccircle cx='14' cy='14' r='8' fill='none' stroke='%23fff' stroke-width='2.4'/%3E%3Cpath d='M20.2 20.2 26 26' stroke='%23fff' stroke-width='2.8' stroke-linecap='round'/%3E%3Cpath d='M14 10.2v7.6M10.2 14h7.6' stroke='%231DB7A6' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
@@ -360,6 +366,16 @@ body.has-composer .toast{bottom:96px}
   .btn{padding-inline:12px}
 }
 @media (max-width:480px){.logo{font-size:17px;letter-spacing:.06em;gap:6px}.logo svg{width:24px;height:24px}.hd-row{gap:2px}.langsel{max-width:70px;font-size:13px}#adminBtn{font-size:12.5px;padding:0 4px}}
+.pq{margin:0 0 26px;padding:18px 20px;border-radius:var(--r);background:var(--lav)}
+.pq-h{display:flex;align-items:center;gap:10px;margin:0 0 12px;color:var(--navy);font-size:16px;font-weight:700}
+.pq-h svg{flex:none}
+.pq-opts{display:flex;flex-wrap:wrap;gap:8px}
+.pq-opt{min-height:44px;padding:8px 16px;border-radius:var(--r);background:#fff;border:1px solid transparent;color:var(--navy);font-size:15px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.pq-opt:hover{border-color:var(--navy)}
+.pq-opt .num{font-size:12.5px;font-weight:500;opacity:.55}
+.pq-opt.say{font-weight:500;text-align:left;line-height:1.35}
+.pq .wait{margin:4px 0}
+.pq-opt.skip{background:transparent;font-weight:500;text-decoration:underline;text-underline-offset:3px}
 .understood{margin:-6px 0 22px;display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;font-size:14.5px}
 .understood b{color:var(--navy);font-weight:700}
 .understood .chips{margin:0}
@@ -554,7 +570,7 @@ const EPIRIS_HOOKS = {
 const LANGS = [["kr","한국어"],["en","English"],["jp","日本語"],["cn","简体中文"],["tw","繁體中文"],["th","ไทย"],["vn","Tiếng Việt"],["id","Indonesia"],["mn","Монгол"]];
 const LANG_NAME = {kr:"한국어",en:"English",jp:"日本語",cn:"简体中文",tw:"繁體中文",th:"ภาษาไทย",vn:"Tiếng Việt",id:"Bahasa Indonesia",mn:"Монгол хэл"};
 const SPEECH_LANG = {kr:"ko-KR",en:"en-US",jp:"ja-JP",cn:"zh-CN",tw:"zh-TW",th:"th-TH",vn:"vi-VN",id:"id-ID",mn:"mn-MN"};
-const TYPE_ORDER = ["증상","부위","성분","제형","대상","기타"];
+const TYPE_ORDER = ["증상","부위","성분","제형","대상","브랜드","기타"];   // "내부"(매장 정리용) 태그는 고객 화면 어디에도 보이지 않습니다
 const T = {
 kr:{announce:w=>`의약품은 매장에서 약사와 상담 후 구매 · 뷰티·건강 제품 ${w} 이상 무료배송`,
   search:"검색",searchPh:"제품이나 고민으로 찾기",bag:"장바구니",navConsult:"약사 상담",navMarket:"전체 상품",home:"홈",menu:"메뉴",
@@ -572,9 +588,9 @@ kr:{announce:w=>`의약품은 매장에서 약사와 상담 후 구매 · 뷰티
   local:tags=>`${tags} 기준으로 고른 제품입니다.`,localWhy:tags=>`${tags}에 해당`,pop:"많이 찾는 제품",
   drugNote:"의약품은 온라인으로 판매하지 않습니다. 매장에서 약사와 상담 후 구매하실 수 있습니다.",
   consultStart:"이런 고민으로 시작해 보세요",
-  analyzing:"문장을 분석하고 있습니다",understood:"이렇게 이해했어요",noCat:"맞는 분류를 찾지 못해 제품 이름으로만 찾았습니다.",onlyStore:"온라인으로 살 수 있는 제품은 없고, 오프라인 약국에서만 살 수 있는 의약품이 있습니다.",storeHits:n=>`오프라인 약국 only 의약품 ${n}개`,askPharm2:"약사 상담으로 보기",mkCount:n=>`제품 ${n}개`,mkNone:"조건에 맞는 제품이 없습니다.",clear:"조건 모두 지우기",showMore:"제품 더 보기",filter:"필터",fmore:"더 보기",
+  askKind:n=>`‘${n}’ 중에서는 어떤 쪽을 찾으세요?`,askWhich:"어느 쪽에 더 가까우세요? 골라 주시면 더 좁혀 드릴게요.",askSkip:"상관없어요",askBusy:"약사가 질문을 고르고 있습니다",analyzing:"문장을 분석하고 있습니다",understood:"이렇게 이해했어요",noCat:"맞는 분류를 찾지 못해 제품 이름으로만 찾았습니다.",onlyStore:"온라인으로 살 수 있는 제품은 없고, 오프라인 약국에서만 살 수 있는 의약품이 있습니다.",storeHits:n=>`오프라인 약국 only 의약품 ${n}개`,askPharm2:"약사 상담으로 보기",mkCount:n=>`제품 ${n}개`,mkNone:"조건에 맞는 제품이 없습니다.",clear:"조건 모두 지우기",showMore:"제품 더 보기",filter:"필터",fmore:"더 보기",
   sortPop:"많이 찾는 순",sortLow:"낮은 가격순",sortHigh:"높은 가격순",resultFor:q=>`"${q}" 검색 결과`,
-  types:{"증상":"증상·고민","부위":"부위","성분":"성분","제형":"제형","대상":"대상","기타":"기타"},
+  types:{"증상":"증상·고민","부위":"부위","성분":"성분","제형":"제형","대상":"대상","브랜드":"브랜드","기타":"기타"},
   kindShop:"온라인 구매 가능",kindDrug:"의약품 · 매장 전용",qty:"수량",addBag:"장바구니에 담기",askPharm:"약사에게 이 제품 물어보기",desc:"제품 설명",detail:"상세 정보 전체 보기",related:"함께 보면 좋은 제품",notFound:"제품을 찾을 수 없습니다.",
   bagEmpty:"장바구니가 비어 있습니다.",goMarket:"전체 상품 보기",subtotal:"상품 금액",shipping:"배송비",free:"무료",total:"결제 금액",
   freeLeft:w=>`${w} 더 담으면 무료배송`,checkout:"주문서 작성",remove:"빼기",close:"닫기",
@@ -600,9 +616,9 @@ en:{announce:w=>`Medicines are sold in store only · Free shipping on beauty and
   local:tags=>`Chosen for: ${tags}.`,localWhy:tags=>`Matches ${tags}`,pop:"Popular product",
   drugNote:"Medicines are not sold online. You can buy them in store after talking to a pharmacist.",
   consultStart:"Start with a common concern",
-  analyzing:"Reading your sentence",understood:"Here's how we understood it",noCat:"No matching category, so we searched product names only.",onlyStore:"Nothing to buy online for this, but there are medicines available in store.",storeHits:n=>`${n} medicines sold in store`,askPharm2:"Ask the pharmacist about this",mkCount:n=>`${n} products`,mkNone:"No products match these filters.",clear:"Clear all filters",showMore:"Show more products",filter:"Filter",fmore:"Show more",
+  askKind:n=>`Which kind of “${n}” are you looking for?`,askWhich:"Which is closer to what you need? Pick one and we will narrow it down.",askSkip:"No preference",askBusy:"The pharmacist is thinking of a question",analyzing:"Reading your sentence",understood:"Here's how we understood it",noCat:"No matching category, so we searched product names only.",onlyStore:"Nothing to buy online for this, but there are medicines available in store.",storeHits:n=>`${n} medicines sold in store`,askPharm2:"Ask the pharmacist about this",mkCount:n=>`${n} products`,mkNone:"No products match these filters.",clear:"Clear all filters",showMore:"Show more products",filter:"Filter",fmore:"Show more",
   sortPop:"Most popular",sortLow:"Price: low to high",sortHigh:"Price: high to low",resultFor:q=>`Results for "${q}"`,
-  types:{"증상":"Concern","부위":"Body area","성분":"Ingredient","제형":"Form","대상":"For","기타":"Other"},
+  types:{"증상":"Concern","부위":"Body area","성분":"Ingredient","제형":"Form","대상":"For","브랜드":"Brand","기타":"Other"},
   kindShop:"Available online",kindDrug:"Medicine · in-store only",qty:"Quantity",addBag:"Add to cart",askPharm:"Ask the pharmacist about this",desc:"About this product",detail:"See full details",related:"Goes well with",notFound:"Product not found.",
   bagEmpty:"Your cart is empty.",goMarket:"See all products",subtotal:"Items",shipping:"Shipping",free:"Free",total:"Total",
   freeLeft:w=>`Add ${w} more for free shipping`,checkout:"Write order",remove:"Remove",close:"Close",
@@ -628,9 +644,9 @@ jp:{announce:w=>`医薬品は店舗でのみ販売 · 美容・健康製品は${
   local:tags=>`${tags}をもとに選びました。`,localWhy:tags=>`${tags}に該当`,pop:"人気の製品",
   drugNote:"医薬品はオンラインでは販売していません。店舗で薬剤師に相談のうえご購入ください。",
   consultStart:"よくあるお悩みからはじめる",
-  analyzing:"文章を分析しています",understood:"このように理解しました",noCat:"合う分類が見つからず、製品名だけで検索しました。",onlyStore:"オンラインで買える製品はありませんが、店舗で買える医薬品があります。",storeHits:n=>`店舗で購入する医薬品 ${n}件`,askPharm2:"薬剤師相談で見る",mkCount:n=>`製品${n}件`,mkNone:"条件に合う製品がありません。",clear:"条件をすべてクリア",showMore:"製品をもっと見る",filter:"絞り込み",fmore:"もっと見る",
+  askKind:n=>`「${n}」の中では、どれをお探しですか？`,askWhich:"どちらに近いですか？選ぶとさらに絞り込みます。",askSkip:"こだわらない",askBusy:"薬剤師が質問を考えています",analyzing:"文章を分析しています",understood:"このように理解しました",noCat:"合う分類が見つからず、製品名だけで検索しました。",onlyStore:"オンラインで買える製品はありませんが、店舗で買える医薬品があります。",storeHits:n=>`店舗で購入する医薬品 ${n}件`,askPharm2:"薬剤師相談で見る",mkCount:n=>`製品${n}件`,mkNone:"条件に合う製品がありません。",clear:"条件をすべてクリア",showMore:"製品をもっと見る",filter:"絞り込み",fmore:"もっと見る",
   sortPop:"人気順",sortLow:"価格の安い順",sortHigh:"価格の高い順",resultFor:q=>`「${q}」の検索結果`,
-  types:{"증상":"お悩み","부위":"部位","성분":"成分","제형":"剤形","대상":"対象","기타":"その他"},
+  types:{"증상":"お悩み","부위":"部位","성분":"成分","제형":"剤形","대상":"対象","브랜드":"ブランド","기타":"その他"},
   kindShop:"オンライン購入可",kindDrug:"医薬品 · 店舗限定",qty:"数量",addBag:"カートに入れる",askPharm:"この製品を薬剤師に聞く",desc:"製品説明",detail:"詳しい情報を見る",related:"一緒におすすめ",notFound:"製品が見つかりません。",
   bagEmpty:"カートは空です。",goMarket:"すべての製品を見る",subtotal:"商品金額",shipping:"送料",free:"無料",total:"お支払い金額",
   freeLeft:w=>`あと${w}で送料無料`,checkout:"注文書を作成",remove:"削除",close:"閉じる",
@@ -656,9 +672,9 @@ cn:{announce:w=>`药品仅在门店销售 · 美容健康产品满${w}免运费`
   local:tags=>`根据 ${tags} 为您挑选。`,localWhy:tags=>`符合 ${tags}`,pop:"热门产品",
   drugNote:"药品不在线销售。请到店咨询药师后购买。",
   consultStart:"从常见烦恼开始",
-  analyzing:"正在分析您的描述",understood:"我们这样理解",noCat:"没有找到合适的分类，仅按产品名称搜索。",onlyStore:"没有可在线购买的产品，但门店有可购买的药品。",storeHits:n=>`门店销售的药品 ${n}件`,askPharm2:"咨询药师",mkCount:n=>`${n}件产品`,mkNone:"没有符合条件的产品。",clear:"清除全部条件",showMore:"查看更多产品",filter:"筛选",fmore:"更多",
+  askKind:n=>`在“${n}”中，您想找哪一类？`,askWhich:"哪一项更接近您的需求？选择后为您进一步筛选。",askSkip:"都可以",askBusy:"药师正在考虑要问的问题",analyzing:"正在分析您的描述",understood:"我们这样理解",noCat:"没有找到合适的分类，仅按产品名称搜索。",onlyStore:"没有可在线购买的产品，但门店有可购买的药品。",storeHits:n=>`门店销售的药品 ${n}件`,askPharm2:"咨询药师",mkCount:n=>`${n}件产品`,mkNone:"没有符合条件的产品。",clear:"清除全部条件",showMore:"查看更多产品",filter:"筛选",fmore:"更多",
   sortPop:"最受欢迎",sortLow:"价格从低到高",sortHigh:"价格从高到低",resultFor:q=>`"${q}" 的搜索结果`,
-  types:{"증상":"烦恼","부위":"部位","성분":"成分","제형":"剂型","대상":"适用对象","기타":"其他"},
+  types:{"증상":"烦恼","부위":"部位","성분":"成分","제형":"剂型","대상":"适用对象","브랜드":"品牌","기타":"其他"},
   kindShop:"可在线购买",kindDrug:"药品 · 门店专售",qty:"数量",addBag:"加入购物车",askPharm:"向药师咨询此产品",desc:"产品说明",detail:"查看完整详情",related:"搭配推荐",notFound:"找不到该产品。",
   bagEmpty:"购物车是空的。",goMarket:"查看全部产品",subtotal:"商品金额",shipping:"运费",free:"免费",total:"支付金额",
   freeLeft:w=>`再买${w}即可免运费`,checkout:"填写订单",remove:"移除",close:"关闭",
@@ -776,6 +792,11 @@ function findTagIdByName(name){
    6. 태그 엔진 (키오스크와 같은 규칙)
    ════════════════════════════════════════════════════════════ */
 function isClassTag(tid){ const tg=TAG_MASTER[tid]; const nm=(tg&&tg.names&&tg.names.kr)||(tg&&tg.raw)||""; return nm==="의약품"||nm==="비의약품"; }
+// 한 태그의 상위 전부 (parents 가 없던 예전 데이터는 linkedTo 하나)
+function parentsOf(tid){ const x=TAG_MASTER[tid]; if(!x) return []; return [...new Set([...(x.parents||[]),x.linkedTo].filter(p=>p&&p!==tid&&TAG_MASTER[p]))]; }
+const tagType=tid=>(TAG_MASTER[tid]&&TAG_MASTER[tid].type)||"기타";
+const hiddenTag=tid=>tagType(tid)==="내부";                      // 매장 정리용: 검색에는 쓰이지만 고객에게 보여 주지 않음
+const askableTag=tid=>!hiddenTag(tid)&&tagType(tid)!=="브랜드";   // 약사 질문의 답으로 쓸 수 있는 태그
 function tagName(tid,lang){ const tg=TAG_MASTER[tid]; if(!tg) return ""; const L=lang||LANG; return String((tg.names&&tg.names[L])||(tg.names&&tg.names.kr)||tg.raw||tid); }
 // 같은 이름의 태그 + 동의어로 서로 묶인 태그를 한 묶음으로 봅니다 ("알러지"⇄"알레르기")
 function tagGroup(tid){
@@ -795,6 +816,11 @@ function tagDepth(tid,inSet,guard){
 function exactTag(s){
   const k=String(s).toLowerCase().replace(/\s+/g,""); if(k.length<2) return null;
   return Object.keys(TAG_MASTER).find(id=>{ const tg=TAG_MASTER[id]; return [...Object.values(tg.names||{}),tg.raw,...(tg.synonyms||[])].some(n=>String(n||"").toLowerCase().replace(/\s+/g,"")===k); }) || null;
+}
+// 한 말이 여러 태그의 연관어로 등록된 경우 그 태그 전부 ("눈" → 안약·눈영양제·인공눈물)
+function relatedTags(kw){
+  const kk=String(kw).toLowerCase().replace(/\s+/g,""); if(!kk) return [];
+  return Object.keys(TAG_MASTER).filter(id=>(TAG_MASTER[id].related||[]).some(n=>String(n||"").toLowerCase().replace(/\s+/g,"")===kk));
 }
 function matchKeywordToTag(kw){
   const k=String(kw).toLowerCase().trim(); if(!k) return null;
@@ -832,13 +858,19 @@ async function analyze(raw, prev){
   }else k=await aiKeywords(raw, prev||"");
   const usedAI=k.keywords.length>0, kws=usedAI?k.keywords:[raw,...raw.split(/\s+/)];
   const seen=new Set(), tags=[], unmatched=[];
-  const add=tid=>{ const label=tagName(tid).toLowerCase(); if(!label||seen.has(label)||isClassTag(tid)) return; seen.add(label); tags.push(tid); };
+  // 제품이 아직 하나도 안 달린 하위 태그면 상위 태그로 올려서 찾습니다 ("안대" 태그에 제품이 없으면 → "눈")
+  const has=tid=>{ const g=new Set(tagGroup(tid)); return PRODUCTS.some(p=>p.tag_ids.some(x=>g.has(x))); };
+  const up=tid=>{ if(has(tid)) return [tid]; let level=[tid]; const seenUp=new Set(level);          // 상위가 여럿이면 제품이 있는 상위 전부
+    for(let i=0;i<4;i++){ level=[...new Set(level.flatMap(parentsOf))].filter(x=>!seenUp.has(x)); if(!level.length) return [tid]; level.forEach(x=>seenUp.add(x)); const ok=level.filter(has); if(ok.length) return ok; } return [tid]; };
+  const add1=tid=>{ const label=tagName(tid).toLowerCase(); if(!label||seen.has(label)||isClassTag(tid)) return; seen.add(label); tags.push(tid); };
+  const add=tid=>up(tid).forEach(add1);
   // 키워드 둘을 붙이면 태그명이 되는 경우 먼저 ("눈"+"영양제" → 눈영양제). 붙여서 쓴 두 단어는 따로 매칭하지 않음
   const joined=new Set();
   if(usedAI) for(let i=0;i<kws.length;i++) for(let j=0;j<kws.length;j++){ if(i===j) continue;
     const tid=exactTag(String(kws[i]).replace(/\s+/g,"")+String(kws[j]).replace(/\s+/g,""));
     if(tid&&!isClassTag(tid)){ add(tid); joined.add(kws[i]); joined.add(kws[j]); } }
   kws.filter(w=>!joined.has(w)&&!BLOCKED_KW.has(String(w).toLowerCase())).forEach(w=>{
+    const rel=exactTag(w)?[]:relatedTags(w); if(rel.length>1){ rel.forEach(add); return; }
     const tid=matchKeywordToTag(w);
     if(!tid){ if(w!==raw&&usedAI) unmatched.push(w); return; }
     add(tid);
@@ -870,7 +902,7 @@ function pharmacistFirst(tagIds){ const ids=[]; tagIds.forEach(t=>tagGroup(t).fo
 function nextTags(pool, usedTagIds, lastTag){
   const used=new Set(); usedTagIds.forEach(tg=> tagGroup(tg).forEach(g=>used.add(g)));
   const freq={};
-  pool.forEach(p=>p.tag_ids.forEach(tid=>{ if(TAG_MASTER[tid]&&!isClassTag(tid)&&!used.has(tid)) freq[tid]=(freq[tid]||0)+1; }));
+  pool.forEach(p=>p.tag_ids.forEach(tid=>{ if(TAG_MASTER[tid]&&!isClassTag(tid)&&!hiddenTag(tid)&&!used.has(tid)) freq[tid]=(freq[tid]||0)+1; }));
   const seen=new Set();
   let ids=Object.keys(freq).filter(tid=> freq[tid]<pool.length)          // 전부에 붙은 태그는 좁히는 데 쓸모없음
     .filter(tid=>{ const l=tagName(tid).toLowerCase(); if(seen.has(l)) return false; seen.add(l); return true; });
@@ -969,6 +1001,29 @@ async function aiKeywords(raw, prev, only){
     "사용자입력: \""+raw+"\"\n반환형식: {\"keywords\":[\"단어\"],\"followup\":false}"}],0.2,only);
   return { keywords: r&&Array.isArray(r.keywords) ? r.keywords.map(x=>String(x).trim()).filter(Boolean).slice(0,6) : [],
            followup: !!(prev && r && r.followup) };
+}
+// ③ 결과가 많을 때: 약사가 카운터에서 되묻듯 질문 1개 + 고객 말투의 답 2~4개 (각 답은 후보 분류 1개에 연결)
+async function aiAsk(raw, understood, cands, history, total, only){
+  const notes=cands.map(c=>{ const m=TAG_MASTER[c.id]&&TAG_MASTER[c.id].comment; return m?c.name+": "+String(m).slice(0,80):""; }).filter(Boolean).slice(0,8);
+  const r=await gpt([{role:"system",content:"You output JSON only."},{role:"user",content:
+    `당신은 "${PHARM.name}"라는 이름의 한국 약국 약사입니다. 말투: ${PHARM.tone}\n`+
+    `고객이 "${raw}" 라고 말했고, 맞는 제품이 ${total}개라서 더 좁혀야 합니다.\n`+
+    `약국 카운터에서 약사가 이 고객에게 지금 되물을 질문 1개와, 고객이 고를 답 2~4개를 만드세요.\n`+
+    `[이미 파악한 것] ${understood.join(", ")||"없음"}\n`+
+    (history.length?`[앞서 묻고 들은 답] ${history.map(h=>h.q+" → "+h.a).join(" / ")}\n`:"")+
+    `[답에 연결할 수 있는 분류 (이름:제품수)] ${cands.map(c=>c.name+":"+c.n).join(", ")}\n`+
+    (notes.length?`[이 약국 약사가 남긴 메모] ${notes.join(" / ")}\n`:"")+
+    `규칙:\n`+
+    `- 질문은 실제 약사가 묻는 것: 어느 부위인지, 누가 쓰는지, 증상이 어떤 양상인지, 바르는 것·먹는 것 중 무엇을 원하는지 등. 한 번에 한 가지만 묻는다. 분류 이름을 그대로 나열해서 묻지 않는다.\n`+
+    `- 각 답(label)은 고객이 자기 상황을 말하는 짧은 말 (예: "세안하고 나면 얼굴이 당겨요"). 25자 이내.\n`+
+    `- 각 답의 tag 는 반드시 위 분류 목록의 이름 중 정확히 하나. 그 답과 뜻이 실제로 맞는 분류만 쓴다. 뜻이 맞는 분류가 없는 답은 만들지 않는다.\n`+
+    `- 질문과 답이 서로 맞아야 한다 (부위를 물었으면 답도 부위, 양상을 물었으면 답도 양상). 분류에 억지로 끼워 맞추지 말고, 애매하면 답의 수를 줄인다.\n`+
+    `- 답끼리 tag 가 겹치지 않는다. 브랜드·회사·제품 이름으로 보이는 분류는 쓰지 않는다.\n`+
+    `- 앞서 물은 것을 다시 묻지 않는다. 병명을 단정하거나 진단하지 않는다. 용법·용량·특정 제품명을 말하지 않는다.\n`+
+    `- 위 분류로는 약사다운 질문을 만들 수 없으면 {"question":"","options":[]} 를 돌려준다.\n`+
+    `- question 과 label 은 ${LANG_NAME[LANG]||"English"}로 쓴다. tag 는 목록에 있는 이름 그대로 쓴다.\n`+
+    `반환형식: {"question":"...","options":[{"label":"...","tag":"..."}]}`}],0.3,only);
+  return r&&typeof r==="object" ? r : null;
 }
 // ② 후보 제품 → 약사의 선택과 이유 (후보 밖 제품은 절대 못 고름)
 async function aiPick(cands, narrowed, noteTags, options, only){
@@ -1183,7 +1238,7 @@ function renderChrome(){
       <div><h3>${t("ftShop")}</h3><a href="#consult">${t("navConsult")}</a><a href="#market">${t("navMarket")}</a>${SHOP_OPEN?`<button data-act="bag">${t("bag")}</button>`:""}</div>
       <div><h3>${t("ftCo")}</h3><a href="https://8pharmacy.kr" target="_blank" rel="noopener">8pharmacy.kr</a><a href="mailto:8_beauty@naver.com">8_beauty@naver.com</a></div>
     </div>
-    <small>(주)에이트랩스 · 대표 배상우 · 사업자등록번호 297-81-04370 · 서울 서초구 강남대로61길 10, 센터프라자 405호<br>${t("ftFine")} <span class="num" style="opacity:.6">build 1115-2</span></small></div>`;
+    <small>(주)에이트랩스 · 대표 배상우 · 사업자등록번호 297-81-04370 · 서울 서초구 강남대로61길 10, 센터프라자 405호<br>${t("ftFine")} <span class="num" style="opacity:.6">build 1116-1</span></small></div>`;
   document.querySelectorAll("[data-v]").forEach(a=> a.dataset.v===VIEW ? a.setAttribute("aria-current","page") : a.removeAttribute("aria-current"));
   // 연결 상태
   const st=$("status");
@@ -1244,7 +1299,7 @@ function ask(text){ text=String(text||"").trim(); if(!text) return; nav("consult
 // 검색: 문장을 분석해 키워드 → 태그로 바꾼 뒤, 그 태그의 제품을 보여줍니다 (키오스크와 같은 방식)
 async function runSearch(q){
   q=String(q||"").trim(); const seq=++MK.qSeq;
-  MK.q=q; MK.qTags=[]; MK.shown=24; MK.qBusy=!!q; MK.qAI=false;
+  MK.q=q; MK.qTags=[]; MK.noAsk=false; MK.hist=[]; MK.ask=null; MK.shown=24; MK.qBusy=!!q; MK.qAI=false;
   if($("hdq").value!==q) $("hdq").value=q;
   if(VIEW==="market") renderMarket(); else nav("market");
   if(!q) return;
@@ -1281,7 +1336,7 @@ function storeHits(){
 }
 function filtersHTML(list){
   const sel=new Set(); MK.tags.forEach(x=>tagGroup(x).forEach(g=>sel.add(g)));
-  const freq={}; list.forEach(p=>p.tag_ids.forEach(x=>{ if(TAG_MASTER[x]&&!isClassTag(x)) freq[x]=(freq[x]||0)+1; }));
+  const freq={}; list.forEach(p=>p.tag_ids.forEach(x=>{ if(TAG_MASTER[x]&&!isClassTag(x)&&!hiddenTag(x)) freq[x]=(freq[x]||0)+1; }));
   const seen=new Set();
   const ids=[...MK.tags, ...Object.keys(freq).filter(x=>!sel.has(x)&&freq[x]<list.length)]
     .filter(x=>{ const l=tagName(x).toLowerCase(); if(seen.has(l)) return false; seen.add(l); return true; });
@@ -1296,6 +1351,89 @@ function filtersHTML(list){
       ${arr.length>show.length?`<button class="fmore" data-act="fmore" data-id="${ty}">${t("fmore")} (${arr.length-show.length})</button>`:""}</div>`;
   }).join("");
 }
+// 약사 질문: 결과를 더 좁힐 수 있을 때, 상담하듯 "어느 쪽인지" 물어봅니다.
+//  1) 태그 엔진에서 상위-하위로 이어 둔 묶음이 결과 안에 있으면 그 상위 분류로 묻고 (예: 크림 → 재생크림/핸드크림/멍크림)
+//  2) 없으면 결과를 가장 잘 나누는 태그 몇 개로 묻습니다.
+function askNext(pool){
+  if(!MK.q||MK.qBusy||MK.noAsk||pool.length<4) return null;
+  const used=new Set(); [...MK.tags,...MK.qTags].forEach(x=>tagGroup(x).forEach(g=>used.add(g)));
+  const picked=new Set(); MK.tags.forEach(x=>tagGroup(x).forEach(g=>picked.add(g)));
+  const cnt=x=>{ const g=new Set(tagGroup(x)); return pool.filter(p=>p.tag_ids.some(y=>g.has(y))).length; };
+  const freq={}; pool.forEach(p=>p.tag_ids.forEach(x=>{ if(TAG_MASTER[x]&&!isClassTag(x)&&askableTag(x)) freq[x]=(freq[x]||0)+1; }));
+  const kids={}; Object.keys(freq).forEach(x=>{ if(picked.has(x)||freq[x]>=pool.length) return; parentsOf(x).forEach(par=>(kids[par]=kids[par]||[]).push(x)); });
+  const last=MK.tags[MK.tags.length-1], lastG=new Set(last?tagGroup(last):[]);
+  let best=null;
+  const asked=new Set(); if(!MK.tags.length) MK.qTags.forEach(x=>tagGroup(x).forEach(g=>asked.add(g)));
+  Object.keys(kids).forEach(par=>{ const ks=kids[par]; const drill=lastG.has(par)||asked.has(par);   // 방금 고른(또는 검색한) 분류의 하위면 바로 이어서 묻기
+    const hit=pool.filter(p=>ks.some(k=>p.tag_ids.includes(k))).length;
+    if(ks.length<2||(!drill&&hit<pool.length*0.3)) return;                                            // 결과의 30%도 못 나누는 묶음으로는 묻지 않음
+    const cover=hit + (drill?1e6:0);
+    if(!best||cover>best.cover) best={par,ks,cover}; });
+  if(best){ const opts=best.ks.sort((a,b)=>freq[b]-freq[a]).slice(0,6).map(x=>({id:x,n:cnt(x)}));
+    return { q:(TAG_MASTER[best.par].question)||t("askKind",tagName(best.par)), opts }; }
+  const opts=nextTags(pool,[...used],last).filter(askableTag).slice(0,5).map(x=>({id:x,n:cnt(x)})).filter(o=>o.n>0&&o.n<pool.length);
+  return opts.length>=2 ? { q:t("askWhich"), opts } : null;
+}
+// 화면: ① AI 가 약사처럼 만든 질문 (되면) → ② 안 되면 분류 버튼으로 묻기
+function askCands(pool){
+  const used=new Set(); [...MK.tags,...MK.qTags].forEach(x=>tagGroup(x).forEach(g=>used.add(g)));
+  const freq={}; pool.forEach(p=>p.tag_ids.forEach(x=>{ if(TAG_MASTER[x]&&!isClassTag(x)&&askableTag(x)&&!used.has(x)) freq[x]=(freq[x]||0)+1; }));
+  const seen=new Set();
+  return Object.keys(freq).filter(x=>freq[x]<pool.length).sort((a,b)=>freq[b]-freq[a])
+    .map(x=>({id:x,name:tagName(x,"kr"),n:freq[x]})).filter(c=>c.name&&!seen.has(c.name)&&seen.add(c.name)).slice(0,28);
+}
+// 질문의 기준이 되는 태그: 방금 고른 태그, 없으면 이해한 태그 중 가장 좁은(제품 수가 적은) 것
+function askKeyTag(){
+  if(MK.tags.length) return MK.tags[MK.tags.length-1];
+  let best=null,bn=1e9; MK.qTags.forEach(x=>{ const g=new Set(tagGroup(x)); const n=PRODUCTS.filter(p=>p.tag_ids.some(y=>g.has(y))).length; if(n>0&&n<bn){ bn=n; best=x; } });
+  return best;
+}
+// 약사가 카드로 승인해 둔 질문 (약사 층에 저장) — 있으면 AI 를 부르지 않고 바로 씁니다
+function savedAsk(pool){
+  const kt=askKeyTag(); if(!kt||LANG!=="kr") return null;
+  const picked=new Set(); MK.tags.forEach(x=>tagGroup(x).forEach(g=>picked.add(g)));
+  for(const g of tagGroup(kt)){ const a=PREFS[g]&&PREFS[g].ask; if(!a||!a.q||!Array.isArray(a.opts)) continue;
+    const opts=a.opts.filter(o=>o&&o.label&&TAG_MASTER[o.id]&&!picked.has(o.id)).map(o=>{ const s=new Set(tagGroup(o.id)); return {label:o.label,id:o.id,n:pool.filter(p=>p.tag_ids.some(y=>s.has(y))).length}; })
+      .filter(o=>o.n>0&&o.n<pool.length);
+    if(opts.length>=2) return {q:a.q,opts}; }
+  return null;
+}
+// AI 가 즉석으로 만든 질문은 "승인 대기"로 남깁니다 → 약사가 카드에서 승인·수정하면 다음부터 그 질문이 바로 뜹니다
+const ASK_LOGGED=new Set();
+function logAskDraft(q,opts){
+  const kt=askKeyTag(); if(!USE_FIREBASE||LANG!=="kr"||!kt||ASK_LOGGED.has(kt)) return; ASK_LOGGED.add(kt);
+  db.collection("ask_drafts").add({ pid:PHARMACIST_ID, tag:kt, tagName:tagName(kt,"kr"), raw:String(MK.q).slice(0,200), q:String(q).slice(0,200),
+    opts:opts.slice(0,5).map(o=>({label:String(o.label).slice(0,60),id:o.id})), timestamp:firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
+}
+async function fetchAsk(key,pool){
+  const cands=askCands(pool); let r=null;
+  if(cands.length>=2){ try{ r=await aiAsk(MK.q, MK.qTags.map(x=>tagName(x,"kr")), cands, MK.hist||[], pool.length); }catch(e){ r=null; } }
+  if(!MK.ask||MK.ask.key!==key) return;                       // 그 사이 검색·조건이 바뀌었으면 버림
+  const by={}; cands.forEach(c=>by[c.name]=c); const seen=new Set();
+  const opts=((r&&Array.isArray(r.options))?r.options:[]).map(o=>({label:String((o&&o.label)||"").trim(),c:by[String((o&&o.tag)||"").trim()]}))
+    .filter(o=>o.label&&o.c&&!seen.has(o.c.id)&&seen.add(o.c.id)).slice(0,4).map(o=>({label:o.label,id:o.c.id,n:o.c.n}));
+  MK.ask = (r&&r.question&&opts.length>=2) ? {key,state:"ok",q:String(r.question).trim(),opts}
+         : r ? {key,state:"none"}                              // AI 가 "물을 만한 것이 없다"고 한 경우: 억지로 묻지 않음
+         : {key,state:"fail"};                                 // AI 를 못 쓴 경우에만 분류 버튼으로 대신 묻기
+  if(MK.ask.state==="ok") logAskDraft(MK.ask.q,MK.ask.opts);
+  if(VIEW==="market") renderMarket();
+}
+function askHTML(pool){
+  if(!MK.q||MK.qBusy||MK.noAsk||pool.length<4) return "";
+  const skip=`<button class="pq-opt skip" data-act="asknone">${t("askSkip")}</button>`;
+  const box=(q,inner)=>`<div class="pq"><p class="pq-h">${PH_ICON}<span>${esc(q)}</span></p><div class="pq-opts">${inner}${skip}</div></div>`;
+  if(MK.tags.length<3){                                        // 세 번까지만 되묻습니다
+    const key=MK.q+"|"+MK.tags.join(",")+"|"+LANG;
+    if(!MK.ask||MK.ask.key!==key){ const sv=savedAsk(pool);
+      if(sv) MK.ask={key,state:"ok",q:sv.q,opts:sv.opts,saved:true}; else{ MK.ask={key,state:"busy"}; fetchAsk(key,pool); } }
+    if(MK.ask.state==="busy") return `<div class="pq"><div class="wait"><i></i><i></i><i></i><span>${t("askBusy")}</span></div></div>`;
+    if(MK.ask.state==="none") return "";
+    if(MK.ask.state==="ok") return box(MK.ask.q, MK.ask.opts.map((o,i)=>`<button class="pq-opt say" data-act="pqpick" data-id="${i}">${esc(o.label)}</button>`).join(""));
+  }
+  const a=askNext(pool); if(!a) return "";
+  return box(a.q, a.opts.map(o=>`<button class="pq-opt" data-act="mkon" data-id="${esc(o.id)}">${esc(tagName(o.id))}<span class="num">${o.n}</span></button>`).join(""));
+}
+const PH_ICON='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".12"/><path d="M12 6.5v11M6.5 12h11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
 function renderMarket(){
   const list=marketList(), f=filtersHTML(list), inStore=storeHits();
   const understood = !MK.q ? "" : MK.qBusy ? `<div class="understood"><div class="wait"><i></i><i></i><i></i><span>${t("analyzing")}</span></div></div>`
@@ -1307,6 +1445,7 @@ function renderMarket(){
     <p class="crumb"><a href="#home">${t("home")}</a> / ${t("navMarket")}</p>
     <h1 class="pg-title">${MK.q?esc(t("resultFor",MK.q)):t("navMarket")}</h1>
     ${understood}
+    ${askHTML(inStore.length?[...list,...inStore.filter(p=>!list.includes(p))]:list)}
     <div class="coll">
       <aside class="coll-side" aria-label="${t("filter")}">${f}</aside>
       <div>
@@ -1335,6 +1474,14 @@ function renderFilterSheet(list,f){
 /* ════════════════════════════════════════════════════════════
    12. 화면: 상품 상세
    ════════════════════════════════════════════════════════════ */
+// 상품 화면에 보여 줄 태그: 고객에게 의미 있는 것(증상·성분·부위)만 최대 5개.
+// 아직 종류를 나누지 않은 제품은 임시로 브랜드·내부용을 뺀 태그 4개까지.
+function shownTags(p){
+  const all=p.tag_ids.filter(x=>TAG_MASTER[x]&&!isClassTag(x)&&!hiddenTag(x)), seen=new Set();
+  const uniq=a=>a.filter(x=>{ const l=tagName(x).toLowerCase(); if(seen.has(l)) return false; seen.add(l); return true; });
+  const order=["증상","성분","부위"], main=all.filter(x=>order.includes(tagType(x))).sort((a,b)=>order.indexOf(tagType(a))-order.indexOf(tagType(b)));
+  return main.length ? uniq(main).slice(0,5) : uniq(all.filter(x=>tagType(x)!=="브랜드")).slice(0,4);
+}
 function renderProduct(){
   const p=PMAP[ARG], el=$("v-product");
   if(!p){ el.innerHTML=`<div class="empty"><p>${LOADED?t("notFound"):t("loading")}</p>${LOADED?`<a class="btn ghost" href="#market">${t("goMarket")}</a>`:""}</div>`; return; }
@@ -1350,7 +1497,7 @@ function renderProduct(){
         <div class="pd-kind${p.drug?" drug":""}">${p.drug?t("kindDrug"):t("kindShop")}</div>
         <h1 class="pd-name">${esc(p.name)}</h1>
         ${can?`<div class="pd-price num">${priceHTML(p)}</div>`:""}
-        <div class="pd-tags">${p.tag_ids.filter(x=>!isClassTag(x)&&TAG_MASTER[x]).slice(0,10).map(x=>`<button data-act="cat" data-id="${esc(x)}">${esc(tagName(x))}</button>`).join("")}</div>
+        <div class="pd-tags">${shownTags(p).map(x=>`<button data-act="cat" data-id="${esc(x)}">${esc(tagName(x))}</button>`).join("")}</div>
         ${p.drug?`<div class="notice">${t("drugNote")}</div>`:""}
         <div class="pd-buy">
           ${can&&SHOP_OPEN?`<div><span class="sr">${t("qty")}</span><span class="qty"><button data-act="pddec" aria-label="-">−</button><span class="num">${PD_QTY}</span><button data-act="pdinc" aria-label="+">+</button></span></div>
@@ -1662,9 +1809,11 @@ document.addEventListener("click",e=>{
   else if(a==="dec") setQty(id,-1);
   else if(a==="rm"){ delete BAG[id]; saveBag(); renderBag(); render(); }
   else if(a==="askabout"){ const p=PMAP[id]; nav("consult"); $("q").value=p.name+" "; $("q").focus(); }
-  else if(a==="mkon"){ MK.tags.push(id); MK.shown=24; renderMarket(); }
+  else if(a==="mkon"){ if(!MK.tags.includes(id)) MK.tags.push(id); MK.shown=24; renderMarket(); }
+  else if(a==="asknone"){ MK.noAsk=true; renderMarket(); }
+  else if(a==="pqpick"){ const o=MK.ask&&MK.ask.opts&&MK.ask.opts[+id]; if(o){ (MK.hist=MK.hist||[]).push({q:MK.ask.q,a:o.label}); if(!MK.tags.includes(o.id)) MK.tags.push(o.id); MK.shown=24; renderMarket(); } }
   else if(a==="mkoff"){ MK.tags=MK.tags.filter(x=>x!==id); renderMarket(); }
-  else if(a==="mkclear"){ MK.qSeq++; MK.qBusy=false; MK.qTags=[]; MK.tags=[]; MK.q=""; $("hdq").value=""; renderMarket(); }
+  else if(a==="mkclear"){ MK.noAsk=false; MK.hist=[]; MK.ask=null; MK.qSeq++; MK.qBusy=false; MK.qTags=[]; MK.tags=[]; MK.q=""; $("hdq").value=""; renderMarket(); }
   else if(a==="askq") ask(MK.q);
   else if(a==="mkmore"){ MK.shown+=24; renderMarket(); }
   else if(a==="fmore"){ MK.open[id]=true; renderMarket(); }
